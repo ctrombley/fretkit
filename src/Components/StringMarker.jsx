@@ -1,16 +1,19 @@
 import React from 'react';
 
-class Marker extends React.Component {
+class StringMarker extends React.Component {
   constructor(props) {
     super(props)
 
-    this.radius = 10;
+    this.radius = 8;
+    this.previewColor = '#aaaaaa';
+    this.markedColor = '#000000';
+    this.litColor = '#ff0000';
   }
 
   render() {
     const xOffset = this.props.xOffset + this.props.fretWidth / 2;
-    const fill = this.props.isLit ? '#ff0000' :
-      this.props.isPreview ? '#aaaaaa': '#000000';
+    const fill = this.props.isLit ? this.litColor :
+      this.props.isPreview ? this.previewColor: this.markedColor;
 
     return (
       <circle fill={fill}
@@ -22,7 +25,7 @@ class Marker extends React.Component {
   }
 }
 
-Marker.propTypes = {
+StringMarker.propTypes = {
   xOffset: React.PropTypes.number.isRequired,
   yOffset: React.PropTypes.number.isRequired,
   fretWidth: React.PropTypes.number.isRequired,
@@ -30,4 +33,4 @@ Marker.propTypes = {
   isPreview: React.PropTypes.bool
 }
 
-export default Marker;
+export default StringMarker;

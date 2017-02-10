@@ -1,5 +1,5 @@
 import React from 'react';
-import Marker from './Marker.jsx'
+import StringMarker from './StringMarker.jsx'
 
 class String extends React.Component {
   constructor(props) {
@@ -55,7 +55,7 @@ class String extends React.Component {
 
   render() {
     const marker = this.showMarker() ?
-      <Marker xOffset={this.props.xOffset}
+      <StringMarker xOffset={this.props.xOffset}
         yOffset={this.props.yOffset}
         fretWidth={this.props.fretWidth}
         isPreview={this.state.isPreview}

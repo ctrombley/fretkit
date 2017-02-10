@@ -1,20 +1,31 @@
 import React from 'react';
 import String from './String.jsx'
 import Label from './Label.jsx'
+import FretMarker from './FretMarker.jsx'
 
 class Fret extends React.Component {
   constructor(props) {
     super(props);
 
-    this.width = 80;
     this.stringCount = 6;
-    this.fretHeight = String.height * (this.stringCount - 1);
-    this.singleDotFrets = [3,5,7,9,15,17,19,21]
-    this.doubledotFrets = [12,24]
+    this.width = 80;
+    this.height = String.height * (this.stringCount - 1);
+    this.singleMarkerFrets = [3,5,7,9,15,17,19,21] // 1-based
+    this.doubleMarkerFrets = [12,24] // 1-based
   }
 
   isFirst() {
     return this.props.idx === 0;
+  }
+
+  fretMarkerType() {
+    if (this.singleMarkerFrets.includes(this.props.fretNumber)) {
+      return 'single';
+    } else if (this.doubleMarkerFrets.includes(this.props.fretNumber)) {
+      return 'double';
+    } else {
+      return null;
+    }
   }
 
   render() {
@@ -39,15 +50,25 @@ class Fret extends React.Component {
       {this.props.fretNumber}
     </Label>;
 
+    const fretMarkerType = this.fretMarkerType();
+    const fretMarker = !!fretMarkerType ?
+      <FretMarker xOffset={xOffset}
+        yOffset={this.props.fretboardTopMargin}
+        fretWidth={this.width}
+        fretHeight={this.height} 
+        type={fretMarkerType}/> :
+        null;
+
     return (
       <g>
         {this.isFirst() ? fretNumberLabel : null}
+        {fretMarker}
         <line fill="none"
           stroke="#000000"
           x1={xOffset}
           x2={xOffset}
           y1={this.props.fretboardTopMargin}
-          y2={this.props.fretboardTopMargin + this.fretHeight}/>
+          y2={this.props.fretboardTopMargin + this.height}/>
         {strings}
       </g>
       );
