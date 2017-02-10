@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React from 'react';
 import Fret from './Fret.jsx'
 
 class Fretboard extends React.Component {

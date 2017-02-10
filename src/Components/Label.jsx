@@ -12,7 +12,7 @@ class Label extends React.Component {
         strokeLinejoin="null"
         strokeLinecap="null"
         fontSize="24"
-        fontFamily="serif"
+        fontFamily="sans-serif"
         textAnchor="middle">
         {this.props.children}
       </text>
@@ -22,7 +22,8 @@ class Label extends React.Component {
 
 Label.propTypes = {
   xOffset: React.PropTypes.number.isRequired,
-  yOffset: React.PropTypes.number.isRequired
+  yOffset: React.PropTypes.number.isRequired,
+  children: React.PropTypes.node.isRequired
 }
 
 export default Label;
