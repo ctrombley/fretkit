@@ -1,15 +1,16 @@
 {
-  "name": "react-simple-boilerplate",
+  "name": "fretboard",
   "version": "1.0.0",
-  "description": "Simple and lightweight Boilerplate for ReactJS projects",
+  "description": "it's a fretboard",
   "scripts": {
     "lint": "eslint src/**/*",
     "start": "node server.js",
-    "test": "mocha spec/**/*"
+    "test": "mocha --compilers js:babel-core/register  spec/**/*",
+    "watch": "npm run test -- --watch"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/noahlotzer/react-simple-boilerplate.git"
+    "url": "https://github.com/ctrombley/fretboard.git"
   },
   "keywords": [
     "react",
@@ -20,12 +21,8 @@
     "edit",
     "webpack"
   ],
-  "author": "Noah-Jerome Lotzer <n.lotzer@neusta.de>",
+  "author": "Chris Trombley <ctrombley@gmail.com>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/noahlotzer/react-simple-boilerplate/issues"
-  },
-  "homepage": "https://github.com/noahlotzer/react-simple-boilerplate",
   "engines": {
     "node": ">=6.0.0"
   },

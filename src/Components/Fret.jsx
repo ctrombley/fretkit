@@ -1,14 +1,15 @@
 import React from 'react';
-import String from './String.jsx'
-import Label from './Label.jsx'
-import FretMarker from './FretMarker.jsx'
+import String from './String.jsx';
+import Label from './Label.jsx';
+import FretMarker from './FretMarker.jsx';
+import parse from '../lib/tones.js';
 
 class Fret extends React.Component {
   constructor(props) {
     super(props);
 
-    this.stringCount = 6;
     this.width = 80;
+    this.stringCount = this.props.tuning.length;
     this.height = String.height * (this.stringCount - 1);
     this.singleMarkerFrets = [3,5,7,9,15,17,19,21] // 1-based
     this.doubleMarkerFrets = [12,24] // 1-based
@@ -30,19 +31,19 @@ class Fret extends React.Component {
 
   render() {
     const xOffset = this.props.fretboardLeftMargin + this.width * this.props.idx;
-    const strings = [];
 
-    for (var i = 0; i < this.stringCount; i++) {
+    const reversedTuning = this.props.tuning.slice().reverse();
+    const strings = reversedTuning.map((t, i) => {
+      const openNote = parse(t);
       const yOffset = this.props.fretboardTopMargin + String.height * i;
-      const string = <String key={i}
-        idx={i}
+      return <String key={i} idx={i}
+        note={openNote + this.props.idx}
         yOffset={yOffset}
         xOffset={xOffset}
-        fretWidth={this.width} 
-        fretIdx={this.props.idx}/>
-
-      strings.push(string);
-    }
+        fretWidth={this.width}
+        fretIdx={this.props.idx}
+        litNotes={this.props.litNotes}/>;
+    })
 
     const fretNumberLabelPadding = 20;
     const fretNumberLabel = <Label xOffset={xOffset + fretNumberLabelPadding}
@@ -55,7 +56,7 @@ class Fret extends React.Component {
       <FretMarker xOffset={xOffset}
         yOffset={this.props.fretboardTopMargin}
         fretWidth={this.width}
-        fretHeight={this.height} 
+        fretHeight={this.height}
         type={fretMarkerType}/> :
         null;
 
@@ -77,7 +78,9 @@ Fret.propTypes = {
   fretboardLeftMargin: React.PropTypes.number.isRequired,
   fretboardTopMargin: React.PropTypes.number.isRequired,
   idx: React.PropTypes.number.isRequired,
-  fretNumber: React.PropTypes.number.isRequired
+  fretNumber: React.PropTypes.number.isRequired,
+  tuning: React.PropTypes.array.isRequired,
+  litNotes: React.PropTypes.array
 }
 
 export default Fret;

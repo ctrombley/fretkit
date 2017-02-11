@@ -6,7 +6,7 @@ class String extends React.Component {
     super(props)
 
     this.state = {
-      isLit: false,
+      isLit: this.props.litNotes.includes(this.props.note % 12),
       isMarked: false,
       isPreview: false
     }
@@ -68,21 +68,21 @@ class String extends React.Component {
 
   render() {
     const marker = this.showMarker() ?
-      <StringMarker xOffset={this.props.xOffset}
+      <StringMarker className='string__marker'
+        xOffset={this.props.xOffset}
         yOffset={this.props.yOffset}
         fretWidth={this.props.fretWidth}
         type={this.getStringMarkerType()} /> :
       null;
 
     return (
-      <g className='string'>
-        <line fill="none"
-          stroke="#000000"
+      <g className={`string string-${this.props.idx}`}>
+        <line className='string__line'
           x1={this.props.xOffset}
           x2={this.props.xOffset + this.props.fretWidth}
           y2={this.props.yOffset}
           y1={this.props.yOffset}
-          className={`string string-${this.props.idx}`} />
+          />
         { marker }
         <rect height={String.height}
           ref={this.registerOverlay}
@@ -100,7 +100,9 @@ String.propTypes = {
   fretWidth: React.PropTypes.number.isRequired,
   xOffset: React.PropTypes.number.isRequired,
   yOffset: React.PropTypes.number.isRequired,
-  idx: React.PropTypes.number.isRequired
+  idx: React.PropTypes.number.isRequired,
+  note: React.PropTypes.number.isRequired,
+  litNotes: React.PropTypes.array
 }
 
 export default String;
