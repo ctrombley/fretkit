@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "it's a fretboard",
   "scripts": {
-    "lint": "eslint src/**/*",
+    "lint": "eslint **/*.js **/*.jsx",
     "start": "node server.js",
     "test": "mocha --compilers js:babel-core/register  spec/**/*",
     "watch": "npm run test -- --watch"

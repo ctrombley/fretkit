@@ -6,7 +6,6 @@ class String extends React.Component {
     super(props)
 
     this.state = {
-      isLit: this.props.litNotes.includes(this.props.note % 12),
       isMarked: false,
       isPreview: false
     }
@@ -16,6 +15,7 @@ class String extends React.Component {
     this.registerOverlay = this.registerOverlay.bind(this);
     this.showMarker = this.showMarker.bind(this);
     this.getStringMarkerType = this.getStringMarkerType.bind(this);
+    this.isLit = this.isLit.bind(this);
   }
 
   static get height() {
@@ -27,15 +27,17 @@ class String extends React.Component {
   }
 
   toggleMarked() {
-    //console.log(`clicked fret ${this.props.fretIdx}, string ${this.props.idx}`)
     this.setState({ isMarked: !this.state.isMarked });
   }
 
   setPreview(isSet) {
-    //console.log(`hovered over fret ${this.props.fretIdx}, string ${this.props.idx}`)
     if (this.state.isPreview !== isSet) {
       this.setState({ isPreview: isSet });
     }
+  }
+
+  isLit() {
+    return this.props.litNotes.includes(this.props.note % 12);
   }
 
   componentDidMount() {
@@ -55,7 +57,7 @@ class String extends React.Component {
   }
 
   getStringMarkerType() {
-    if (this.state.isLit) {
+    if (this.isLit()) {
       return 'lit';
     } else if (this.state.isPreview) {
       return 'preview';
