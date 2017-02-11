@@ -8,22 +8,29 @@ class App extends Component {
     super(props);
 
     this.state = {
-      litNotes: []
+      litNotes: [],
+      startingFret: 1
     };
 
     this.showNotes = this.showNotes.bind(this);
+    this.setStartingFret = this.setStartingFret.bind(this);
   }
 
   showNotes(notes) {
     this.setState({litNotes: notes});
   }
 
+  setStartingFret(fret) {
+    this.setState({startingFret: fret});
+  }
+
   render() {
     return (
       <div>
-        <ControlPanel showNotes={this.showNotes}/>
+        <ControlPanel showNotes={this.showNotes}
+          setStartingFret={this.setStartingFret}/>
         <Fretboard width="1080" height="480"
-          startFret={1}
+          startingFret={this.state.startingFret}
           fretCount={24}
           tuning={tunings.standard}
           litNotes={this.state.litNotes}/>

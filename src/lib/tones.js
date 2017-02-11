@@ -41,7 +41,7 @@ export default function parse(input) {
   if (Object.keys(modifiers).includes(nextChar)) {
     note = note + modifiers[nextChar];
     fullNote = fullNote + nextChar;
-    nextChar = chars.shift().toLowerCase();
+    nextChar = chars.shift();
   }
 
   if (!nextChar) {
@@ -49,6 +49,7 @@ export default function parse(input) {
     return note;
   }
 
+  nextChar = nextChar.toLowerCase();
   const octave = parseInt(nextChar, 10);
   const octaveModifier = octave * 12;
   note = note + octaveModifier;

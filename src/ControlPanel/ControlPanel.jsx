@@ -10,20 +10,26 @@ class ControlPanel extends Component {
     super(props);
 
     this.state = {
-      value: ''
+      notes: '',
+      startingFret: ''
     };
 
-    this.handleChange = this.handleChange.bind(this);
+    this.setNotes = this.setNotes.bind(this);
+    this.setStartingFret = this.setStartingFret.bind(this);
   }
 
-  handleChange(event) {
+  setStartingFret(event) {
+    const value = parseInt(event.target.value, 10);
+    this.props.setStartingFret(value);
+    this.setState({startingFret: value});
+  }
+
+  setNotes(event) {
     const value = event.target.value;
-    console.log(`ControlPanel - value: ${value}`)
     const notes = parseList(value);
-    console.log(`ControlPanel - notes: ${notes}`)
     this.props.showNotes(notes);
 
-    this.setState({value: event.target.value});
+    this.setState({notes: value});
   }
 
   render() {
@@ -32,7 +38,14 @@ class ControlPanel extends Component {
        <form>
           <label>
             Show:
-            <input value={this.state.value} onChange={this.handleChange} />
+            <input value={this.state.notes} 
+              onChange={this.setNotes} />
+          </label>
+          <label>
+            Starting fret:
+            <input type='number' min='1' max='24' 
+              value={this.state.startingFret} 
+              onChange={this.setStartingFret} />
           </label>
         </form>
       </div>

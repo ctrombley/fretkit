@@ -14,7 +14,7 @@ class Fretboard extends React.Component {
     for (var i = 0; i < this.props.fretCount; i++) {
 
       const fret = <Fret key={i} idx={i}
-        fretNumber={this.props.startFret + i}
+        fretNumber={this.props.startingFret + i}
         fretboardLeftMargin={this.leftMargin}
         fretboardTopMargin={this.topMargin} 
         tuning={this.props.tuning}
@@ -36,7 +36,7 @@ class Fretboard extends React.Component {
 Fretboard.propTypes = {
   width: React.PropTypes.string.isRequired,
   height: React.PropTypes.string.isRequired,
-  startFret: React.PropTypes.number.isRequired,
+  startingFret: React.PropTypes.number.isRequired,
   fretCount: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,
   litNotes: React.PropTypes.array
