@@ -11,25 +11,20 @@ class FretMarker extends React.Component {
     const xOffset = this.props.xOffset + this.props.fretWidth / 2;
 
     const singleMarker = (
-      <circle fill='#dddddd'
+      <circle className='fret__marker fret__marker-single'
         cx={xOffset}
         cy={this.props.yOffset + this.props.fretHeight / 2}
-        r={this.radius}
-        className='marker'/>
+        r={this.radius} />
       );
 
     const doubleMarker = (
-      <g>
-        <circle fill='#dddddd'
-          cx={xOffset}
+      <g className='fret__marker fret__marker-double'>
+        <circle cx={xOffset}
           cy={this.props.yOffset + this.props.fretHeight / 5}
-          r={this.radius}
-          className='marker'/>
-        <circle fill='#dddddd'
-          cx={xOffset}
+          r={this.radius} />
+        <circle cx={xOffset}
           cy={this.props.yOffset + 4 * this.props.fretHeight / 5}
-          r={this.radius}
-          className='marker'/>
+          r={this.radius} />
       </g>
       );
 

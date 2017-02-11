@@ -5,22 +5,23 @@ class StringMarker extends React.Component {
     super(props)
 
     this.radius = 8;
-    this.previewColor = '#aaaaaa';
-    this.markedColor = '#000000';
-    this.litColor = '#ff0000';
+
+    this.getClassName = this.getClassName.bind(this);
+  }
+
+  getClassName() {
+    return `string__marker-${this.props.type}`;
   }
 
   render() {
     const xOffset = this.props.xOffset + this.props.fretWidth / 2;
-    const fill = this.props.isLit ? this.litColor :
-      this.props.isPreview ? this.previewColor: this.markedColor;
 
     return (
-      <circle fill={fill}
+      <circle
         cx={xOffset}
         cy={this.props.yOffset}
         r={this.radius}
-        className='marker'/>
+        className={`string__marker ${this.getClassName()}`}/>
       );
   }
 }
@@ -29,8 +30,7 @@ StringMarker.propTypes = {
   xOffset: React.PropTypes.number.isRequired,
   yOffset: React.PropTypes.number.isRequired,
   fretWidth: React.PropTypes.number.isRequired,
-  isLit: React.PropTypes.bool,
-  isPreview: React.PropTypes.bool
+  type: React.PropTypes.string.isRequired
 }
 
 export default StringMarker;

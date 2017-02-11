@@ -15,6 +15,7 @@ class String extends React.Component {
     this.setPreview = this.setPreview.bind(this);
     this.registerOverlay = this.registerOverlay.bind(this);
     this.showMarker = this.showMarker.bind(this);
+    this.getStringMarkerType = this.getStringMarkerType.bind(this);
   }
 
   static get height() {
@@ -22,7 +23,7 @@ class String extends React.Component {
   }
 
   showMarker() {
-    return this.state.isMarked || this.state.isPreview || this.state.isLit;
+    return !!this.getStringMarkerType();
   }
 
   toggleMarked() {
@@ -53,31 +54,42 @@ class String extends React.Component {
     this.overlay = ref;
   }
 
+  getStringMarkerType() {
+    if (this.state.isLit) {
+      return 'lit';
+    } else if (this.state.isPreview) {
+      return 'preview';
+    } else if (this.state.isMarked) {
+      return 'marked';
+    } else {
+      return null;
+    }
+  }
+
   render() {
     const marker = this.showMarker() ?
       <StringMarker xOffset={this.props.xOffset}
         yOffset={this.props.yOffset}
         fretWidth={this.props.fretWidth}
-        isPreview={this.state.isPreview}
-        isLit = {this.state.isLit} /> :
+        type={this.getStringMarkerType()} /> :
       null;
 
     return (
-      <g>
+      <g className='string'>
         <line fill="none"
           stroke="#000000"
           x1={this.props.xOffset}
           x2={this.props.xOffset + this.props.fretWidth}
           y2={this.props.yOffset}
           y1={this.props.yOffset}
-          className={`string-${this.props.idx}`} />
+          className={`string string-${this.props.idx}`} />
         { marker }
         <rect height={String.height}
           ref={this.registerOverlay}
-          fillOpacity="0"
           width={this.props.fretWidth}
           x={this.props.xOffset}
-          y={this.props.yOffset - String.height / 2} />
+          y={this.props.yOffset - String.height / 2} 
+          className="string__overlay"/>
       </g>
       );
   }

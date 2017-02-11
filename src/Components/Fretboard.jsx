@@ -13,17 +13,18 @@ class Fretboard extends React.Component {
     const frets = [];
 
     for (var i = 0; i < this.props.fretCount; i++) {
-      const fret = <Fret key={i}
-        idx={i}
+      const fret = <Fret key={i} idx={i}
         fretNumber={this.props.startFret + i}
         fretboardLeftMargin={this.leftMargin}
         fretboardTopMargin={this.topMargin} />;
 
-        frets.push(fret);
+      frets.push(fret);
     }
 
     return (
-      <svg width={this.props.width} height={this.props.height} >
+      <svg className='fret-board'
+        width={this.props.width}
+        height={this.props.height} >
         {frets}
       </svg>
       );

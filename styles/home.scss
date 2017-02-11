@@ -5,3 +5,37 @@ h1 {
 body {
   cursor: pointer;
 }
+
+.fret__wire {
+  fill: none;
+  stroke: #000000;
+}
+
+.fret__marker {
+  fill: #dddddd;
+}
+
+.label {
+  fill: #000000;
+  stroke: #000000;
+  stroke-width: 0;
+  font-size: 24;
+  font-family: 'sans-serif';
+  text-anchor: 'middle';
+}
+
+.string__overlay {
+  fill-opacity: 0;
+}
+
+.string__marker-marked {
+  fill: #000000;
+}
+
+.string__marker-preview {
+  fill: rgba(255, 151, 61, 0.5);
+}
+
+.string__marker-lit {
+  fill: #ff0000;
+}

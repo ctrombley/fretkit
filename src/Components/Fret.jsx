@@ -60,13 +60,11 @@ class Fret extends React.Component {
         null;
 
     return (
-      <g>
+      <g className='fret'>
         {this.isFirst() ? fretNumberLabel : null}
         {fretMarker}
-        <line fill="none"
-          stroke="#000000"
-          x1={xOffset}
-          x2={xOffset}
+        <line className='fret__wire'
+          x1={xOffset} x2={xOffset}
           y1={this.props.fretboardTopMargin}
           y2={this.props.fretboardTopMargin + this.height}/>
         {strings}
