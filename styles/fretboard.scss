@@ -2,6 +2,12 @@ body {
   cursor: pointer;
 }
 
+.fretboard {
+  display: block;
+  margin: 0 auto;
+  border: 1px solid #000;
+}
+
 .fret__wire {
   fill: none;
   stroke: #000000;

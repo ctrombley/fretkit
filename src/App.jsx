@@ -32,11 +32,11 @@ class App extends Component {
 
   render() {
     return (
-      <div>
+      <div className='main'>
         <ControlPanel setNotes={this.setNotes}
           setStartingFret={this.setStartingFret}
           setFretCount={this.setFretCount} />
-        <Fretboard width="1080" height="480"
+        <Fretboard width="1080" height="280"
           startingFret={this.state.startingFret}
           fretCount={this.state.fretCount}
           tuning={tunings.standard}

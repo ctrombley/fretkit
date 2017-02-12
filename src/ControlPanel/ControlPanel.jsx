@@ -45,21 +45,24 @@ class ControlPanel extends Component {
   render() {
     return (
       <div className='control-panel'>
-       <form>
-          <label>
+       <form className='control-panel__form'>
+          <label className='control-panel__label'>
             Show:
-            <input value={this.state.notes}
+            <input className='control-panel__input'
+              value={this.state.notes}
               onChange={this.setNotes} />
           </label>
-          <label>
+          <label className='control-panel__label'>
             Starting fret:
-            <input type='number' min='1' max='24'
+            <input className='control-panel__input'
+              type='number' min='1' max='24'
               value={this.state.startingFret}
               onChange={this.setStartingFret} />
           </label>
-          <label>
+          <label className='control-panel__label'>
             Fret count:
-            <input type='number' min='1' max='12'
+            <input className='control-panel__input'
+              type='number' min='1' max='12'
               value={this.state.fretCount}
               onChange={this.setFretCount} />
           </label>

@@ -24,7 +24,7 @@ class Fretboard extends React.Component {
     }
 
     return (
-      <svg className='fret-board'
+      <svg className='fretboard'
         width={this.props.width}
         height={this.props.height} >
         {frets}
