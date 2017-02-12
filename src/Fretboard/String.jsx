@@ -15,7 +15,6 @@ class String extends React.Component {
     this.disablePreview = this.disablePreview.bind(this);
     this.registerOverlay = this.registerOverlay.bind(this);
     this.showMarker = this.showMarker.bind(this);
-    this.getStringMarkerType = this.getStringMarkerType.bind(this);
     this.isLit = this.isLit.bind(this);
   }
 
@@ -24,7 +23,7 @@ class String extends React.Component {
   }
 
   showMarker() {
-    return !!this.getStringMarkerType();
+    return this.isLit() || this.isMarked();
   }
 
   toggleMarked() {
@@ -64,25 +63,25 @@ class String extends React.Component {
     this.overlay = ref;
   }
 
-  getStringMarkerType() {
-    if (this.isLit()) {
-      return 'lit';
-    } else if (this.state.isPreview) {
-      return 'preview';
-    } else if (this.state.isMarked) {
-      return 'marked';
-    } else {
-      return null;
-    }
-  }
-
   render() {
-    const marker = this.showMarker() ?
-      <StringMarker className='string__marker'
-        xOffset={this.props.xOffset}
+    const marker = this.state.isMarked ?
+      <StringMarker xOffset={this.props.xOffset}
+        yOffset={this.props.yOffset}
+        fretWidth={this.props.fretWidth} /> :
+      null;
+
+    const litMarker = this.isLit() ?
+      <StringMarker xOffset={this.props.xOffset}
         yOffset={this.props.yOffset}
         fretWidth={this.props.fretWidth}
-        type={this.getStringMarkerType()} /> :
+        className='string__marker-lit'/> :
+      null;
+
+    const previewMarker = this.state.isPreview ?
+      <StringMarker xOffset={this.props.xOffset}
+        yOffset={this.props.yOffset}
+        fretWidth={this.props.fretWidth}
+        className='string__marker-preview'/> :
       null;
 
     return (
@@ -94,6 +93,8 @@ class String extends React.Component {
           y1={this.props.yOffset}
           />
         { marker }
+        { litMarker }
+        { previewMarker }
         <rect height={String.height}
           ref={this.registerOverlay}
           width={this.props.fretWidth}

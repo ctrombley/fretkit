@@ -3,8 +3,6 @@ import React from 'react';
 class FretMarker extends React.Component {
   constructor(props) {
     super(props)
-
-    this.radius = 10;
   }
 
   render() {
@@ -20,11 +18,9 @@ class FretMarker extends React.Component {
     const doubleMarker = (
       <g className='fret__marker fret__marker-double'>
         <circle cx={xOffset}
-          cy={this.props.yOffset + this.props.fretHeight / 5}
-          r={this.radius} />
+          cy={this.props.yOffset + this.props.fretHeight / 5} />
         <circle cx={xOffset}
-          cy={this.props.yOffset + 4 * this.props.fretHeight / 5}
-          r={this.radius} />
+          cy={this.props.yOffset + 4 * this.props.fretHeight / 5} />
       </g>
       );
 

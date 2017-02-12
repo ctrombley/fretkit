@@ -1,12 +1,21 @@
 import React from 'react';
 import Fret from './Fret.jsx'
+import String from './String.jsx'
 
 class Fretboard extends React.Component {
   constructor(props) {
     super(props);
 
-    this.leftMargin = 100;
-    this.topMargin = 100;
+    this.margin = 50;
+  }
+
+  getWidth() {
+    return (this.props.fretCount * Fret.width) + (this.margin * 2);
+  }
+
+  getHeight() {
+    const stringCount = this.props.tuning.length;
+    return (String.height * stringCount) + (this.margin * 2);
   }
 
   render() {
@@ -15,8 +24,7 @@ class Fretboard extends React.Component {
 
       const fret = <Fret key={i} idx={i}
         fretNumber={this.props.startingFret + i}
-        fretboardLeftMargin={this.leftMargin}
-        fretboardTopMargin={this.topMargin} 
+        fretboardMargin={this.margin}
         tuning={this.props.tuning}
         litNotes={this.props.litNotes}/>;
 
@@ -25,8 +33,8 @@ class Fretboard extends React.Component {
 
     return (
       <svg className='fretboard'
-        width={this.props.width}
-        height={this.props.height} >
+        width={this.getWidth()}
+        height={this.getHeight()} >
         {frets}
       </svg>
       );
@@ -34,8 +42,6 @@ class Fretboard extends React.Component {
 }
 
 Fretboard.propTypes = {
-  width: React.PropTypes.string.isRequired,
-  height: React.PropTypes.string.isRequired,
   startingFret: React.PropTypes.number.isRequired,
   fretCount: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,

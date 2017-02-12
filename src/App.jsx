@@ -36,8 +36,7 @@ class App extends Component {
         <ControlPanel setNotes={this.setNotes}
           setStartingFret={this.setStartingFret}
           setFretCount={this.setFretCount} />
-        <Fretboard width="1080" height="280"
-          startingFret={this.state.startingFret}
+        <Fretboard startingFret={this.state.startingFret}
           fretCount={this.state.fretCount}
           tuning={tunings.standard}
           litNotes={this.state.litNotes}/>

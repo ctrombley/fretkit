@@ -8,11 +8,14 @@ class Fret extends React.Component {
   constructor(props) {
     super(props);
 
-    this.width = 80;
-    this.stringCount = this.props.tuning.length;
-    this.height = String.height * (this.stringCount - 1);
+    const stringCount = this.props.tuning.length;
+    this.height = String.height * (stringCount - 1);
     this.singleMarkerFrets = [3,5,7,9,15,17,19,21] // 1-based
     this.doubleMarkerFrets = [12,24] // 1-based
+  }
+
+  static get width() {
+    return 80;
   }
 
   isFirst() {
@@ -30,32 +33,32 @@ class Fret extends React.Component {
   }
 
   render() {
-    const xOffset = this.props.fretboardLeftMargin + this.width * this.props.idx;
+    const xOffset = this.props.fretboardMargin + Fret.width * this.props.idx;
 
     const reversedTuning = this.props.tuning.slice().reverse();
     const strings = reversedTuning.map((t, i) => {
       const openNote = parse(t);
-      const yOffset = this.props.fretboardTopMargin + String.height * i;
+      const yOffset = this.props.fretboardMargin + String.height * i;
       return <String key={i} idx={i}
         note={openNote.value + this.props.fretNumber}
         yOffset={yOffset}
         xOffset={xOffset}
-        fretWidth={this.width}
+        fretWidth={Fret.width}
         fretIdx={this.props.idx}
         litNotes={this.props.litNotes}/>;
     })
 
     const fretNumberLabelPadding = 20;
     const fretNumberLabel = <Label xOffset={xOffset + fretNumberLabelPadding}
-      yOffset={this.props.fretboardTopMargin - fretNumberLabelPadding}>
+      yOffset={this.props.fretboardMargin - fretNumberLabelPadding}>
       {this.props.fretNumber}
     </Label>;
 
     const fretMarkerType = this.fretMarkerType();
     const fretMarker = !!fretMarkerType ?
       <FretMarker xOffset={xOffset}
-        yOffset={this.props.fretboardTopMargin}
-        fretWidth={this.width}
+        yOffset={this.props.fretboardMargin}
+        fretWidth={Fret.width}
         fretHeight={this.height}
         type={fretMarkerType}/> :
         null;
@@ -66,8 +69,8 @@ class Fret extends React.Component {
         {fretMarker}
         <line className='fret__wire'
           x1={xOffset} x2={xOffset}
-          y1={this.props.fretboardTopMargin}
-          y2={this.props.fretboardTopMargin + this.height}/>
+          y1={this.props.fretboardMargin}
+          y2={this.props.fretboardMargin + this.height}/>
         {strings}
       </g>
       );
@@ -75,8 +78,7 @@ class Fret extends React.Component {
 }
 
 Fret.propTypes = {
-  fretboardLeftMargin: React.PropTypes.number.isRequired,
-  fretboardTopMargin: React.PropTypes.number.isRequired,
+  fretboardMargin: React.PropTypes.number.isRequired,
   idx: React.PropTypes.number.isRequired,
   fretNumber: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,
