@@ -11,7 +11,8 @@ class String extends React.Component {
     }
 
     this.toggleMarked = this.toggleMarked.bind(this);
-    this.setPreview = this.setPreview.bind(this);
+    this.enablePreview = this.enablePreview.bind(this);
+    this.disablePreview = this.disablePreview.bind(this);
     this.registerOverlay = this.registerOverlay.bind(this);
     this.showMarker = this.showMarker.bind(this);
     this.getStringMarkerType = this.getStringMarkerType.bind(this);
@@ -30,26 +31,33 @@ class String extends React.Component {
     this.setState({ isMarked: !this.state.isMarked });
   }
 
-  setPreview(isSet) {
-    if (this.state.isPreview !== isSet) {
-      this.setState({ isPreview: isSet });
+  enablePreview() {
+    if (!this.state.isPreview) {
+      this.setState({ isPreview: true });
+    }
+  }
+
+  disablePreview() {
+    if (this.state.isPreview) {
+      this.setState({ isPreview: false });
     }
   }
 
   isLit() {
-    return this.props.litNotes.includes(this.props.note % 12);
+    const litNoteValues = this.props.litNotes.map(n => n.value);
+    return litNoteValues.includes(this.props.note % 12);
   }
 
   componentDidMount() {
     this.overlay.addEventListener('click', this.toggleMarked);
-    this.overlay.addEventListener('mouseover', () => this.setPreview(true));
-    this.overlay.addEventListener('mouseout', () => this.setPreview(false));
+    this.overlay.addEventListener('mouseover', this.enablePreview);
+    this.overlay.addEventListener('mouseout', this.disablePreview);
   }
 
   componentWillUnmount(){
-    this.overlay.removeEventListener('click');
-    this.overlay.removeEventListener('mouseover');
-    this.overlay.removeEventListener('mouseout');
+    this.overlay.removeEventListener('click', this.toggleMarked);
+    this.overlay.removeEventListener('mouseover', this.enablePreview);
+    this.overlay.removeEventListener('mouseout', this.disablePreview);
   }
 
   registerOverlay(ref) {

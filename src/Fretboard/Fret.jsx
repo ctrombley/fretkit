@@ -37,7 +37,7 @@ class Fret extends React.Component {
       const openNote = parse(t);
       const yOffset = this.props.fretboardTopMargin + String.height * i;
       return <String key={i} idx={i}
-        note={openNote + this.props.fretNumber}
+        note={openNote.value + this.props.fretNumber}
         yOffset={yOffset}
         xOffset={xOffset}
         fretWidth={this.width}

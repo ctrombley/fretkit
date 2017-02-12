@@ -3,7 +3,9 @@ import { parseList } from '../lib/tones.js';
 
 class ControlPanel extends Component {
   static propTypes = {
-    showNotes: React.PropTypes.func.isRequired
+    setFretCount: React.PropTypes.func.isRequired,
+    setNotes: React.PropTypes.func.isRequired,
+    setStartingFret: React.PropTypes.func.isRequired
   };
 
   constructor(props) {
@@ -11,11 +13,13 @@ class ControlPanel extends Component {
 
     this.state = {
       notes: '',
-      startingFret: ''
+      startingFret: '1',
+      fretCount: '12'
     };
 
     this.setNotes = this.setNotes.bind(this);
     this.setStartingFret = this.setStartingFret.bind(this);
+    this.setFretCount = this.setFretCount.bind(this);
   }
 
   setStartingFret(event) {
@@ -27,9 +31,15 @@ class ControlPanel extends Component {
   setNotes(event) {
     const value = event.target.value;
     const notes = parseList(value);
-    this.props.showNotes(notes);
+    this.props.setNotes(notes);
 
     this.setState({notes: value});
+  }
+
+  setFretCount(event) {
+    const value = parseInt(event.target.value, 10);
+    this.props.setFretCount(value);
+    this.setState({fretCount: value});
   }
 
   render() {
@@ -38,14 +48,20 @@ class ControlPanel extends Component {
        <form>
           <label>
             Show:
-            <input value={this.state.notes} 
+            <input value={this.state.notes}
               onChange={this.setNotes} />
           </label>
           <label>
             Starting fret:
-            <input type='number' min='1' max='24' 
-              value={this.state.startingFret} 
+            <input type='number' min='1' max='24'
+              value={this.state.startingFret}
               onChange={this.setStartingFret} />
+          </label>
+          <label>
+            Fret count:
+            <input type='number' min='1' max='12'
+              value={this.state.fretCount}
+              onChange={this.setFretCount} />
           </label>
         </form>
       </div>

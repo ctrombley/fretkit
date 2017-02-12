@@ -9,14 +9,16 @@ class App extends Component {
 
     this.state = {
       litNotes: [],
-      startingFret: 1
+      startingFret: 1,
+      fretCount: 12
     };
 
-    this.showNotes = this.showNotes.bind(this);
+    this.setNotes = this.setNotes.bind(this);
     this.setStartingFret = this.setStartingFret.bind(this);
+    this.setFretCount = this.setFretCount.bind(this);
   }
 
-  showNotes(notes) {
+  setNotes(notes) {
     this.setState({litNotes: notes});
   }
 
@@ -24,14 +26,19 @@ class App extends Component {
     this.setState({startingFret: fret});
   }
 
+  setFretCount(count) {
+    this.setState({fretCount: count});
+  }
+
   render() {
     return (
       <div>
-        <ControlPanel showNotes={this.showNotes}
-          setStartingFret={this.setStartingFret}/>
+        <ControlPanel setNotes={this.setNotes}
+          setStartingFret={this.setStartingFret}
+          setFretCount={this.setFretCount} />
         <Fretboard width="1080" height="480"
           startingFret={this.state.startingFret}
-          fretCount={24}
+          fretCount={this.state.fretCount}
           tuning={tunings.standard}
           litNotes={this.state.litNotes}/>
       </div>
