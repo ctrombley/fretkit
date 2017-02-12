@@ -92,8 +92,8 @@ class String extends React.Component {
           y2={this.props.yOffset}
           y1={this.props.yOffset}
           />
-        { marker }
         { litMarker }
+        { marker }
         { previewMarker }
         <rect height={String.height}
           ref={this.registerOverlay}

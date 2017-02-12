@@ -8,14 +8,17 @@ class Fret extends React.Component {
   constructor(props) {
     super(props);
 
-    const stringCount = this.props.tuning.length;
-    this.height = String.height * (stringCount - 1);
     this.singleMarkerFrets = [3,5,7,9,15,17,19,21] // 1-based
     this.doubleMarkerFrets = [12,24] // 1-based
   }
 
   static get width() {
     return 80;
+  }
+
+  getHeight() {
+    const stringCount = this.props.tuning.length;
+    return String.height * (stringCount - 1);
   }
 
   isFirst() {
@@ -59,7 +62,7 @@ class Fret extends React.Component {
       <FretMarker xOffset={xOffset}
         yOffset={this.props.fretboardMargin}
         fretWidth={Fret.width}
-        fretHeight={this.height}
+        fretHeight={this.getHeight()}
         type={fretMarkerType}/> :
         null;
 
@@ -70,7 +73,7 @@ class Fret extends React.Component {
         <line className='fret__wire'
           x1={xOffset} x2={xOffset}
           y1={this.props.fretboardMargin}
-          y2={this.props.fretboardMargin + this.height}/>
+          y2={this.props.fretboardMargin + this.getHeight()}/>
         {strings}
       </g>
       );

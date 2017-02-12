@@ -1,18 +1,14 @@
 import React from 'react';
 
 class FretMarker extends React.Component {
-  constructor(props) {
-    super(props)
-  }
-
   render() {
     const xOffset = this.props.xOffset + this.props.fretWidth / 2;
 
     const singleMarker = (
-      <circle className='fret__marker fret__marker-single'
-        cx={xOffset}
-        cy={this.props.yOffset + this.props.fretHeight / 2}
-        r={this.radius} />
+      <g className='fret__marker fret__marker-single'>
+        <circle cx={xOffset}
+          cy={this.props.yOffset + this.props.fretHeight / 2} />
+      </g>
       );
 
     const doubleMarker = (
@@ -24,12 +20,13 @@ class FretMarker extends React.Component {
       </g>
       );
 
-    return (
-      <g>
-      {this.props.type === 'single' ? singleMarker : null}
-      {this.props.type === 'double' ? doubleMarker : null}
-      </g>
-    );
+    if (this.props.type === 'single') {
+      return singleMarker;
+    } else if (this.props.type === 'double') {
+      return doubleMarker;
+    } else {
+      return null;
+    }
   }
 }
 

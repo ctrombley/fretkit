@@ -1,8 +1,9 @@
-body {
-  cursor: pointer;
+.label, button {
+  font-size: 24;
 }
 
 .fretboard {
+  cursor: pointer;
   display: block;
   margin: 0 auto;
   //border: 1px solid #000;
@@ -13,7 +14,7 @@ body {
   stroke: #000000;
 }
 
-.fret__marker {
+.fret__marker > circle {
   r: 10;
   fill: #dddddd;
 }
@@ -22,7 +23,6 @@ body {
   fill: #000000;
   stroke: #000000;
   stroke-width: 0;
-  font-size: 24;
   text-anchor: 'middle';
 }
 
@@ -44,7 +44,7 @@ body {
 
 .string__marker-preview {
   fill: rgba($blue, 0.5);
-  animation: markerAnimation 1.2s infinite;
+  animation: pulse 1.2s infinite;
   animation-delay: 0;
 }
 
@@ -52,7 +52,7 @@ body {
   fill: $magenta;
 }
 
-@keyframes markerAnimation {
+@keyframes pulse {
   0% {
     r: 8;
     opacity: 1;

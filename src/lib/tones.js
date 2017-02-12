@@ -14,7 +14,11 @@ export default function parse(input) {
     return parseList(distinctTokens);
   }
 
-  return new Note(input);
+  try {
+    return new Note(input);
+  } catch (ex) {
+    return null;
+  }
 }
 
 export function parseList(input) {
@@ -26,5 +30,5 @@ export function parseList(input) {
     return [];
   }
 
-  return input.map(parse);
+  return input.map(parse).filter(n => !!n);
 }

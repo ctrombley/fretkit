@@ -35,7 +35,6 @@ export default class Note {
     }
 
     let value = notes[baseNote.toLowerCase()];
-    baseNote = baseNote.toUpperCase();
 
     if (modifier) {
       value = value + modifiers[modifier]; 
@@ -44,11 +43,7 @@ export default class Note {
       if (value < 0) {
         value = value + 12;
       }
-
-      baseNote = baseNote + modifier;
     }
-
-    this.baseNote = baseNote;
 
     if (octave) {
       this.octave = parseInt(octave, 10);
@@ -56,5 +51,9 @@ export default class Note {
     }
 
     this.value = value;
+  }
+
+  add(note) {
+    return 
   }
 }

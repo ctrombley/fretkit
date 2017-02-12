@@ -30,12 +30,16 @@ class App extends Component {
     this.setState({fretCount: count});
   }
 
+  clear(count) {
+  }
+
   render() {
     return (
       <div className='main'>
         <ControlPanel setNotes={this.setNotes}
           setStartingFret={this.setStartingFret}
-          setFretCount={this.setFretCount} />
+          setFretCount={this.setFretCount} 
+          clear={this.clear}/>
         <Fretboard startingFret={this.state.startingFret}
           fretCount={this.state.fretCount}
           tuning={tunings.standard}
