@@ -116,5 +116,12 @@ describe('Interval', () => {
       expect(new Interval('#7').semitones).to.equal(12);
       expect(new Interval('♯7').semitones).to.equal(12);
     });
+
+    it('should create a new Interval from an existing one', () => {
+      const firstInterval = new Interval(13);
+      const secondInterval = new Interval(firstInterval);
+      expect(firstInterval).to.not.eql(secondInterval);
+      expect(secondInterval.semitones).to.equal(13);
+    });
   });
 });

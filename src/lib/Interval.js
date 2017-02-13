@@ -34,6 +34,10 @@ export default class Interval {
       this.value = 0;
     }
 
+    if (input instanceof Interval) {
+      this.semitones = input.semitones;
+    }
+
     if (typeof(input) === 'string') {
       this.parseString(input);
     }

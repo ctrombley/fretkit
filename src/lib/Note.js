@@ -1,3 +1,5 @@
+import Interval from './Interval.js';
+
 const noteRegex = /^\s*([A-Ga-g]{1})([♮#♯𝄪b♭𝄫]{0,2})([\d]{0,1})\s*$/;
 
 const notes = {
@@ -25,24 +27,28 @@ const modifiers = {
 };
 
 function parseBaseNote(baseNote, modifier) {
-  let semitones = notes[baseNote.toLowerCase()];
+  let semitone = notes[baseNote.toLowerCase()];
 
   if (modifier) {
-    semitones = semitones + modifiers[modifier]; 
-    semitones = semitones % 12;
+    semitone = semitone + modifiers[modifier]; 
+    semitone = semitone % 12;
 
-    if (semitones < 0) {
-      semitones = semitones + 12;
+    if (semitone < 0) {
+      semitone = semitone + 12;
     }
   }
 
-  return semitones;
+  return semitone;
 }
 
 export default class Note {
   constructor(input) {
     if (!input) {
-      this.semitones = 0;
+      this.semitone = 0;
+    }
+
+    if (input instanceof Note) {
+      this.semitone = input.semitone;
     }
 
     if (typeof(input) === 'string') {
@@ -68,21 +74,31 @@ export default class Note {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    let semitones = parseBaseNote(baseNote, modifier);
+    let semitone = parseBaseNote(baseNote, modifier);
 
     if (octave) {
       this.octave = parseInt(octave, 10);
-      semitones = semitones + this.octave * 12;
+      semitone = semitone + this.octave * 12;
     }
 
-    this.semitones = semitones;
+    this.semitone = semitone;
   }
 
-  parseNumber(semitones) {
-    this.semitones = semitones;
+  parseNumber(semitone) {
+    this.semitone = semitone;
   }
 
   parseOpts(opts) {
     this.opts = opts;
+  }
+
+  add(interval) {
+    interval = new Interval(interval);
+    return new Note(this.semitone + interval.semitones);
+  }
+
+  subtract(interval) {
+    interval = new Interval(interval);
+    return new Note(this.semitone - interval.semitones);
   }
 }
