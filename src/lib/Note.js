@@ -1,4 +1,4 @@
-const noteRegex = /^\s*([A-Ga-g]{1})([#b]{0,2})([\d]{0,1})\s*$/;
+const noteRegex = /^\s*([A-Ga-g]{1})([♮#♯𝄪b♭𝄫]{0,2})([\d]{0,1})\s*$/;
 
 const notes = {
   'c': 0,
@@ -11,18 +11,52 @@ const notes = {
 };
 
 const modifiers = {
+  '♮': 0,
+  '♯': 1,
   '#': 1,
   'b': -1,
+  '♭': -1,
+  '𝄪': 2,
   '##': 2,
-  'bb': -2
+  '♯♯': 2,
+  'bb': -2,
+  '♭♭': -2,
+  '𝄫': -2
 };
 
+function parseBaseNote(baseNote, modifier) {
+  let semitones = notes[baseNote.toLowerCase()];
+
+  if (modifier) {
+    semitones = semitones + modifiers[modifier]; 
+    semitones = semitones % 12;
+
+    if (semitones < 0) {
+      semitones = semitones + 12;
+    }
+  }
+
+  return semitones;
+}
+
 export default class Note {
-  constructor(noteStr) {
-    if (!noteStr) {
-      throw new Error('Note string required');
+  constructor(input) {
+    if (!input) {
+      this.semitones = 0;
     }
 
+    if (typeof(input) === 'string') {
+      this.parseString(input);
+    }
+    if (typeof(input) === 'number') {
+      this.parseNumber(input);
+    }
+    if (typeof(input) === 'object') {
+      this.parseOpts(input)
+    }
+  }
+
+  parseString(noteStr) {
     let match, baseNote, modifier, octave;
     try {
       [match, baseNote, modifier, octave] = noteStr.match(noteRegex);
@@ -34,26 +68,21 @@ export default class Note {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    let value = notes[baseNote.toLowerCase()];
-
-    if (modifier) {
-      value = value + modifiers[modifier]; 
-      value = value % 12;
-
-      if (value < 0) {
-        value = value + 12;
-      }
-    }
+    let semitones = parseBaseNote(baseNote, modifier);
 
     if (octave) {
       this.octave = parseInt(octave, 10);
-      value = value + this.octave * 12;
+      semitones = semitones + this.octave * 12;
     }
 
-    this.value = value;
+    this.semitones = semitones;
   }
 
-  add(note) {
-    return 
+  parseNumber(semitones) {
+    this.semitones = semitones;
+  }
+
+  parseOpts(opts) {
+    this.opts = opts;
   }
 }

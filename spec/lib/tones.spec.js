@@ -14,12 +14,12 @@ describe('tones', () => {
     });
 
     it('should parse a single note', () => {
-      expect(parse('c#').value).to.equal(1);
+      expect(parse('c#').semitones).to.equal(1);
     });
 
     it('should parse a list of notes', () => {
       const parsedNotes = parse(tunings.standard);
-      const parsedValues = parsedNotes.map(x => x.value);
+      const parsedValues = parsedNotes.map(x => x.semitones);
       expect(parsedValues).to.deep.equal(
         [28, 33, 38, 43, 47, 52]
       );
