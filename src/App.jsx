@@ -13,8 +13,7 @@ class App extends Component {
       litNotes: [],
       startingFret: 1,
       fretCount: 12,
-      searchStr: '',
-
+      searchStr: ''
     };
 
     this.search = this.search.bind(this);
@@ -51,7 +50,7 @@ class App extends Component {
     this.setState({fretCount: count});
   }
 
-  clear(count) {
+  clear() {
   }
 
   render() {
