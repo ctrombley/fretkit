@@ -13,7 +13,8 @@ class App extends Component {
       litNotes: [],
       startingFret: 1,
       fretCount: 12,
-      searchStr: ''
+      searchStr: '',
+
     };
 
     this.search = this.search.bind(this);

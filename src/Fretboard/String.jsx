@@ -1,5 +1,6 @@
 import React from 'react';
 import Note from '../lib/Note.js'
+import musicbox from '../lib/musicbox.js'
 import StringMarker from './StringMarker.jsx'
 
 class String extends React.Component {
@@ -33,13 +34,25 @@ class String extends React.Component {
 
   enablePreview() {
     if (!this.state.isPreview) {
+      this.play();
       this.setState({ isPreview: true });
     }
   }
 
   disablePreview() {
     if (this.state.isPreview) {
+      this.stopPlaying();
       this.setState({ isPreview: false });
+    }
+  }
+
+  play() {
+    this.playing = musicbox.play(this.props.note.frequency);
+  }
+
+  stopPlaying() {
+    if (this.playing) {
+      this.playing.stop();
     }
   }
 
