@@ -1,4 +1,5 @@
 import React from 'react';
+import Note from '../lib/Note.js'
 import StringMarker from './StringMarker.jsx'
 
 class String extends React.Component {
@@ -43,8 +44,12 @@ class String extends React.Component {
   }
 
   isLit() {
-    const litNoteValues = this.props.litNotes.map(n => n.value);
-    return litNoteValues.includes(this.props.note % 12);
+    const litNoteSemitones = this.props.litNotes.map(n => n.baseSemitone);
+    return litNoteSemitones.includes(this.props.note.baseSemitone);
+  }
+
+  isRoot() {
+    
   }
 
   componentDidMount() {
@@ -112,8 +117,10 @@ String.propTypes = {
   xOffset: React.PropTypes.number.isRequired,
   yOffset: React.PropTypes.number.isRequired,
   idx: React.PropTypes.number.isRequired,
-  note: React.PropTypes.number.isRequired,
-  litNotes: React.PropTypes.array
+  note: React.PropTypes.instanceOf(Note).isRequired,
+  root: React.PropTypes.instanceOf(Note),
+  litNotes: React.PropTypes.array,
+
 }
 
 export default String;

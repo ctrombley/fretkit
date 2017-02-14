@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
+import Chord from '../lib/Chord.js';
 import { parseList } from '../lib/tones.js';
 
 class ControlPanel extends Component {
   static propTypes = {
     setFretCount: React.PropTypes.func.isRequired,
-    setNotes: React.PropTypes.func.isRequired,
+    search: React.PropTypes.func.isRequired,
     setStartingFret: React.PropTypes.func.isRequired,
     clear: React.PropTypes.func.isRequired
   };
@@ -13,12 +14,12 @@ class ControlPanel extends Component {
     super(props);
 
     this.state = {
-      notes: '',
+      search: '',
       startingFret: '1',
       fretCount: '12'
     };
 
-    this.setNotes = this.setNotes.bind(this);
+    this.search = this.search.bind(this);
     this.setStartingFret = this.setStartingFret.bind(this);
     this.setFretCount = this.setFretCount.bind(this);
   }
@@ -29,12 +30,10 @@ class ControlPanel extends Component {
     this.setState({startingFret: value});
   }
 
-  setNotes(event) {
+  search(event) {
     const value = event.target.value;
-    const notes = parseList(value);
-    this.props.setNotes(notes);
-
-    this.setState({notes: value});
+    this.props.search(value);
+    this.setState({search: value});
   }
 
   setFretCount(event) {
@@ -51,8 +50,8 @@ class ControlPanel extends Component {
             Show:
             <input className='control-panel__input'
               type='search'
-              value={this.state.notes}
-              onChange={this.setNotes} />
+              value={this.state.search}
+              onChange={this.search} />
           </label>
           <label className='control-panel__label'>
             Starting fret:

@@ -2,6 +2,7 @@ import React from 'react';
 import String from './String.jsx';
 import Label from './Label.jsx';
 import FretMarker from './FretMarker.jsx';
+import Note from '../lib/Note.js';
 import parse from '../lib/tones.js';
 
 class Fret extends React.Component {
@@ -40,10 +41,10 @@ class Fret extends React.Component {
 
     const reversedTuning = this.props.tuning.slice().reverse();
     const strings = reversedTuning.map((t, i) => {
-      const openNote = parse(t);
+      const openNote = new Note(t);
       const yOffset = this.props.fretboardMargin + String.height * i;
       return <String key={i} idx={i}
-        note={openNote.value + this.props.fretNumber}
+        note={openNote.add(this.props.fretNumber)}
         yOffset={yOffset}
         xOffset={xOffset}
         fretWidth={Fret.width}

@@ -84,6 +84,10 @@ export default class Note {
     this.semitone = semitone;
   }
 
+  get baseSemitone() {
+    return this.semitone % 12;
+  }
+
   parseNumber(semitone) {
     this.semitone = semitone;
   }
