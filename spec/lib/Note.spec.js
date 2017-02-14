@@ -9,12 +9,12 @@ describe('Note', () => {
 
     it('should return default without args', () => {
       const note = new Note();
-      expect(note.semitone).to.equal(0);
+      expect(note.semitones).to.equal(0);
     });
 
     it('should return default for undefined', () => {
       const note = new Note(undefined);
-      expect(note.semitone).to.equal(0);
+      expect(note.semitones).to.equal(0);
     });
 
     it('should not parse the empty string', () => {
@@ -30,185 +30,198 @@ describe('Note', () => {
     });
 
     it('should parse a C/D𝄫', () => {
-      expect(new Note('c').semitone).to.equal(0);
-      expect(new Note('C').semitone).to.equal(0);
-      expect(new Note('d𝄫').semitone).to.equal(0);
-      expect(new Note('D𝄫').semitone).to.equal(0);
-      expect(new Note('dbb').semitone).to.equal(0);
-      expect(new Note('Dbb').semitone).to.equal(0);
-      expect(new Note('d♭♭').semitone).to.equal(0);
-      expect(new Note('D♭♭').semitone).to.equal(0);
+      expect(new Note('c').semitones).to.equal(0);
+      expect(new Note('C').semitones).to.equal(0);
+      expect(new Note('d𝄫').semitones).to.equal(0);
+      expect(new Note('D𝄫').semitones).to.equal(0);
+      expect(new Note('dbb').semitones).to.equal(0);
+      expect(new Note('Dbb').semitones).to.equal(0);
+      expect(new Note('d♭♭').semitones).to.equal(0);
+      expect(new Note('D♭♭').semitones).to.equal(0);
     });
 
     it('should parse a C♯/D♭', () => {
-      expect(new Note('c♯').semitone).to.equal(1);
-      expect(new Note('c#').semitone).to.equal(1);
-      expect(new Note('C♯').semitone).to.equal(1);
-      expect(new Note('C#').semitone).to.equal(1);
-      expect(new Note('d♭').semitone).to.equal(1);
-      expect(new Note('db').semitone).to.equal(1);
-      expect(new Note('D♭').semitone).to.equal(1);
-      expect(new Note('Db').semitone).to.equal(1);
+      expect(new Note('c♯').semitones).to.equal(1);
+      expect(new Note('c#').semitones).to.equal(1);
+      expect(new Note('C♯').semitones).to.equal(1);
+      expect(new Note('C#').semitones).to.equal(1);
+      expect(new Note('d♭').semitones).to.equal(1);
+      expect(new Note('db').semitones).to.equal(1);
+      expect(new Note('D♭').semitones).to.equal(1);
+      expect(new Note('Db').semitones).to.equal(1);
     });
 
     it('should parse a D/E𝄫/C𝄪', () => {
-      expect(new Note('d').semitone).to.equal(2);
-      expect(new Note('D').semitone).to.equal(2);
-      expect(new Note('e𝄫').semitone).to.equal(2);
-      expect(new Note('E𝄫').semitone).to.equal(2);
-      expect(new Note('ebb').semitone).to.equal(2);
-      expect(new Note('Ebb').semitone).to.equal(2);
-      expect(new Note('e♭♭').semitone).to.equal(2);
-      expect(new Note('E♭♭').semitone).to.equal(2);
-      expect(new Note('c𝄪').semitone).to.equal(2);
-      expect(new Note('C𝄪').semitone).to.equal(2);
-      expect(new Note('c##').semitone).to.equal(2);
-      expect(new Note('C##').semitone).to.equal(2);
-      expect(new Note('c♯♯').semitone).to.equal(2);
-      expect(new Note('C♯♯').semitone).to.equal(2);
+      expect(new Note('d').semitones).to.equal(2);
+      expect(new Note('D').semitones).to.equal(2);
+      expect(new Note('e𝄫').semitones).to.equal(2);
+      expect(new Note('E𝄫').semitones).to.equal(2);
+      expect(new Note('ebb').semitones).to.equal(2);
+      expect(new Note('Ebb').semitones).to.equal(2);
+      expect(new Note('e♭♭').semitones).to.equal(2);
+      expect(new Note('E♭♭').semitones).to.equal(2);
+      expect(new Note('c𝄪').semitones).to.equal(2);
+      expect(new Note('C𝄪').semitones).to.equal(2);
+      expect(new Note('c##').semitones).to.equal(2);
+      expect(new Note('C##').semitones).to.equal(2);
+      expect(new Note('c♯♯').semitones).to.equal(2);
+      expect(new Note('C♯♯').semitones).to.equal(2);
     });
 
     it('should parse a D♯/E♭', () => {
-      expect(new Note('d♯').semitone).to.equal(3);
-      expect(new Note('d#').semitone).to.equal(3);
-      expect(new Note('D♯').semitone).to.equal(3);
-      expect(new Note('D#').semitone).to.equal(3);
-      expect(new Note('e♭').semitone).to.equal(3);
-      expect(new Note('eb').semitone).to.equal(3);
-      expect(new Note('E♭').semitone).to.equal(3);
-      expect(new Note('Eb').semitone).to.equal(3);
+      expect(new Note('d♯').semitones).to.equal(3);
+      expect(new Note('d#').semitones).to.equal(3);
+      expect(new Note('D♯').semitones).to.equal(3);
+      expect(new Note('D#').semitones).to.equal(3);
+      expect(new Note('e♭').semitones).to.equal(3);
+      expect(new Note('eb').semitones).to.equal(3);
+      expect(new Note('E♭').semitones).to.equal(3);
+      expect(new Note('Eb').semitones).to.equal(3);
     });
 
     it('should parse an E/D𝄪', () => {
-      expect(new Note('e').semitone).to.equal(4);
-      expect(new Note('E').semitone).to.equal(4);
-      expect(new Note('d𝄪').semitone).to.equal(4);
-      expect(new Note('D𝄪').semitone).to.equal(4);
-      expect(new Note('d##').semitone).to.equal(4);
-      expect(new Note('D##').semitone).to.equal(4);
-      expect(new Note('d♯♯').semitone).to.equal(4);
-      expect(new Note('D♯♯').semitone).to.equal(4);
+      expect(new Note('e').semitones).to.equal(4);
+      expect(new Note('E').semitones).to.equal(4);
+      expect(new Note('d𝄪').semitones).to.equal(4);
+      expect(new Note('D𝄪').semitones).to.equal(4);
+      expect(new Note('d##').semitones).to.equal(4);
+      expect(new Note('D##').semitones).to.equal(4);
+      expect(new Note('d♯♯').semitones).to.equal(4);
+      expect(new Note('D♯♯').semitones).to.equal(4);
     });
 
     it('should parse an F/G𝄫', () => {
-      expect(new Note('f').semitone).to.equal(5);
-      expect(new Note('F').semitone).to.equal(5);
-      expect(new Note('g𝄫').semitone).to.equal(5);
-      expect(new Note('G𝄫').semitone).to.equal(5);
-      expect(new Note('gbb').semitone).to.equal(5);
-      expect(new Note('Gbb').semitone).to.equal(5);
-      expect(new Note('g♭♭').semitone).to.equal(5);
-      expect(new Note('G♭♭').semitone).to.equal(5);
+      expect(new Note('f').semitones).to.equal(5);
+      expect(new Note('F').semitones).to.equal(5);
+      expect(new Note('g𝄫').semitones).to.equal(5);
+      expect(new Note('G𝄫').semitones).to.equal(5);
+      expect(new Note('gbb').semitones).to.equal(5);
+      expect(new Note('Gbb').semitones).to.equal(5);
+      expect(new Note('g♭♭').semitones).to.equal(5);
+      expect(new Note('G♭♭').semitones).to.equal(5);
     });
 
     it('should parse a F♯/G♭', () => {
-      expect(new Note('f♯').semitone).to.equal(6);
-      expect(new Note('f#').semitone).to.equal(6);
-      expect(new Note('F♯').semitone).to.equal(6);
-      expect(new Note('F#').semitone).to.equal(6);
-      expect(new Note('g♭').semitone).to.equal(6);
-      expect(new Note('gb').semitone).to.equal(6);
-      expect(new Note('G♭').semitone).to.equal(6);
-      expect(new Note('Gb').semitone).to.equal(6);
+      expect(new Note('f♯').semitones).to.equal(6);
+      expect(new Note('f#').semitones).to.equal(6);
+      expect(new Note('F♯').semitones).to.equal(6);
+      expect(new Note('F#').semitones).to.equal(6);
+      expect(new Note('g♭').semitones).to.equal(6);
+      expect(new Note('gb').semitones).to.equal(6);
+      expect(new Note('G♭').semitones).to.equal(6);
+      expect(new Note('Gb').semitones).to.equal(6);
     });
 
     it('should parse an G/A𝄫/F𝄪', () => {
-      expect(new Note('g').semitone).to.equal(7);
-      expect(new Note('G').semitone).to.equal(7);
-      expect(new Note('a𝄫').semitone).to.equal(7);
-      expect(new Note('A𝄫').semitone).to.equal(7);
-      expect(new Note('abb').semitone).to.equal(7);
-      expect(new Note('Abb').semitone).to.equal(7);
-      expect(new Note('a♭♭').semitone).to.equal(7);
-      expect(new Note('A♭♭').semitone).to.equal(7);
-      expect(new Note('f𝄪').semitone).to.equal(7);
-      expect(new Note('F𝄪').semitone).to.equal(7);
-      expect(new Note('f##').semitone).to.equal(7);
-      expect(new Note('F##').semitone).to.equal(7);
-      expect(new Note('f♯♯').semitone).to.equal(7);
-      expect(new Note('F♯♯').semitone).to.equal(7);
+      expect(new Note('g').semitones).to.equal(7);
+      expect(new Note('G').semitones).to.equal(7);
+      expect(new Note('a𝄫').semitones).to.equal(7);
+      expect(new Note('A𝄫').semitones).to.equal(7);
+      expect(new Note('abb').semitones).to.equal(7);
+      expect(new Note('Abb').semitones).to.equal(7);
+      expect(new Note('a♭♭').semitones).to.equal(7);
+      expect(new Note('A♭♭').semitones).to.equal(7);
+      expect(new Note('f𝄪').semitones).to.equal(7);
+      expect(new Note('F𝄪').semitones).to.equal(7);
+      expect(new Note('f##').semitones).to.equal(7);
+      expect(new Note('F##').semitones).to.equal(7);
+      expect(new Note('f♯♯').semitones).to.equal(7);
+      expect(new Note('F♯♯').semitones).to.equal(7);
     });
 
     it('should parse a G♯/A♭', () => {
-      expect(new Note('g♯').semitone).to.equal(8);
-      expect(new Note('g#').semitone).to.equal(8);
-      expect(new Note('G♯').semitone).to.equal(8);
-      expect(new Note('G#').semitone).to.equal(8);
-      expect(new Note('a♭').semitone).to.equal(8);
-      expect(new Note('ab').semitone).to.equal(8);
-      expect(new Note('A♭').semitone).to.equal(8);
-      expect(new Note('Ab').semitone).to.equal(8);
+      expect(new Note('g♯').semitones).to.equal(8);
+      expect(new Note('g#').semitones).to.equal(8);
+      expect(new Note('G♯').semitones).to.equal(8);
+      expect(new Note('G#').semitones).to.equal(8);
+      expect(new Note('a♭').semitones).to.equal(8);
+      expect(new Note('ab').semitones).to.equal(8);
+      expect(new Note('A♭').semitones).to.equal(8);
+      expect(new Note('Ab').semitones).to.equal(8);
     });
 
     it('should parse an A/B𝄫/G𝄪', () => {
-      expect(new Note('a').semitone).to.equal(9);
-      expect(new Note('A').semitone).to.equal(9);
-      expect(new Note('b𝄫').semitone).to.equal(9);
-      expect(new Note('B𝄫').semitone).to.equal(9);
-      expect(new Note('bbb').semitone).to.equal(9);
-      expect(new Note('Bbb').semitone).to.equal(9);
-      expect(new Note('b♭♭').semitone).to.equal(9);
-      expect(new Note('B♭♭').semitone).to.equal(9);
-      expect(new Note('g𝄪').semitone).to.equal(9);
-      expect(new Note('G𝄪').semitone).to.equal(9);
-      expect(new Note('g##').semitone).to.equal(9);
-      expect(new Note('G##').semitone).to.equal(9);
-      expect(new Note('g♯♯').semitone).to.equal(9);
-      expect(new Note('G♯♯').semitone).to.equal(9);
+      expect(new Note('a').semitones).to.equal(9);
+      expect(new Note('A').semitones).to.equal(9);
+      expect(new Note('b𝄫').semitones).to.equal(9);
+      expect(new Note('B𝄫').semitones).to.equal(9);
+      expect(new Note('bbb').semitones).to.equal(9);
+      expect(new Note('Bbb').semitones).to.equal(9);
+      expect(new Note('b♭♭').semitones).to.equal(9);
+      expect(new Note('B♭♭').semitones).to.equal(9);
+      expect(new Note('g𝄪').semitones).to.equal(9);
+      expect(new Note('G𝄪').semitones).to.equal(9);
+      expect(new Note('g##').semitones).to.equal(9);
+      expect(new Note('G##').semitones).to.equal(9);
+      expect(new Note('g♯♯').semitones).to.equal(9);
+      expect(new Note('G♯♯').semitones).to.equal(9);
     });
 
     it('should parse a A♯/B♭', () => {
-      expect(new Note('a♯').semitone).to.equal(10);
-      expect(new Note('a#').semitone).to.equal(10);
-      expect(new Note('A♯').semitone).to.equal(10);
-      expect(new Note('A#').semitone).to.equal(10);
-      expect(new Note('b♭').semitone).to.equal(10);
-      expect(new Note('bb').semitone).to.equal(10);
-      expect(new Note('B♭').semitone).to.equal(10);
-      expect(new Note('Bb').semitone).to.equal(10);
+      expect(new Note('a♯').semitones).to.equal(10);
+      expect(new Note('a#').semitones).to.equal(10);
+      expect(new Note('A♯').semitones).to.equal(10);
+      expect(new Note('A#').semitones).to.equal(10);
+      expect(new Note('b♭').semitones).to.equal(10);
+      expect(new Note('bb').semitones).to.equal(10);
+      expect(new Note('B♭').semitones).to.equal(10);
+      expect(new Note('Bb').semitones).to.equal(10);
     });
 
     it('should parse a B/C♭/A𝄪', () => {
-      expect(new Note('b').semitone).to.equal(11);
-      expect(new Note('B').semitone).to.equal(11);
-      expect(new Note('c♭').semitone).to.equal(11);
-      expect(new Note('cb').semitone).to.equal(11);
-      expect(new Note('C♭').semitone).to.equal(11);
-      expect(new Note('Cb').semitone).to.equal(11);
-      expect(new Note('a𝄪').semitone).to.equal(11);
-      expect(new Note('A𝄪').semitone).to.equal(11);
-      expect(new Note('a##').semitone).to.equal(11);
-      expect(new Note('A##').semitone).to.equal(11);
-      expect(new Note('a♯♯').semitone).to.equal(11);
-      expect(new Note('A♯♯').semitone).to.equal(11);
+      expect(new Note('b').semitones).to.equal(11);
+      expect(new Note('B').semitones).to.equal(11);
+      expect(new Note('c♭').semitones).to.equal(11);
+      expect(new Note('cb').semitones).to.equal(11);
+      expect(new Note('C♭').semitones).to.equal(11);
+      expect(new Note('Cb').semitones).to.equal(11);
+      expect(new Note('a𝄪').semitones).to.equal(11);
+      expect(new Note('A𝄪').semitones).to.equal(11);
+      expect(new Note('a##').semitones).to.equal(11);
+      expect(new Note('A##').semitones).to.equal(11);
+      expect(new Note('a♯♯').semitones).to.equal(11);
+      expect(new Note('A♯♯').semitones).to.equal(11);
     });
 
     it('should parse a note string with whitespace', () => {
       const note = new Note(' d ');
-      expect(note.semitone).to.equal(2);
+      expect(note.semitones).to.equal(2);
       expect(note.octave).to.be.undefined;
     });
 
     it('should parse a note string with an octave', () => {
       const note = new Note('d3');
-      expect(note.semitone).to.equal(38);
+      expect(note.semitones).to.equal(38);
       expect(note.octave).to.equal(3);
     });
 
     it('should parse a note string with a modifier and an octave', () => {
       const note = new Note('d#1');
-      expect(note.semitone).to.equal(15);
+      expect(note.semitones).to.equal(15);
       expect(note.octave).to.equal(1);
     });
 
     it('should add an interval', () => {
       const note = new Note('d#1');
-      expect(note.add('♭3').semitone).to.equal(18);
+      expect(note.add('♭3').semitones).to.equal(18);
     });
 
     it('should subtract an interval', () => {
       const note = new Note('d#1');
-      expect(note.subtract('♭3').semitone).to.equal(12);
+      expect(note.subtract('♭3').semitones).to.equal(12);
+    });
+
+    it('should expose a reference semitones property relative to A4', () => {
+      expect(new Note('A4').referenceSemitones).to.equal(0);
+      expect(new Note('A♭4').referenceSemitones).to.equal(-1);
+      expect(new Note('A♯4').referenceSemitones).to.equal(1);
+    });
+
+    it('should expose note frequency', () => {
+      var epsilon = 1e-1;
+      expect(new Note('A4').frequency).to.equal(440);
+      expect(new Note('C0').frequency).to.be.closeTo(16.35, epsilon);
+      expect(new Note('B8').frequency).to.be.closeTo(7902.13, epsilon);
     });
   });
 });

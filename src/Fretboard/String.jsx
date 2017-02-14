@@ -44,8 +44,8 @@ class String extends React.Component {
   }
 
   isLit() {
-    const litNoteSemitones = this.props.litNotes.map(n => n.baseSemitone);
-    return litNoteSemitones.includes(this.props.note.baseSemitone);
+    const litNoteSemitones = this.props.litNotes.map(n => n.baseSemitones);
+    return litNoteSemitones.includes(this.props.note.baseSemitones);
   }
 
   isRoot() {

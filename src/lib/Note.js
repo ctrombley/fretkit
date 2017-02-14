@@ -27,28 +27,28 @@ const modifiers = {
 };
 
 function parseBaseNote(baseNote, modifier) {
-  let semitone = notes[baseNote.toLowerCase()];
+  let semitones = notes[baseNote.toLowerCase()];
 
   if (modifier) {
-    semitone = semitone + modifiers[modifier]; 
-    semitone = semitone % 12;
+    semitones = semitones + modifiers[modifier]; 
+    semitones = semitones % 12;
 
-    if (semitone < 0) {
-      semitone = semitone + 12;
+    if (semitones < 0) {
+      semitones = semitones + 12;
     }
   }
 
-  return semitone;
+  return semitones;
 }
 
 export default class Note {
   constructor(input) {
     if (!input) {
-      this.semitone = 0;
+      this.semitones = 0;
     }
 
     if (input instanceof Note) {
-      this.semitone = input.semitone;
+      this.semitones = input.semitones;
     }
 
     if (typeof(input) === 'string') {
@@ -74,35 +74,59 @@ export default class Note {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    let semitone = parseBaseNote(baseNote, modifier);
+    let semitones = parseBaseNote(baseNote, modifier);
 
     if (octave) {
       this.octave = parseInt(octave, 10);
-      semitone = semitone + this.octave * 12;
+      semitones = semitones + this.octave * 12;
     }
 
-    this.semitone = semitone;
+    this.semitones = semitones;
   }
 
-  get baseSemitone() {
-    return this.semitone % 12;
+  get baseSemitones() {
+    return this.semitones % 12;
   }
 
-  parseNumber(semitone) {
-    this.semitone = semitone;
+  get referenceSemitones() {
+    return this.subtract(new Note('A4')).semitones;
+  }
+
+  get frequency() {
+    return 440 * Math.pow(Math.pow(2, 1/12), this.referenceSemitones);
+  }
+
+  parseNumber(semitones) {
+    this.semitones = semitones;
   }
 
   parseOpts(opts) {
     this.opts = opts;
   }
 
-  add(interval) {
-    interval = new Interval(interval);
-    return new Note(this.semitone + interval.semitones);
+  add(input) {
+    let semitones;
+    if (input instanceof Interval || input instanceof Note){
+      semitones = input.semitones;
+    } else if (typeof(input) === 'string') {
+      semitones = new Interval(input).semitones;
+    } else if (typeof(input) === 'number') {
+      semitones = input;
+    }
+
+    return new Note(this.semitones + semitones);
   }
 
-  subtract(interval) {
-    interval = new Interval(interval);
-    return new Note(this.semitone - interval.semitones);
+  subtract(input) {
+    let semitones;
+    if (input instanceof Interval || input instanceof Note){
+      semitones = input.semitones;
+    } else if (typeof(input) === 'string') {
+      semitones = new Interval(input).semitones;
+    } else if (typeof(input) === 'number') {
+      semitones = input;
+    }
+
+    return new Note(this.semitones - semitones);
   }
 }

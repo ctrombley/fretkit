@@ -30,11 +30,12 @@ export default class Chord {
       throw new Error(`Invalid chord string: ${chordStr}`);
     }
 
+    this.name = chordStr;
     this.root = root;
     this.notes = chords[chord].map(interval => new Note(root).add(interval));
   }
 
   semitones() {
-    return this.notes.map(n => n.semitone);
+    return this.notes.map(n => n.semitones);
   }
 }
