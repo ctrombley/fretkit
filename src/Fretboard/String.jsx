@@ -132,7 +132,7 @@ String.propTypes = {
   idx: React.PropTypes.number.isRequired,
   note: React.PropTypes.instanceOf(Note).isRequired,
   root: React.PropTypes.instanceOf(Note),
-  litNotes: React.PropTypes.array,
+  litNotes: React.PropTypes.array
 
 }
 

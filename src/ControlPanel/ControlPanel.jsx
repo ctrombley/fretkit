@@ -1,15 +1,5 @@
 import React, { Component } from 'react';
-import Chord from '../lib/Chord.js';
-import { parseList } from '../lib/tones.js';
-
 class ControlPanel extends Component {
-  static propTypes = {
-    setFretCount: React.PropTypes.func.isRequired,
-    search: React.PropTypes.func.isRequired,
-    setStartingFret: React.PropTypes.func.isRequired,
-    clear: React.PropTypes.func.isRequired
-  };
-
   constructor(props) {
     super(props);
 
@@ -74,5 +64,12 @@ class ControlPanel extends Component {
     );
   }
 }
+
+ControlPanel.propTypes = {
+  setFretCount: React.PropTypes.func.isRequired,
+  search: React.PropTypes.func.isRequired,
+  setStartingFret: React.PropTypes.func.isRequired,
+  clear: React.PropTypes.func.isRequired
+};
 
 export default ControlPanel;

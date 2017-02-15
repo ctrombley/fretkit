@@ -3,7 +3,6 @@ import String from './String.jsx';
 import Label from './Label.jsx';
 import FretMarker from './FretMarker.jsx';
 import Note from '../lib/Note.js';
-import parse from '../lib/tones.js';
 
 class Fret extends React.Component {
   constructor(props) {
@@ -59,7 +58,7 @@ class Fret extends React.Component {
     </Label>;
 
     const fretMarkerType = this.fretMarkerType();
-    const fretMarker = !!fretMarkerType ?
+    const fretMarker = fretMarkerType ?
       <FretMarker xOffset={xOffset}
         yOffset={this.props.fretboardMargin}
         fretWidth={Fret.width}
