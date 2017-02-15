@@ -1,9 +1,19 @@
-export default {
-  'ionian': [2, 2, 1, 2, 2, 2, 1],
-  'dorian': [2, 1, 2, 2, 2, 1, 2],
-  'phrygian': [1, 2, 2, 2, 1, 2, 2],
-  'lydian': [2, 2, 2, 1, 2, 2, 1],
-  'mixolydian': [2, 2, 1, 2, 2, 1, 2],
-  'aeolian': [2, 1, 2, 2, 1, 2, 2],
-  'locrian': [1, 2, 2, 1, 2, 2, 2]
+const modes = {
+  'ionian':     ['1', '2', '3', '4', '5', '6', '7'],
+  'dorian':     ['1', '2', '♭3', '4', '5', '6', '♭7'],
+  'phrygian':   ['1', '♭2', '♭3', '4', '5', '♭6', '♭7'],
+  'lydian':     ['1', '2', '3', '♯4', '5', '6', '7'],
+  'mixolydian': ['1', '2', '3', '4', '5', '6', '♭7'],
+  'aeolian':    ['1', '2', '♭3', '4', '5', '♭6', '♭7'],
+  'locrian':    ['1', '♭2', '♭3', '4', 'd5', '♭6', '♭7']
 }
+
+modes['I'] = modes['ionian'];
+modes['II'] = modes['dorian'];
+modes['III'] = modes['phrygian'];
+modes['IV'] = modes['lydian'];
+modes['V'] = modes['mixolydian'];
+modes['VI'] = modes['aeolian'];
+modes['VII'] = modes['locrian'];
+
+export default modes;

@@ -3,6 +3,8 @@ import tunings from './lib/tunings.js';
 import ControlPanel from './ControlPanel/ControlPanel.jsx';
 import Fretboard from './Fretboard/Fretboard.jsx';
 import Chord from './lib/Chord.js';
+import Mode from './lib/Mode.js';
+import Scale from './lib/Scale.js';
 import { parseList } from './lib/tones.js';
 
 class App extends Component {
@@ -26,10 +28,21 @@ class App extends Component {
   }
 
   search(searchStr) {
-    let chord, notes;
+    let chord, mode, scale, notes;
+
     try {
       chord = new Chord(searchStr);
       notes = chord.notes;
+    } catch(ex) { }
+
+    try {
+      mode = new Mode(searchStr);
+      notes = mode.notes;
+    } catch(ex) { }
+
+    try {
+      scale = new Scale(searchStr);
+      notes = scale.notes;
     } catch(ex) { }
 
     if (!notes) {
