@@ -1,7 +1,7 @@
 import Note from './Note.js';
 import scales from './scales.js';
 
-const scaleRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w\s]+)\s*$/;
+const scaleRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w\s]+?)\s*$/;
 
 export default class Scale {
   constructor(input) {
@@ -32,8 +32,9 @@ export default class Scale {
 
     scale = scales[scale.toLowerCase()];
 
+    this.name = scaleStr;
     this.notes = scale.map((intervalStr) => new Note(root).add(intervalStr));
-    this.root = root;
+    this.root = new Note(root);
   }
 
   parseNumber(value) {

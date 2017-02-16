@@ -30,18 +30,21 @@ class String extends React.Component {
 
   toggleMarked() {
     this.setState({ isMarked: !this.state.isMarked });
+    if (this.state.isMarked) {
+      this.play();
+    } else {
+      this.stopPlaying();
+    }
   }
 
   enablePreview() {
     if (!this.state.isPreview) {
-      this.play();
       this.setState({ isPreview: true });
     }
   }
 
   disablePreview() {
     if (this.state.isPreview) {
-      this.stopPlaying();
       this.setState({ isPreview: false });
     }
   }
@@ -62,7 +65,9 @@ class String extends React.Component {
   }
 
   isRoot() {
-    
+    return this.props.current && this.props.current.root && 
+      this.props.current.root.semitones === this.props.note.baseSemitones;
+
   }
 
   componentDidMount() {
@@ -92,7 +97,7 @@ class String extends React.Component {
       <StringMarker xOffset={this.props.xOffset}
         yOffset={this.props.yOffset}
         fretWidth={this.props.fretWidth}
-        className='string__marker-lit'/> :
+        className={`string__marker-lit ${this.isRoot() ? 'string__marker-root' : ''}`}/> :
       null;
 
     const previewMarker = this.state.isPreview ?
@@ -118,7 +123,7 @@ class String extends React.Component {
           width={this.props.fretWidth}
           x={this.props.xOffset}
           y={this.props.yOffset - String.height / 2} 
-          className="string__overlay"/>
+          className='string__overlay'/>
       </g>
       );
   }
@@ -131,7 +136,7 @@ String.propTypes = {
   yOffset: React.PropTypes.number.isRequired,
   idx: React.PropTypes.number.isRequired,
   note: React.PropTypes.instanceOf(Note).isRequired,
-  root: React.PropTypes.instanceOf(Note),
+  current: React.PropTypes.object,
   litNotes: React.PropTypes.array
 
 }

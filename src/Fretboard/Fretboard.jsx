@@ -26,7 +26,8 @@ class Fretboard extends React.Component {
         fretNumber={this.props.startingFret + i}
         fretboardMargin={this.margin}
         tuning={this.props.tuning}
-        litNotes={this.props.litNotes}/>;
+        litNotes={this.props.litNotes}
+        current={this.props.current}/>;
 
       frets.push(fret);
     }
@@ -45,7 +46,8 @@ Fretboard.propTypes = {
   startingFret: React.PropTypes.number.isRequired,
   fretCount: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,
-  litNotes: React.PropTypes.array
+  litNotes: React.PropTypes.array,
+  current: React.PropTypes.object
 };
 
 export default Fretboard;

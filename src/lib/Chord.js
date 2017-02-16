@@ -1,7 +1,8 @@
+
 import chords from './chords.js';
 import Note from './Note.js';
 
-const chordRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w°øΔ⑦♭♯\+\-\s]+)\s*$/;
+const chordRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w°øΔ⑦♭♯\+\-\s]+?)\s*$/;
 
 export default class Chord {
   constructor(input) {
@@ -31,7 +32,7 @@ export default class Chord {
     }
 
     this.name = chordStr;
-    this.root = root;
+    this.root = new Note(root);
     this.notes = chords[chord].map(interval => new Note(root).add(interval));
   }
 

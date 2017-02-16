@@ -15,7 +15,8 @@ class App extends Component {
       litNotes: [],
       startingFret: 1,
       fretCount: 12,
-      searchStr: ''
+      searchStr: '',
+      current: null
     };
 
     this.search = this.search.bind(this);
@@ -28,22 +29,28 @@ class App extends Component {
   }
 
   search(searchStr) {
-    let chord, mode, scale, notes;
+    let chord, mode, scale, current, notes;
 
     try {
-      chord = new Chord(searchStr);
+      current = chord = new Chord(searchStr);
       notes = chord.notes;
-    } catch(ex) { }
+    } catch(ex) { 
+      //console.log(ex.message)
+    }
 
     try {
-      mode = new Mode(searchStr);
+      current = mode = new Mode(searchStr);
       notes = mode.notes;
-    } catch(ex) { }
+    } catch(ex) {
+      //console.log(ex.message)
+    }
 
     try {
-      scale = new Scale(searchStr);
+      current = scale = new Scale(searchStr);
       notes = scale.notes;
-    } catch(ex) { }
+    } catch(ex) {
+      //console.log(ex.message)
+    }
 
     if (!notes) {
       notes = parseList(searchStr);
@@ -51,7 +58,8 @@ class App extends Component {
 
     this.setState({
       searchStr: searchStr,
-      litNotes: notes
+      litNotes: notes,
+      current: current
     });
   }
 
@@ -76,7 +84,9 @@ class App extends Component {
         <Fretboard startingFret={this.state.startingFret}
           fretCount={this.state.fretCount}
           tuning={tunings.standard}
-          litNotes={this.state.litNotes}/>
+          litNotes={this.state.litNotes}
+          current={this.state.current}/>
+        <label>{this.state.current ? this.state.current.name : ''}</label>
       </div>
     );
   }

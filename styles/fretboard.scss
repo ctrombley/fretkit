@@ -52,6 +52,10 @@
   fill: $magenta;
 }
 
+.string__marker-root {
+  fill: $green;
+}
+
 @keyframes pulse {
   0% {
     r: 8;

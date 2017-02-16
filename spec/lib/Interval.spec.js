@@ -88,6 +88,8 @@ describe('Interval', () => {
       expect(new Interval('M6').semitones).to.equal(9);
       expect(new Interval('d7').semitones).to.equal(9);
       expect(new Interval('D7').semitones).to.equal(9);
+      expect(new Interval('𝄫7').semitones).to.equal(9);
+      expect(new Interval('bb7').semitones).to.equal(9);
     });
 
     it('should parse a minor seventh/augmented sixth', () => {

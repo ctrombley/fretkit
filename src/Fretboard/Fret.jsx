@@ -48,7 +48,8 @@ class Fret extends React.Component {
         xOffset={xOffset}
         fretWidth={Fret.width}
         fretIdx={this.props.idx}
-        litNotes={this.props.litNotes}/>;
+        litNotes={this.props.litNotes}
+        current={this.props.current}/>;
     })
 
     const fretNumberLabelPadding = 20;
@@ -85,7 +86,8 @@ Fret.propTypes = {
   idx: React.PropTypes.number.isRequired,
   fretNumber: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,
-  litNotes: React.PropTypes.array
+  litNotes: React.PropTypes.array,
+  current: React.PropTypes.object
 }
 
 export default Fret;

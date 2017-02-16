@@ -33,7 +33,7 @@ export default class Mode {
     mode = modes[mode.toLowerCase()];
 
     this.notes = mode.map((intervalStr) => new Note(root).add(intervalStr));
-    this.root = root;
+    this.root = new Note(root);
   }
 
   parseNumber(value) {
