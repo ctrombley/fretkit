@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Component } from 'react';
 
-class StringMarker extends React.Component {
+class StringMarker extends Component {
   render() {
     const xOffset = this.props.xOffset + this.props.fretWidth / 2;
 
@@ -8,7 +8,7 @@ class StringMarker extends React.Component {
       <circle
         cx={xOffset}
         cy={this.props.yOffset}
-        className={`string__marker ${this.props.className}`}/>
+        className={`string__marker ${this.props.className || ''}`}/>
       );
   }
 }

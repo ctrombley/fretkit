@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { Component } from 'react';
 import String from './String.jsx';
 import Label from './Label.jsx';
 import FretMarker from './FretMarker.jsx';
 import Note from '../lib/Note.js';
 
-class Fret extends React.Component {
+class Fret extends Component {
   constructor(props) {
     super(props);
 
@@ -49,7 +49,9 @@ class Fret extends React.Component {
         fretWidth={Fret.width}
         fretIdx={this.props.idx}
         litNotes={this.props.litNotes}
-        current={this.props.current}/>;
+        current={this.props.current}
+        filterStart={this.props.filterStart}
+        filterEnd={this.props.filterEnd}/>;
     })
 
     const fretNumberLabelPadding = 20;
@@ -87,7 +89,9 @@ Fret.propTypes = {
   fretNumber: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,
   litNotes: React.PropTypes.array,
-  current: React.PropTypes.object
+  current: React.PropTypes.object,
+  filterStart: React.PropTypes.number,
+  filterEnd: React.PropTypes.number
 }
 
 export default Fret;

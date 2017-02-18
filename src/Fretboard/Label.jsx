@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Component } from 'react';
 
-class Label extends React.Component {
+class Label extends Component {
   render() {
     return (
       <text className='label' x={this.props.xOffset} y={this.props.yOffset}>

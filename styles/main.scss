@@ -10,3 +10,11 @@ body, button {
   font-family: 'Cabin', sans-serif;
   color: $darkGrey;
 }
+
+.selected-label {
+  display: block;
+  margin: 0 auto;
+  height: 20px;
+  font-size: 24px;
+  text-align: center;
+}

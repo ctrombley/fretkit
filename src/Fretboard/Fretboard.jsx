@@ -9,13 +9,16 @@ class Fretboard extends React.Component {
     this.margin = 50;
   }
 
+  get stringCount() {
+    return this.props.tuning.length;
+  }
+
   getWidth() {
     return (this.props.fretCount * Fret.width) + (this.margin * 2);
   }
 
   getHeight() {
-    const stringCount = this.props.tuning.length;
-    return (String.height * stringCount) + (this.margin * 2);
+    return (String.height * this.stringCount) + (this.margin * 2);
   }
 
   render() {
@@ -27,7 +30,9 @@ class Fretboard extends React.Component {
         fretboardMargin={this.margin}
         tuning={this.props.tuning}
         litNotes={this.props.litNotes}
-        current={this.props.current}/>;
+        current={this.props.current}
+        filterStart={this.props.filterStart}
+        filterEnd={this.props.filterEnd}/>;
 
       frets.push(fret);
     }
@@ -47,7 +52,9 @@ Fretboard.propTypes = {
   fretCount: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired,
   litNotes: React.PropTypes.array,
-  current: React.PropTypes.object
+  current: React.PropTypes.object,
+  filterStart: React.PropTypes.number,
+  filterEnd: React.PropTypes.number
 };
 
 export default Fretboard;

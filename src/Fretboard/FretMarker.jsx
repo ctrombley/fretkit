@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Component } from 'react';
 
-class FretMarker extends React.Component {
+class FretMarker extends Component {
   render() {
     const xOffset = this.props.xOffset + this.props.fretWidth / 2;
 

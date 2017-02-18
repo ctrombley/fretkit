@@ -35,7 +35,24 @@
 }
 
 .string__marker {
+  transition: r 100ms;
   r: 8;
+}
+
+.string__marker-enter {
+  r: 0;
+}
+
+.string__marker-enter-active {
+  r: 8;
+}
+
+.string__marker-leave {
+  r: 8;
+}
+
+.string__marker-leave-active {
+  r: 0;
 }
 
 .string__marker-marked {

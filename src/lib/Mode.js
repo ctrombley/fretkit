@@ -32,6 +32,7 @@ export default class Mode {
 
     mode = modes[mode.toLowerCase()];
 
+    this.name = modeStr;
     this.notes = mode.map((intervalStr) => new Note(root).add(intervalStr));
     this.root = new Note(root);
   }
