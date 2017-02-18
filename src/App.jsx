@@ -31,7 +31,6 @@ class App extends Component {
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
-    this.setMarkedNote = this.setMarkedNote.bind(this);
   }
 
   setNotes(notes) {
