@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "it's a fretboard",
   "scripts": {
+    "build": "webpack --progress --profile --colors",
+    "dev": "webpack-dashboard -- webpack-dev-server -d --progress --profile --colors",
     "lint": "eslint src/**/*.js src/**/*.jsx",
-    "start": "node server.js",
+    "start": "webpack-dev-server -d --progress --profile --colors",
     "test": "mocha --compilers js:babel-core/register  spec/**/*",
     "watch": "npm run test -- --watch"
   },
@@ -36,16 +38,21 @@
     "css-loader": "0.23.1",
     "eslint": "2.7.0",
     "eslint-plugin-react": "5.2.2",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "html-webpack-plugin": "^2.28.0",
     "mocha": "^3.2.0",
     "node-sass": "3.8.0",
+    "react-hot-loader": "^1.3.1",
     "sass-loader": "4.0.0",
     "sockjs-client": "^1.1.1",
     "style-loader": "0.13.1",
     "webpack": "1.13.1",
+    "webpack-dashboard": "^0.3.0",
     "webpack-dev-server": "1.14.1"
   },
   "dependencies": {
-    "react": "15.2.1",
-    "react-dom": "15.2.1"
+    "react": "15.4.2",
+    "react-addons-css-transition-group": "15.4.2",
+    "react-dom": "15.4.2"
   }
 }
