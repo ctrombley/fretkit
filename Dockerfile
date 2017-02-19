@@ -12,6 +12,6 @@ RUN npm install -d
 COPY . /app
 
 RUN npm build
-RUN npm prune --production
+# RUN npm prune --production
 
 EXPOSE 80
