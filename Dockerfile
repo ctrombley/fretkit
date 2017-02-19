@@ -13,7 +13,6 @@ RUN mkdir -p /app && cp -a /tmp/node_modules /app/
 # Bundle app source
 COPY . /app
 
-RUN npm install -d
 RUN npm run build
 
 EXPOSE 80
