@@ -12,7 +12,6 @@ RUN mkdir -p /app && cp -a /tmp/node_modules /app/
 WORKDIR /app
 COPY . /app
 
-RUN npm install -d
 RUN npm run build
 
 EXPOSE 3000
