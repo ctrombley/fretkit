@@ -12,6 +12,8 @@ RUN npm install -d
 COPY . /app
 
 RUN npm build
-# RUN npm prune --production
+
+# Add client bundle
+COPY ./public /app/public
 
 EXPOSE 80
