@@ -10,8 +10,4 @@ COPY . /app
 RUN npm install -d
 RUN npm run build
 
-# Add client bundle
-RUN mkdir -p /app/public
-COPY ./public /app/public
-
 EXPOSE 80
