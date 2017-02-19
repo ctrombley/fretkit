@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "it's a fretboard",
   "scripts": {
-    "build": "webpack --progress --profile --colors",
+    "build": "webpack --config webpack.production.config.js --progress --profile --colors",
     "dev": "webpack-dashboard -- webpack-dev-server -d --progress --profile --colors",
     "lint": "eslint src/**/*.js src/**/*.jsx",
     "start": "webpack-dev-server -d --progress --profile --colors",
@@ -47,6 +47,7 @@
     "sockjs-client": "^1.1.1",
     "style-loader": "0.13.1",
     "webpack": "1.13.1",
+    "webpack-cleanup-plugin": "^0.4.2",
     "webpack-dashboard": "^0.3.0",
     "webpack-dev-server": "1.14.1"
   },
