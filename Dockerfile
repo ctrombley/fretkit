@@ -15,4 +15,5 @@ COPY . /app
 
 RUN npm run build
 
-EXPOSE 80
+EXPOSE 3000
+ENTRYPOINT echo "Listening on port 3000"
