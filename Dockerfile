@@ -16,4 +16,4 @@ COPY . /app
 RUN npm run build
 
 EXPOSE 3000
-ENTRYPOINT echo "Listening on port 3000"
+CMD "tail"
