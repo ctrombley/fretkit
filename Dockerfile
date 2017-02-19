@@ -4,14 +4,11 @@ FROM node:boron
 RUN mkdir -p /app
 WORKDIR /app
 
-# Install app dependencies
-COPY package.json /app/
-RUN npm install -d
-
 # Bundle app source
 COPY . /app
 
-RUN npm build
+RUN npm install -d
+RUN npm run build
 
 # Add client bundle
 RUN mkdir -p /app/public
