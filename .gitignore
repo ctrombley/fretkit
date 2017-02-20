@@ -3,6 +3,7 @@ public
 npm-debug.log
 .DS_Store
 dist
+deploy.sh
 
 ### PhpStorm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
