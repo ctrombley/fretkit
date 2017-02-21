@@ -7,49 +7,85 @@ import Transport from './ControlPanel/Transport.jsx';
 import Chord from './lib/Chord.js';
 import Mode from './lib/Mode.js';
 import Scale from './lib/Scale.js';
+import Note from './lib/Note.js';
 import { parseList } from './lib/tones.js';
+import generate from './lib/sequenceGenerator.js';
 
 class App extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
+      tuning: tunings.standard,
       litNotes: [],
       markedNotes: [],
       startingFret: 1,
+      position: 1,
       fretCount: 12,
       searchStr: '',
       current: null,
       filterStart: 1,
       filterEnd: 12,
-      sequence: [],
+      sequences: [],
       sequenceIdx: null 
     };
 
     this.search = this.search.bind(this);
     this.setStartingFret = this.setStartingFret.bind(this);
+    this.setPosition = this.setPosition.bind(this);
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
+  }
+
+  get strings() {
+    const openNotes = this.state.tuning.map((noteStr) => {
+      return new Note(noteStr);
+    });
+
+    const strings = openNotes.map((note) => {
+      const notes = [];
+      for (let i=1; i<this.state.fretCount; i++) {
+        notes.push(new Note(note.semitones + i));
+      }
+
+      return notes;
+    });
+
+    return strings;
   }
 
   setNotes(notes) {
     this.setState({litNotes: notes});
   }
 
+  nextSequence() {
+    if (sequenceIdx < sequences.length - 1) {
+      this.setState({sequenceIdx: sequenceIdx + 1});
+    }
+  }
+
+  prevSequence() {
+    if (sequenceIdx > 0) {
+      this.setState({sequenceIdx: sequenceIdx - 1});
+    }
+  }
+
   search(searchStr) {
-    let chord, mode, scale, current, notes;
+    let chord, mode, scale, sequences, current, notes;
 
     try {
       current = chord = new Chord(searchStr);
       notes = chord.notes;
-    } catch(ex) { 
+      sequences = generate(notes, this.strings, this.state.position)
+    } catch(ex) {
       //console.log(ex.message)
     }
 
     try {
       current = mode = new Mode(searchStr);
       notes = mode.notes;
+      sequences = generate(notes, this.strings, this.state.position)
     } catch(ex) {
       //console.log(ex.message)
     }
@@ -57,6 +93,7 @@ class App extends Component {
     try {
       current = scale = new Scale(searchStr);
       notes = scale.notes;
+      sequences = generate(notes, this.strings, this.state.position)
     } catch(ex) {
       //console.log(ex.message)
     }
@@ -68,12 +105,22 @@ class App extends Component {
     this.setState({
       searchStr: searchStr,
       litNotes: notes,
+      sequences: sequences,
       current: current
     });
   }
 
   setStartingFret(fret) {
     this.setState({startingFret: fret});
+  }
+
+  setPosition(fret) {
+    this.setState({position: fret});
+
+    if (this.state.current) {
+      const sequences = generate(this.state.current.notes, this.strings, fret)
+      this.setState({sequences: sequences});
+    }
   }
 
   setFretCount(count) {
@@ -106,20 +153,20 @@ class App extends Component {
         <label className='selected-label'>{this.state.current ? this.state.current.name : ''}</label>
         <Fretboard startingFret={this.state.startingFret}
           fretCount={this.state.fretCount}
-          tuning={tunings.standard}
+          tuning={this.state.tuning}
           litNotes={this.state.litNotes}
           markedNotes={this.state.markedNotes}
           current={this.state.current}
           filterStart={this.state.filterStart}
-          filterEnd={this.state.filterEnd}/>
+          filterEnd={this.state.filterEnd}
+          sequences={this.state.sequences}/>
         <ControlPanel search={this.search}
           setStartingFret={this.setStartingFret}
+          setPosition={this.setPosition}
           setFilterStart={this.setFilterStart}
           setFilterEnd={this.setFilterEnd}
           setFretCount={this.setFretCount}
           clear={this.clear}/>
-        <Sequence sequence={this.state.sequence}
-          sequenceIdx={this.state.sequenceIdx}
         />
         <Transport />
       </div>

@@ -6,6 +6,7 @@ class ControlPanel extends Component {
     this.state = {
       search: '',
       startingFret: '1',
+      position: '1',
       fretCount: '12',
       filterStart: '1',
       filterEnd: '12'
@@ -13,6 +14,7 @@ class ControlPanel extends Component {
 
     this.search = this.search.bind(this);
     this.setStartingFret = this.setStartingFret.bind(this);
+    this.setPosition = this.setPosition.bind(this);
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
@@ -22,6 +24,12 @@ class ControlPanel extends Component {
     const value = parseInt(event.target.value, 10);
     this.props.setStartingFret(value);
     this.setState({startingFret: value});
+  }
+
+  setPosition(event) {
+    const value = parseInt(event.target.value, 10);
+    this.props.setPosition(value);
+    this.setState({position: value});
   }
 
   setFilterStart(event) {
@@ -67,6 +75,13 @@ class ControlPanel extends Component {
               onChange={this.setStartingFret} />
           </label>
           <label className='control-panel__label'>
+          Position:
+            <input className='control-panel__input'
+              type='number' min='1' max='24'
+              value={this.state.position}
+              onChange={this.setPosition} />
+          </label>
+          <label className='control-panel__label'>
             Fretboard size:
             <input className='control-panel__input'
               type='number' min='1' max='12'
@@ -98,6 +113,7 @@ class ControlPanel extends Component {
 
 ControlPanel.propTypes = {
   setFretCount: React.PropTypes.func.isRequired,
+  setPosition: React.PropTypes.func.isRequired,
   search: React.PropTypes.func.isRequired,
   setStartingFret: React.PropTypes.func.isRequired,
   setFilterStart: React.PropTypes.func.isRequired,

@@ -33,7 +33,7 @@ export default class Chord {
 
     this.name = chordStr;
     this.root = new Note(root);
-    this.notes = chords[chord].map(interval => new Note(root).add(interval));
+    this.notes = chords[chord].map(interval => new Note(new Note(root).add(interval).baseSemitones));
   }
 
   semitones() {
