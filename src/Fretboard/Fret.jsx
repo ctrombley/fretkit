@@ -51,7 +51,8 @@ class Fret extends Component {
         litNotes={this.props.litNotes}
         current={this.props.current}
         filterStart={this.props.filterStart}
-        filterEnd={this.props.filterEnd}/>;
+        filterEnd={this.props.filterEnd}
+        sequences={this.props.sequences}/>;
     })
 
     const fretNumberLabelPadding = 20;
@@ -91,7 +92,8 @@ Fret.propTypes = {
   litNotes: React.PropTypes.array,
   current: React.PropTypes.object,
   filterStart: React.PropTypes.number,
-  filterEnd: React.PropTypes.number
+  filterEnd: React.PropTypes.number,
+  sequences: React.PropTypes.array
 }
 
 export default Fret;

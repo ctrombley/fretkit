@@ -32,7 +32,8 @@ class Fretboard extends React.Component {
         litNotes={this.props.litNotes}
         current={this.props.current}
         filterStart={this.props.filterStart}
-        filterEnd={this.props.filterEnd}/>;
+        filterEnd={this.props.filterEnd}
+        sequences={this.props.sequences}/>;
 
       frets.push(fret);
     }
@@ -54,7 +55,8 @@ Fretboard.propTypes = {
   litNotes: React.PropTypes.array,
   current: React.PropTypes.object,
   filterStart: React.PropTypes.number,
-  filterEnd: React.PropTypes.number
+  filterEnd: React.PropTypes.number,
+  sequences: React.PropTypes.array
 };
 
 export default Fretboard;

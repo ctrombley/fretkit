@@ -5,6 +5,10 @@ export default class StringNote {
     this.note = note;
   }
 
+  get semitones() {
+    return this.note.semitones;
+  }
+
   get baseSemitones() {
     return this.note.baseSemitones;
   }
