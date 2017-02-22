@@ -26,7 +26,7 @@ class String extends Component {
   }
 
   get stringNumber() {
-    return 5 - this.props.idx;
+    return this.props.stringCount - 1 - this.props.idx;
   }
 
   showMarker() {
@@ -65,11 +65,9 @@ class String extends Component {
   }
 
   isLit() {
-    if (this.props.sequences && this.props.sequences.length) {
-      const sequence = this.props.sequences[0];
+    if (this.props.sequenceEnabled && this.props.sequence) {
+      const sequence = this.props.sequence;
       return !!sequence.stringNotes.filter((stringNote) => {
-        //console.log(`comparing ${stringNote.semitones} to ${this.props.note.semitones}`);
-        //console.log(`comparing ${stringNote.string} to ${this.stringNumber}`);
         return stringNote.semitones == this.props.note.semitones &&
           stringNote.string == this.stringNumber;
       }).length;
@@ -165,11 +163,13 @@ String.propTypes = {
   yOffset: React.PropTypes.number.isRequired,
   idx: React.PropTypes.number.isRequired,
   note: React.PropTypes.instanceOf(Note).isRequired,
+  stringCount: React.PropTypes.number.isRequired,
   current: React.PropTypes.object,
   litNotes: React.PropTypes.array,
   filterStart: React.PropTypes.number,
   filterEnd: React.PropTypes.number,
-  sequences: React.PropTypes.array
+  sequence: React.PropTypes.object,
+  sequenceEnabled: React.PropTypes.bool
 }
 
 export default String;

@@ -16,10 +16,14 @@ class Fret extends Component {
     return 80;
   }
 
-  getHeight() {
-    const stringCount = this.props.tuning.length;
-    return String.height * (stringCount - 1);
+  get stringCount() {
+    return this.props.tuning.length;
   }
+
+  getHeight() {
+    return String.height * (this.stringCount - 1);
+  }
+
 
   isFirst() {
     return this.props.idx === 0;
@@ -48,11 +52,13 @@ class Fret extends Component {
         xOffset={xOffset}
         fretWidth={Fret.width}
         fretIdx={this.props.idx}
+        stringCount={this.stringCount}
         litNotes={this.props.litNotes}
         current={this.props.current}
         filterStart={this.props.filterStart}
         filterEnd={this.props.filterEnd}
-        sequences={this.props.sequences}/>;
+        sequence={this.props.sequence}
+        sequenceEnabled={this.props.sequenceEnabled}/>;
     })
 
     const fretNumberLabelPadding = 20;
@@ -93,7 +99,8 @@ Fret.propTypes = {
   current: React.PropTypes.object,
   filterStart: React.PropTypes.number,
   filterEnd: React.PropTypes.number,
-  sequences: React.PropTypes.array
+  sequence: React.PropTypes.object,
+  sequenceEnabled: React.PropTypes.bool
 }
 
 export default Fret;

@@ -9,7 +9,8 @@ class ControlPanel extends Component {
       position: '1',
       fretCount: '12',
       filterStart: '1',
-      filterEnd: '12'
+      filterEnd: '12',
+      sequenceEnabled: false
     };
 
     this.search = this.search.bind(this);
@@ -18,6 +19,7 @@ class ControlPanel extends Component {
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
+    this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
   }
 
   setStartingFret(event) {
@@ -42,6 +44,12 @@ class ControlPanel extends Component {
     const value = parseInt(event.target.value, 10);
     this.props.setFilterEnd(value);
     this.setState({filterEnd: value});
+  }
+
+  setSequenceEnabled(event) {
+    const value = event.target.checked;
+    this.props.setSequenceEnabled(value);
+    this.setState({sequenceEnabled: value});
   }
 
   search(event) {
@@ -88,6 +96,7 @@ class ControlPanel extends Component {
               value={this.state.fretCount}
               onChange={this.setFretCount} />
           </label>
+          {/*
           <label className='control-panel__label'>
             Start filter:
             <input className='control-panel__input'
@@ -102,9 +111,17 @@ class ControlPanel extends Component {
               value={this.state.filterEnd}
               onChange={this.setFilterEnd} />
           </label>
+          */}
+          <label className='control-panel__label'>
+           Sequence:
+            <input className='control-panel__input'
+              type='checkbox'
+              value={this.state.sequenceEnabled}
+              onChange={this.setSequenceEnabled} />
+          </label>
           <button onClick={this.props.clear}>Clear fretboard</button>
-          <button>Rotate</button>
-          <button onClick={this.props.save}>Save to sequence</button>
+          <button onClick={this.props.prev}>Prev</button>
+          <button onClick={this.props.next}>Next</button>
         </form>
       </div>
     );
@@ -118,7 +135,10 @@ ControlPanel.propTypes = {
   setStartingFret: React.PropTypes.func.isRequired,
   setFilterStart: React.PropTypes.func.isRequired,
   setFilterEnd: React.PropTypes.func.isRequired,
-  clear: React.PropTypes.func.isRequired
+  setSequenceEnabled: React.PropTypes.func.isRequired,
+  clear: React.PropTypes.func.isRequired,
+  next: React.PropTypes.func.isRequired,
+  prev: React.PropTypes.func.isRequired
 };
 
 export default ControlPanel;

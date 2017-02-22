@@ -33,7 +33,8 @@ class Fretboard extends React.Component {
         current={this.props.current}
         filterStart={this.props.filterStart}
         filterEnd={this.props.filterEnd}
-        sequences={this.props.sequences}/>;
+        sequence={this.props.sequence}
+        sequenceEnabled={this.props.sequenceEnabled}/>;
 
       frets.push(fret);
     }
@@ -56,7 +57,8 @@ Fretboard.propTypes = {
   current: React.PropTypes.object,
   filterStart: React.PropTypes.number,
   filterEnd: React.PropTypes.number,
-  sequences: React.PropTypes.array
+  sequence: React.PropTypes.object,
+  sequenceEnabled: React.PropTypes.bool
 };
 
 export default Fretboard;

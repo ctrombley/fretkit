@@ -27,7 +27,8 @@ class App extends Component {
       filterStart: 1,
       filterEnd: 12,
       sequences: [],
-      sequenceIdx: null 
+      sequenceIdx: null,
+      sequenceEnabled: false
     };
 
     this.search = this.search.bind(this);
@@ -36,6 +37,10 @@ class App extends Component {
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
+    this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
+    this.getCurrentSequence = this.getCurrentSequence.bind(this);
+    this.next = this.next.bind(this);
+    this.prev = this.prev.bind(this);
   }
 
   get strings() {
@@ -73,6 +78,7 @@ class App extends Component {
 
   search(searchStr) {
     let chord, mode, scale, sequences, current, notes;
+    sequences = [];
 
     try {
       current = chord = new Chord(searchStr);
@@ -102,10 +108,13 @@ class App extends Component {
       notes = parseList(searchStr);
     }
 
+    const sequenceIdx = sequences.length > 0 ? 0 : null;
+
     this.setState({
       searchStr: searchStr,
       litNotes: notes,
       sequences: sequences,
+      sequenceIdx: sequenceIdx,
       current: current
     });
   }
@@ -119,7 +128,11 @@ class App extends Component {
 
     if (this.state.current) {
       const sequences = generate(this.state.current.notes, this.strings, fret)
-      this.setState({sequences: sequences});
+      const sequenceIdx = sequences.length > 0 ? 0 : null;
+      this.setState({
+        sequences: sequences,
+        sequenceIdx: sequenceIdx
+      });
     }
   }
 
@@ -135,6 +148,10 @@ class App extends Component {
     this.setState({filterEnd: value});
   }
 
+  setSequenceEnabled(value) {
+    this.setState({sequenceEnabled: value});
+  }
+
   toggleMarkedNote(string, value) {
     this.setState({markedNote: value});
   }
@@ -147,10 +164,38 @@ class App extends Component {
     this.setState({markedNotes})
   }
 
+  next(e) {
+    e.preventDefault();
+    if (!this.state.sequences.length) return;
+
+    const nextSequenceIdx = this.state.sequenceIdx + 1;
+    if (nextSequenceIdx < this.state.sequences.length) {
+      this.setState({sequenceIdx: nextSequenceIdx})
+    }
+  }
+
+  prev(e) {
+    e.preventDefault();
+    if (!this.state.sequences.length) return;
+
+    const nextSequenceIdx = this.state.sequenceIdx - 1;
+    if (nextSequenceIdx >= 0) {
+      this.setState({sequenceIdx: nextSequenceIdx})
+    }
+  }
+
+  getCurrentSequence() {
+    return this.state.sequences[this.state.sequenceIdx];
+  }
+
   render() {
     return (
       <div className='main'>
-        <label className='selected-label'>{this.state.current ? this.state.current.name : ''}</label>
+        <label className='selected-label'>
+          {this.state.current ? this.state.current.name : ''}
+          {this.state.sequenceEnabled && this.getCurrentSequence() ? 
+            ` (${this.state.sequenceIdx + 1} / ${this.state.sequences.length})` : ''}
+        </label>
         <Fretboard startingFret={this.state.startingFret}
           fretCount={this.state.fretCount}
           tuning={this.state.tuning}
@@ -159,15 +204,18 @@ class App extends Component {
           current={this.state.current}
           filterStart={this.state.filterStart}
           filterEnd={this.state.filterEnd}
-          sequences={this.state.sequences}/>
+          sequence={this.getCurrentSequence()}
+          sequenceEnabled={this.state.sequenceEnabled}/>
         <ControlPanel search={this.search}
           setStartingFret={this.setStartingFret}
           setPosition={this.setPosition}
           setFilterStart={this.setFilterStart}
           setFilterEnd={this.setFilterEnd}
           setFretCount={this.setFretCount}
-          clear={this.clear}/>
-        />
+          setSequenceEnabled={this.setSequenceEnabled}
+          clear={this.clear}
+          next={this.next}
+          prev={this.prev}/>
         <Transport />
       </div>
     );
