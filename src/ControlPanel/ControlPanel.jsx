@@ -10,7 +10,8 @@ class ControlPanel extends Component {
       fretCount: '12',
       filterStart: '1',
       filterEnd: '12',
-      sequenceEnabled: false
+      sequenceEnabled: false,
+      degreesEnabled: false,
     };
 
     this.search = this.search.bind(this);
@@ -20,6 +21,7 @@ class ControlPanel extends Component {
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
     this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
+    this.setDegreesEnabled = this.setDegreesEnabled.bind(this);
   }
 
   setStartingFret(event) {
@@ -50,6 +52,12 @@ class ControlPanel extends Component {
     const value = event.target.checked;
     this.props.setSequenceEnabled(value);
     this.setState({sequenceEnabled: value});
+  }
+
+  setDegreesEnabled(event) {
+    const value = event.target.checked;
+    this.props.setDegreesEnabled(value);
+    this.setState({degreesEnabled: value});
   }
 
   search(event) {
@@ -119,6 +127,13 @@ class ControlPanel extends Component {
               value={this.state.sequenceEnabled}
               onChange={this.setSequenceEnabled} />
           </label>
+          <label className='control-panel__label'>
+           Degrees:
+            <input className='control-panel__input'
+              type='checkbox'
+              value={this.state.degreesEnabled}
+              onChange={this.setDegreesEnabled} />
+          </label>
           <button onClick={this.props.clear}>Clear fretboard</button>
           <button onClick={this.props.prev}>Prev</button>
           <button onClick={this.props.next}>Next</button>
@@ -136,6 +151,7 @@ ControlPanel.propTypes = {
   setFilterStart: React.PropTypes.func.isRequired,
   setFilterEnd: React.PropTypes.func.isRequired,
   setSequenceEnabled: React.PropTypes.func.isRequired,
+  setDegreesEnabled: React.PropTypes.func.isRequired,
   clear: React.PropTypes.func.isRequired,
   next: React.PropTypes.func.isRequired,
   prev: React.PropTypes.func.isRequired

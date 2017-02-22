@@ -75,12 +75,11 @@ function generate(baseNotes, strings, position) {
     sequence.pop();
   }
 
-  const t0 = performance.now();
+  //const t0 = performance.now();
   traverse(startingStringNote);
-  const t1 = performance.now();
+  //const t1 = performance.now();
 
-  console.log(`found ${found.length} sequences in ${t1-t0} ms`)
-  //console.log(inspect(found, {depth: 4}));
+  //console.log(`found ${found.length} sequences in ${t1-t0} ms`)
 
   return found;
 }

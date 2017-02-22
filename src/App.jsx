@@ -28,7 +28,8 @@ class App extends Component {
       filterEnd: 12,
       sequences: [],
       sequenceIdx: null,
-      sequenceEnabled: false
+      sequenceEnabled: false,
+      degreesEnabled: false
     };
 
     this.search = this.search.bind(this);
@@ -38,6 +39,7 @@ class App extends Component {
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
     this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
+    this.setDegreesEnabled = this.setDegreesEnabled.bind(this);
     this.getCurrentSequence = this.getCurrentSequence.bind(this);
     this.next = this.next.bind(this);
     this.prev = this.prev.bind(this);
@@ -152,6 +154,10 @@ class App extends Component {
     this.setState({sequenceEnabled: value});
   }
 
+  setDegreesEnabled(value) {
+    this.setState({degreesEnabled: value});
+  }
+
   toggleMarkedNote(string, value) {
     this.setState({markedNote: value});
   }
@@ -205,7 +211,8 @@ class App extends Component {
           filterStart={this.state.filterStart}
           filterEnd={this.state.filterEnd}
           sequence={this.getCurrentSequence()}
-          sequenceEnabled={this.state.sequenceEnabled}/>
+          sequenceEnabled={this.state.sequenceEnabled}
+          degreesEnabled={this.state.degreesEnabled}/>
         <ControlPanel search={this.search}
           setStartingFret={this.setStartingFret}
           setPosition={this.setPosition}
@@ -213,6 +220,7 @@ class App extends Component {
           setFilterEnd={this.setFilterEnd}
           setFretCount={this.setFretCount}
           setSequenceEnabled={this.setSequenceEnabled}
+          setDegreesEnabled={this.setDegreesEnabled}
           clear={this.clear}
           next={this.next}
           prev={this.prev}/>

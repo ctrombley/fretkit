@@ -33,7 +33,7 @@ export default class Scale {
     scale = scales[scale.toLowerCase()];
 
     this.name = scaleStr;
-    this.notes = scale.map((intervalStr) => new Note(new Note(root).add(intervalStr).baseSemitones));
+    this.notes = scale.map((intervalStr) => new Note(root).add(intervalStr).baseNote);
     this.root = new Note(root);
   }
 

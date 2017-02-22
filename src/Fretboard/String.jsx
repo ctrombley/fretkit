@@ -29,6 +29,17 @@ class String extends Component {
     return this.props.stringCount - 1 - this.props.idx;
   }
 
+  get degree() {
+    if (!this.props.current || !this.props.current.root) return;
+
+    for (let i=0; i<this.props.current.notes.length; i++) {
+      var note = this.props.current.notes[i];
+      if (note.semitones === this.props.note.baseSemitones) {
+        return note.parsed;
+      }
+    }
+  }
+
   showMarker() {
     return this.isLit() || this.isMarked();
   }
@@ -78,14 +89,13 @@ class String extends Component {
   }
 
   isVisible() {
-    return this.props.filterStart-1 <= this.props.fretIdx && 
+    return this.props.filterStart-1 <= this.props.fretIdx &&
       this.props.filterEnd-1 >= this.props.fretIdx;
   }
 
   isRoot() {
-    return this.props.current && this.props.current.root && 
+    return this.props.current && this.props.current.root &&
       this.props.current.root.semitones === this.props.note.baseSemitones;
-
   }
 
   componentDidMount() {
@@ -117,6 +127,7 @@ class String extends Component {
         xOffset={this.props.xOffset}
         yOffset={this.props.yOffset}
         fretWidth={this.props.fretWidth}
+        label={this.props.degreesEnabled && this.degree}
         className={`string__marker-lit ${this.isRoot() ? 'string__marker-root' : ''}`}/> :
       null;
 

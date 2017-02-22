@@ -58,7 +58,8 @@ class Fret extends Component {
         filterStart={this.props.filterStart}
         filterEnd={this.props.filterEnd}
         sequence={this.props.sequence}
-        sequenceEnabled={this.props.sequenceEnabled}/>;
+        sequenceEnabled={this.props.sequenceEnabled}
+        degreesEnabled={this.props.degreesEnabled}/>;
     })
 
     const fretNumberLabelPadding = 20;
@@ -100,7 +101,8 @@ Fret.propTypes = {
   filterStart: React.PropTypes.number,
   filterEnd: React.PropTypes.number,
   sequence: React.PropTypes.object,
-  sequenceEnabled: React.PropTypes.bool
+  sequenceEnabled: React.PropTypes.bool,
+  degreesEnabled: React.PropTypes.bool
 }
 
 export default Fret;
