@@ -216,7 +216,6 @@ class App extends Component {
           clear={this.clear}
           next={this.next}
           prev={this.prev}/>
-        <Transport />
       </div>
     );
   }

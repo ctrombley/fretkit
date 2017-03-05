@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import Transport from './Transport.jsx';
+
 class ControlPanel extends Component {
   constructor(props) {
     super(props);
@@ -123,6 +125,7 @@ class ControlPanel extends Component {
           <button onClick={this.props.prev}>Prev</button>
           <button onClick={this.props.next}>Next</button>
         </form>
+        <Transport bpm={90} timeSignature={{upper: 4, lower: 4}}/>
       </div>
     );
   }
