@@ -8,7 +8,9 @@ const chords = {
   '°7': ['1', '♭3', '♭5', '𝄫7'],
   'ø': ['1', '♭3', '♭5', '♭7'],
   'mM7': ['1', '♭3', '5', '7'],
-  '+M7': ['1', '3', '♯5', '7']
+  '+M7': ['1', '3', '♯5', '7'],
+  '6': ['1', '3', '5', '6'],
+  'm6': ['1', '♭3', '5', '6'],
 };
 
 chords['major'] = chords['M'];
@@ -59,5 +61,8 @@ chords['augmented major 7th'] = chords['+M7'];
 chords['augmented major seventh'] = chords['+M7'];
 chords['maj7♯5'] = chords['+M7'];
 chords['+Δ7'] = chords['+M7'];
+
+chords['major 6th'] = chords['6'];
+chords['minor 6th'] = chords['m6'];
 
 export default chords;
