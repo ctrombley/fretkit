@@ -62,6 +62,7 @@ chords['augmented major seventh'] = chords['+M7'];
 chords['maj7♯5'] = chords['+M7'];
 chords['+Δ7'] = chords['+M7'];
 
+chords['M6'] = chords['6'];
 chords['major 6th'] = chords['6'];
 chords['minor 6th'] = chords['m6'];
 
