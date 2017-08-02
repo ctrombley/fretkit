@@ -14,7 +14,15 @@ class Fretboard extends React.Component {
   }
 
   getWidth() {
-    return (this.props.fretCount * Fret.width) + (this.margin * 2);
+    return (this.calcWidth(this.props.fretCount)) + (this.margin * 2);
+  }
+
+  calcWidth(idx) {
+    if (idx === 0) {
+      return Fret.baseWidth;
+    } else {
+      return this.calcWidth(idx-1) + Fret.calcWidth(idx);
+    }
   }
 
   getHeight() {
@@ -24,28 +32,33 @@ class Fretboard extends React.Component {
   render() {
     const frets = [];
     for (var i = 0; i < this.props.fretCount; i++) {
-
-      const fret = <Fret key={i} idx={i}
-        fretNumber={this.props.startingFret + i}
-        fretboardMargin={this.margin}
-        tuning={this.props.tuning}
-        litNotes={this.props.litNotes}
-        current={this.props.current}
-        filterStart={this.props.filterStart}
-        filterEnd={this.props.filterEnd}
-        sequence={this.props.sequence}
-        sequenceEnabled={this.props.sequenceEnabled}/>;
+      const fret = (
+        <Fret
+          key={i}
+          idx={i}
+          fretNumber={this.props.startingFret + i}
+          fretboardMargin={this.margin}
+          tuning={this.props.tuning}
+          litNotes={this.props.litNotes}
+          current={this.props.current}
+          filterStart={this.props.filterStart}
+          filterEnd={this.props.filterEnd}
+          sequence={this.props.sequence}
+          sequenceEnabled={this.props.sequenceEnabled}
+        />
+      );
 
       frets.push(fret);
     }
 
     return (
-      <svg className='fretboard'
+      <svg
+        className='fretboard'
         width={this.getWidth()}
-        height={this.getHeight()} >
-        {frets}
+        height={this.getHeight()}
+      > {frets}
       </svg>
-      );
+    );
   }
 }
 
