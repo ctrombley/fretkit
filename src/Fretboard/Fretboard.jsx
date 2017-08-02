@@ -45,6 +45,7 @@ class Fretboard extends React.Component {
           filterEnd={this.props.filterEnd}
           sequence={this.props.sequence}
           sequenceEnabled={this.props.sequenceEnabled}
+          startingFret={this.props.startingFret}
         />
       );
 

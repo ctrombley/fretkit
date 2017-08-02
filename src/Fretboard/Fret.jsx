@@ -25,7 +25,7 @@ class Fret extends Component {
   }
 
   calcXOffset(idx) {
-    if (idx === 0) {
+    if (idx === this.props.startingFret-1) {
       return 0;
     } else {
       return this.calcXOffset(idx-1) + Fret.calcWidth(idx-1);
@@ -33,7 +33,7 @@ class Fret extends Component {
   }
 
   get width() {
-    return Fret.calcWidth(this.props.idx);
+    return Fret.calcWidth(this.props.fretNumber - 1);
   }
 
   get stringCount() {
@@ -131,6 +131,7 @@ Fret.propTypes = {
   litNotes: React.PropTypes.array,
   sequence: React.PropTypes.object,
   sequenceEnabled: React.PropTypes.bool,
+  startingFret: React.PropTypes.number.isRequired,
   tuning: React.PropTypes.array.isRequired
 }
 
