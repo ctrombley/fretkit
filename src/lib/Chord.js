@@ -18,6 +18,10 @@ export default class Chord {
     }
   }
 
+  createNoteFromInterval(root, interval) {
+    return new Note(new Note(root).add(interval).baseSemitones)
+  }
+
   parseString(chordStr) {
     let match, root, chord;
 
@@ -33,7 +37,9 @@ export default class Chord {
 
     this.name = chordStr;
     this.root = new Note(root);
-    this.notes = chords[chord].map(interval => new Note(new Note(root).add(interval).baseSemitones));
+
+    const chordIntervals = chords[chord];
+    this.notes = chordIntervals.map(interval => this.createNoteFromInterval(root, interval));
   }
 
   semitones() {

@@ -27,7 +27,6 @@ describe('sequenceGenerator', () => {
   describe('generate', () => {
     it('should generate a sequence', () => {
       const sequence = generate(gMin7.notes, strings, 5);
-      
     })
   })
 })

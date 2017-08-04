@@ -5,6 +5,11 @@ const expect = chai.expect;
 const assert = chai.assert;
 
 describe('Note', () => {
+  const epsilon = 1e-1;
+  const C0Freq = 16.35;
+  const A4Freq = 440;
+  const B8Freq = 7902.13;
+
   describe('constructor', () => {
 
     it('should return default without args', () => {
@@ -218,10 +223,14 @@ describe('Note', () => {
     });
 
     it('should expose note frequency', () => {
-      var epsilon = 1e-1;
-      expect(new Note('A4').frequency).to.equal(440);
-      expect(new Note('C0').frequency).to.be.closeTo(16.35, epsilon);
-      expect(new Note('B8').frequency).to.be.closeTo(7902.13, epsilon);
+      expect(new Note('A4').frequency).to.be.closeTo(A4Freq, epsilon);
+      expect(new Note('C0').frequency).to.be.closeTo(C0Freq, epsilon);
+      expect(new Note('B8').frequency).to.be.closeTo(B8Freq, epsilon);
+    });
+
+    it('should get new note from base semitones', () => {
+      expect(new Note('C1').baseNote.frequency).to.be.closeTo(C0Freq, epsilon);
+      expect(new Note('C2').baseNote.frequency).to.be.closeTo(C0Freq, epsilon);
     });
   });
 });

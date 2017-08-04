@@ -26,8 +26,8 @@ const modifiers = {
   '𝄫': -2
 };
 
-function parseBaseNote(baseNote, modifier) {
-  let semitones = notes[baseNote.toLowerCase()];
+function parseBaseNote(noteLetter, modifier) {
+  let semitones = notes[noteLetter.toLowerCase()];
 
   if (modifier) {
     semitones = semitones + modifiers[modifier]; 
@@ -63,25 +63,24 @@ export default class Note {
   }
 
   parseString(noteStr) {
-    let match, baseNote, modifier, octave;
+    let match, noteLetter, modifier, octave;
     try {
-      [match, baseNote, modifier, octave] = noteStr.match(noteRegex);
+      [match, noteLetter, modifier, octave] = noteStr.match(noteRegex);
     } catch(e) {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    if (!match || !baseNote || (modifier && !modifiers[modifier])) {
+    if (!match || !noteLetter || (modifier && !modifiers[modifier])) {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    let semitones = parseBaseNote(baseNote, modifier);
+    let baseSemitones = parseBaseNote(noteLetter, modifier);
 
     if (octave) {
       this.octave = parseInt(octave, 10);
-      semitones = semitones + this.octave * 12;
     }
 
-    this.semitones = semitones;
+    this.semitones = baseSemitones + (this.octave || 0) * 12;
   }
 
   get baseSemitones() {
@@ -94,6 +93,10 @@ export default class Note {
 
   get frequency() {
     return 440 * Math.pow(Math.pow(2, 1/12), this.referenceSemitones);
+  }
+
+  get baseNote() {
+    return new Note(this.baseSemitones);
   }
 
   parseNumber(semitones) {
