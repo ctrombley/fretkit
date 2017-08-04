@@ -7,6 +7,10 @@ export default class Sequence {
     
   }
 
+  get length() {
+    return this.stringNotes.length;
+  }
+
   get minFret() {
     return Math.min.apply(null, this.stringNotes.map(sn => sn.fret));
   }
@@ -28,7 +32,7 @@ export default class Sequence {
   }
 
   clone() {
-    return new Sequence(this.stringNotes.slice());
+    return this.slice();
   }
 
   push(stringNote) {
@@ -37,5 +41,13 @@ export default class Sequence {
 
   pop() {
     this.stringNotes.pop();
+  }
+
+  shift() {
+    this.stringNotes.shift();
+  }
+
+  slice(i, j) {
+    return new Sequence(this.stringNotes.slice(i, j));
   }
 }

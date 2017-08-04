@@ -7,9 +7,9 @@ class ControlPanel extends Component {
       search: '',
       startingFret: '1',
       position: '1',
-      fretCount: '12',
+      fretCount: '24',
       filterStart: '1',
-      filterEnd: '12',
+      filterEnd: '24',
       sequenceEnabled: false
     };
 
@@ -92,7 +92,7 @@ class ControlPanel extends Component {
           <label className='control-panel__label'>
             Fretboard size:
             <input className='control-panel__input'
-              type='number' min='1' max='12'
+              type='number' min='1' max='24'
               value={this.state.fretCount}
               onChange={this.setFretCount} />
           </label>

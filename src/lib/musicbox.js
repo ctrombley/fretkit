@@ -4,10 +4,12 @@ function play(frequency) {
   const gainNode = audioCtx.createGain();
   const oscillator = audioCtx.createOscillator();
 
+  gainNode.gain.value = 0.1;
+
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
 
-  oscillator.type = 'sine';
+  oscillator.type = 'square';
   oscillator.frequency.value = frequency;
   oscillator.start();
 

@@ -21,11 +21,11 @@ class App extends Component {
       markedNotes: [],
       startingFret: 1,
       position: 1,
-      fretCount: 12,
+      fretCount: 24,
       searchStr: '',
       current: null,
       filterStart: 1,
-      filterEnd: 12,
+      filterEnd: 24,
       sequences: [],
       sequenceIdx: null,
       sequenceEnabled: false

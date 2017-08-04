@@ -6,7 +6,7 @@ const chords = {
   'M7': ['1', '3', '5', '7'],
   'm7': ['1', '♭3', '5', '♭7'],
   '°7': ['1', '♭3', '♭5', '𝄫7'],
-  'ø': ['1', '♭3', '♭5', '♭7'],
+  'ø7': ['1', '♭3', '♭5', '♭7'],
   'mM7': ['1', '♭3', '5', '7'],
   '+M7': ['1', '3', '♯5', '7'],
   '6': ['1', '3', '5', '6'],
@@ -44,12 +44,13 @@ chords['diminished 7th'] = chords['°7'];
 chords['diminished seventh'] = chords['°7'];
 chords['dim7'] = chords['°7'];
 
-chords['half diminished 7th'] = chords['°7'];
-chords['half-diminished seventh'] = chords['°7'];
-chords['m7♭5'] = chords['°7'];
-chords['m7b5'] = chords['°7'];
-chords['-7♭5'] = chords['°7'];
-chords['-7b5'] = chords['°7'];
+chords['half diminished 7th'] = chords['ø7'];
+chords['half-diminished seventh'] = chords['ø7'];
+chords['ø'] = chords['ø7'];
+chords['m7♭5'] = chords['ø7'];
+chords['m7b5'] = chords['ø7'];
+chords['-7♭5'] = chords['ø7'];
+chords['-7b5'] = chords['ø7'];
 
 chords['minor major 7th'] = chords['mM7'];
 chords['minor major seventh'] = chords['mM7'];

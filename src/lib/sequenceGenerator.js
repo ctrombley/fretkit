@@ -120,6 +120,21 @@ function generate(baseNotes, strings, position) {
   const performance = performance || Date;
   const t0 = performance.now();
   traverse(startingStringNote);
+
+  // If removing the first or last note of a sequence optimizes
+  // its total fret delta, then remove that note.
+  found.forEach((seq) => {
+    if (seq.slice(0, seq.length-1).fretDelta < seq.fretDelta) {
+      seq.pop();
+    }
+    if (seq.slice(1).fretDelta < seq.fretDelta) {
+      seq.shift();
+    }
+  });
+
+  // Sort by fret width to show the most optimized path first.
+  found.sort((a,b) => a.fretDelta - b.fretDelta);
+
   const t1 = performance.now();
 
   console.log(`found ${found.length} sequences in ${t1-t0} ms`)
