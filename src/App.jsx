@@ -37,6 +37,7 @@ class App extends Component {
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
+    this.clear = this.clear.bind(this);
     this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
     this.getCurrentSequence = this.getCurrentSequence.bind(this);
     this.next = this.next.bind(this);
@@ -161,7 +162,7 @@ class App extends Component {
   }
 
   clear() {
-    this.setState({markedNotes})
+    this.setState({markedNotes: null})
   }
 
   next(e) {

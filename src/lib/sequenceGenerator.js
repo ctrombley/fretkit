@@ -6,7 +6,7 @@ function generate(baseNotes, strings, position) {
 
   const sequence = new Sequence();
   const found = [];
-  const baseNoteSemitones = baseNotes.map(n => n.semitones);
+  const baseNoteSemitones = baseNotes.map(n => n.baseSemitones);
 
   // Calculate the semitone differences between each string.
   const stringDistances = [];
@@ -33,15 +33,20 @@ function generate(baseNotes, strings, position) {
   var startingStringNote = new StringNote(0, startingNote, position-1);
 
   function traverse(stringNote) {
-    //console.log()
+    // console.log(`adding string note: ${inspect(stringNote)}`)
 
     // Add the new note to the sequence.
     sequence.push(stringNote);
 
     //console.log(inspect(sequence, {depth: 4}))
 
+    // console.log(`baseNoteSemitones: ${inspect(baseNoteSemitones)}`);
+    // console.log(`stringNote.note.baseSemitones: ${inspect(stringNote.note.baseSemitones)}`);
+
     // Find the new note's index in the chord.
     const index = baseNoteSemitones.indexOf(stringNote.note.baseSemitones);
+
+    // console.log(`index: ${inspect(index)}`);
 
     // Find the semitone interval from the new note to the next note in the chord
     let nextInterval = baseNoteSemitones[(index + 1) % baseNoteSemitones.length] - baseNoteSemitones[(index)];
@@ -49,10 +54,12 @@ function generate(baseNotes, strings, position) {
       nextInterval = nextInterval + 12;
     }
 
+    // console.log(`nextInterval: ${inspect(nextInterval)}`);
+
     // Apply the interval to our new note to find the next note to inspect.
     const targetNote = stringNote.note.add(nextInterval);
 
-    //console.log(`targetNote: ${inspect(targetNote)}`)
+    // console.log(`targetNote: ${inspect(targetNote)}`)
 
     // Find the frets that contain the target note across all the strings.
     // The resulting array will contain a stringCount-length array with the
@@ -65,14 +72,14 @@ function generate(baseNotes, strings, position) {
       }
     });
 
-    //console.log(`targetNoteLocations: ${inspect(targetNoteLocations)}`)
+    // console.log(`targetNoteLocations: ${inspect(targetNoteLocations)}`)
 
     let foundNext = false;
 
     // Test each note location as a potential candidate for the sequence.
     for (let i=0; i<targetNoteLocations.length; i++) {
       // Skip the string if it doesn't contain the target note.
-      if (!targetNoteLocations[i]) { continue; }
+      if (!targetNoteLocations[i] === undefined) { continue; }
 
       // Find the new min and max fret if we were to choose this note
       const newMin = Math.min(sequence.minFret, targetNoteLocations[i]);
@@ -81,18 +88,22 @@ function generate(baseNotes, strings, position) {
       // console.log();
       // console.log(`checking string: ${i}, fret: ${targetNoteLocations[i]}`);
       // console.log(`i >= stringNote.string: ${i >= stringNote.string}`);
-      // console.log(`newMax - newMin < 6: ${newMax - newMin < 6}`);
+      // console.log(`newMax - newMin <= maxStringDistance: ${newMax - newMin <= maxStringDistance}`);
       // console.log(`targetNoteLocations[i] >= position-1: ${targetNoteLocations[i] >= position-1}`);
 
       // Traverse to the new note if 3 conditions are true:
       // 1) the new string is gte to our current string
       // 2) the distance between the new min and max frets does not exceed the max string distance
       // 3) the new note's fret is gte to the selected position
-      if (i >= stringNote.string &&
-        newMax - newMin < maxStringDistance &&
-        targetNoteLocations[i] >= position-1) {
+      if (
+        i >= stringNote.string
+        && newMax - newMin <= maxStringDistance
+        && targetNoteLocations[i] >= position-1
+      ) {
         foundNext = true;
         traverse(new StringNote(i, targetNote, targetNoteLocations[i]))
+      } else {
+        // console.log('done');
       }
     }
 
