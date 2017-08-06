@@ -4,9 +4,9 @@
   "description": "it's a fretboard",
   "scripts": {
     "build": "webpack --config webpack.production.config.js --progress --profile --colors",
+    "start": "node server.js",
     "dev": "webpack-dashboard -- webpack-dev-server -d --progress --profile --colors",
     "lint": "eslint src/**/*.js src/**/*.jsx",
-    "start": "webpack-dev-server -d --progress --profile --colors",
     "test": "mocha --compilers js:babel-core/register  spec/**/*",
     "watch": "npm run test -- --watch"
   },

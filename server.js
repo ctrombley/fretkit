@@ -9,10 +9,10 @@ new WebpackDevServer(webpack(config), {
       poll: 1000
     }
   })
-  .listen(3000, '0.0.0.0', function (err, result) {
+  .listen(process.env.PORT, function (err, result) {
     if (err) {
       console.log(err);
     }
 
-    console.log('Running at http://0.0.0.0:3000');
+    console.log('Listening on port 3000.');
   });
