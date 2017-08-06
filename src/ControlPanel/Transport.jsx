@@ -1,7 +1,5 @@
-import React from 'react';
+// import React from 'react';
 
-const Transport = (props) => {
-	return null;
-}
+const Transport = () => null;
 
 export default Transport;

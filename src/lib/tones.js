@@ -1,4 +1,16 @@
-import Note from './Note.js';
+import Note from './Note';
+
+export function parseList(input) {
+  if (typeof input === 'string') {
+    input = input.match(/[^ ]+/g);
+  }
+
+  if (!input) {
+    return [];
+  }
+
+  return input.map(parse).filter(n => !!n);
+}
 
 export default function parse(input) {
   if (!input) {
@@ -19,16 +31,4 @@ export default function parse(input) {
   } catch (ex) {
     return null;
   }
-}
-
-export function parseList(input) {
-  if (typeof(input) === 'string') {
-    input = input.match(/[^ ]+/g);
-  }
-
-  if (!input) {
-    return [];
-  }
-
-  return input.map(parse).filter(n => !!n);
 }

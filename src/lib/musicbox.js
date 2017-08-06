@@ -16,10 +16,10 @@ function play(frequency) {
   return {
     stop: () => {
       gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.015);
-    }
+    },
   };
 }
 
 export default {
-  play: play
-}
+  play,
+};

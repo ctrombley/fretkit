@@ -1,17 +1,23 @@
 import React, { Component } from 'react';
-import Note from '../lib/Note.js'
-import musicbox from '../lib/musicbox.js'
-import StringMarker from './StringMarker.jsx'
+import PropTypes from 'prop-types';
 import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
+import Note from '../lib/Note';
+import musicbox from '../lib/musicbox';
+import StringMarker from './StringMarker';
+
 class String extends Component {
+  static get height() {
+    return 20;
+  }
+
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       isMarked: false,
-      isPreview: false
-    }
+      isPreview: false,
+    };
 
     this.toggleMarked = this.toggleMarked.bind(this);
     this.enablePreview = this.enablePreview.bind(this);
@@ -21,12 +27,21 @@ class String extends Component {
     this.isLit = this.isLit.bind(this);
   }
 
-  static get height() {
-    return 20;
+  componentDidMount() {
+    this.overlay.addEventListener('click', this.toggleMarked);
+    this.overlay.addEventListener('mouseover', this.enablePreview);
+    this.overlay.addEventListener('mouseout', this.disablePreview);
+  }
+
+  componentWillUnmount() {
+    this.overlay.removeEventListener('click', this.toggleMarked);
+    this.overlay.removeEventListener('mouseover', this.enablePreview);
+    this.overlay.removeEventListener('mouseout', this.disablePreview);
   }
 
   get stringNumber() {
-    return this.props.stringCount - 1 - this.props.idx;
+    const { idx, stringCount } = this.props;
+    return (stringCount - 1) - idx;
   }
 
   showMarker() {
@@ -65,39 +80,32 @@ class String extends Component {
   }
 
   isLit() {
-    if (this.props.sequenceEnabled && this.props.sequence) {
-      const sequence = this.props.sequence;
-      return !!sequence.stringNotes.filter((stringNote) => {
-        return stringNote.semitones == this.props.note.semitones &&
-          stringNote.string == this.stringNumber;
-      }).length;
-    } else {
-      const litNoteSemitones = this.props.litNotes.map(n => n.baseSemitones);
-      return litNoteSemitones.includes(this.props.note.baseSemitones);
+    const {
+      litNotes,
+      note,
+      sequence,
+      sequenceEnabled,
+    } = this.props;
+    if (sequenceEnabled && sequence) {
+      return !!sequence.stringNotes.filter(stringNote => (
+        stringNote.semitones === note.semitones &&
+        stringNote.string === this.stringNumber
+      )).length;
     }
+
+    const litNoteSemitones = litNotes.map(n => n.baseSemitones);
+    return litNoteSemitones.includes(note.baseSemitones);
   }
 
   isVisible() {
-    return this.props.filterStart-1 <= this.props.fretIdx && 
-      this.props.filterEnd-1 >= this.props.fretIdx;
+    const { filterEnd, filterStart, fretIdx } = this.props;
+    return filterStart - 1 <= fretIdx && filterEnd - 1 >= fretIdx;
   }
 
   isRoot() {
-    return this.props.current && this.props.current.root && 
-      this.props.current.root.semitones === this.props.note.baseSemitones;
-
-  }
-
-  componentDidMount() {
-    this.overlay.addEventListener('click', this.toggleMarked);
-    this.overlay.addEventListener('mouseover', this.enablePreview);
-    this.overlay.addEventListener('mouseout', this.disablePreview);
-  }
-
-  componentWillUnmount(){
-    this.overlay.removeEventListener('click', this.toggleMarked);
-    this.overlay.removeEventListener('mouseover', this.enablePreview);
-    this.overlay.removeEventListener('mouseout', this.disablePreview);
+    const { current, note } = this.props;
+    return current && current.root &&
+      current.root.semitones === note.baseSemitones;
   }
 
   registerOverlay(ref) {
@@ -105,71 +113,82 @@ class String extends Component {
   }
 
   render() {
-    const marker = this.state.isMarked ?
-      <StringMarker key='marker'
-        xOffset={this.props.xOffset}
-        yOffset={this.props.yOffset}
-        fretWidth={this.props.fretWidth} /> :
-      null;
+    const { fretWidth, xOffset, yOffset } = this.props;
+    const marker = this.state.isMarked ? (
+      <StringMarker
+        fretWidth={fretWidth}
+        key="marker"
+        xOffset={xOffset}
+        yOffset={yOffset}
+      />
+    ) : null;
 
-    const litMarker = (this.isLit() && this.isVisible()) ?
-      <StringMarker key='litMarker'
-        xOffset={this.props.xOffset}
-        yOffset={this.props.yOffset}
-        fretWidth={this.props.fretWidth}
-        className={`string__marker-lit ${this.isRoot() ? 'string__marker-root' : ''}`}/> :
-      null;
+    const litMarker = (this.isLit() && this.isVisible()) ? (
+      <StringMarker
+        className={`string__marker-lit ${this.isRoot() ? 'string__marker-root' : ''}`}
+        fretWidth={fretWidth}
+        key="litMarker"
+        xOffset={xOffset}
+        yOffset={yOffset}
+      />
+    ) : null;
 
-    const previewMarker = this.state.isPreview ?
-      <StringMarker key='previewMarker'
-        xOffset={this.props.xOffset}
-        yOffset={this.props.yOffset}
-        fretWidth={this.props.fretWidth}
-        className='string__marker-preview'/> :
-      null;
+    const previewMarker = this.state.isPreview ? (
+      <StringMarker
+        className="string__marker-preview"
+        fretWidth={fretWidth}
+        key="previewMarker"
+        xOffset={xOffset}
+        yOffset={yOffset}
+      />
+    ) : null;
 
     return (
       <g className={`string string-${this.props.idx}`}>
-        <line className='string__line'
-          x1={this.props.xOffset}
-          x2={this.props.xOffset + this.props.fretWidth}
-          y2={this.props.yOffset}
-          y1={this.props.yOffset}
-          />
+        <line
+          className="string__line"
+          x1={xOffset}
+          x2={xOffset + fretWidth}
+          y1={yOffset}
+          y2={yOffset}
+        />
         <ReactCSSTransitionGroup
-            transitionName='string__marker'
-            transitionEnterTimeout={100}
-            transitionLeaveTimeout={100}
-            component='g'>
+          component="g"
+          transitionEnterTimeout={100}
+          transitionLeaveTimeout={100}
+          transitionName="string__marker"
+        >
           { litMarker }
           { marker }
         </ReactCSSTransitionGroup>
         { previewMarker }
-        <rect height={String.height}
+        <rect
+          className="string__overlay"
+          height={String.height}
           ref={this.registerOverlay}
-          width={this.props.fretWidth}
-          x={this.props.xOffset}
-          y={this.props.yOffset - String.height / 2} 
-          className='string__overlay'/>
+          width={fretWidth}
+          x={xOffset}
+          y={yOffset - (String.height / 2)}
+        />
       </g>
-      );
+    );
   }
 }
 
 String.propTypes = {
-  fretIdx: React.PropTypes.number.isRequired,
-  fretWidth: React.PropTypes.number.isRequired,
-  xOffset: React.PropTypes.number.isRequired,
-  yOffset: React.PropTypes.number.isRequired,
-  idx: React.PropTypes.number.isRequired,
-  note: React.PropTypes.instanceOf(Note).isRequired,
-  stringCount: React.PropTypes.number.isRequired,
-  current: React.PropTypes.object,
-  litNotes: React.PropTypes.array,
-  filterStart: React.PropTypes.number,
-  filterEnd: React.PropTypes.number,
-  sequence: React.PropTypes.object,
-  sequenceEnabled: React.PropTypes.bool
-}
+  current: PropTypes.shape({}).isRequired,
+  filterEnd: PropTypes.number.isRequired,
+  filterStart: PropTypes.number.isRequired,
+  fretIdx: PropTypes.number.isRequired,
+  fretWidth: PropTypes.number.isRequired,
+  idx: PropTypes.number.isRequired,
+  litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  note: PropTypes.instanceOf(Note).isRequired,
+  sequence: PropTypes.shape({}).isRequired,
+  sequenceEnabled: PropTypes.bool.isRequired,
+  stringCount: PropTypes.number.isRequired,
+  xOffset: PropTypes.number.isRequired,
+  yOffset: PropTypes.number.isRequired,
+};
 
 export default String;

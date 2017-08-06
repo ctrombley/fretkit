@@ -1,5 +1,5 @@
-import Note from './Note.js';
-import modes from './modes.js';
+import Note from './Note';
+import modes from './modes';
 
 const modeRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*(\w+)\s*$/;
 
@@ -9,20 +9,22 @@ export default class Mode {
       this.notes = [];
     }
 
-    if (typeof(input) === 'string') {
+    if (typeof input === 'string') {
       this.parseString(input);
     }
-    if (typeof(input) === 'object') {
+    if (typeof input === 'object') {
       this.parseOpts(input);
     }
   }
 
   parseString(modeStr) {
-    let match, root, mode;
+    let match;
+    let root;
+    let mode;
 
     try {
       [match, root, mode] = modeStr.match(modeRegex);
-    } catch(e) {
+    } catch (e) {
       throw new Error(`Invalid mode string: ${modeStr}`);
     }
 
@@ -33,7 +35,7 @@ export default class Mode {
     mode = modes[mode.toLowerCase()];
 
     this.name = modeStr;
-    this.notes = mode.map((intervalStr) => new Note(root).add(intervalStr));
+    this.notes = mode.map(intervalStr => new Note(root).add(intervalStr));
     this.root = new Note(root);
   }
 

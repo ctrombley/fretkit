@@ -1,7 +1,5 @@
-import React from 'react';
+// import React from 'react';
 
-const Sequence = (props) => {
-	return null;
-}
+const Sequence = () => null;
 
 export default Sequence;

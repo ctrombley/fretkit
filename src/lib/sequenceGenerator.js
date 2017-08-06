@@ -1,9 +1,8 @@
-import StringNote from './StringNote.js';
-import Sequence from './Sequence.js';
-import {inspect} from 'util';
+import StringNote from './StringNote';
+import Sequence from './Sequence';
+import { inspect } from 'util';
 
 function generate(baseNotes, strings, position) {
-
   const sequence = new Sequence();
   const found = [];
   const baseNoteSemitones = baseNotes.map(n => n.baseSemitones);
@@ -11,26 +10,25 @@ function generate(baseNotes, strings, position) {
   // Calculate the semitone differences between each string.
   const stringDistances = [];
   let maxStringDistance = 0;
-  for (let i=1; i<strings.length; i++) {
-    const stringDistance = strings[i][0].semitones - strings[i-1][0].semitones;
+  for (let i = 1; i < strings.length; i += 1) {
+    const stringDistance = strings[i][0].semitones - strings[i - 1][0].semitones;
     stringDistances.push(stringDistance);
     maxStringDistance = Math.max(maxStringDistance, stringDistance);
   }
 
   let startingNote;
 
-  while(!startingNote) {
-    const noteToCheck = strings[0][position-1];
+  while (!startingNote) {
+    const noteToCheck = strings[0][position - 1];
     if (baseNoteSemitones.includes(noteToCheck.baseSemitones)) {
       startingNote = noteToCheck;
-      //console.log(`found starting note: ${startingNote.semitones}, base semitones: ${startingNote.baseSemitones}, starting index: ${baseNoteSemitones.indexOf(startingNote.baseSemitones)}`);
-    }
-    else {
-      position = position+1;
+      // console.log(`found starting note: ${startingNote.semitones}, base semitones: ${startingNote.baseSemitones}, starting index: ${baseNoteSemitones.indexOf(startingNote.baseSemitones)}`);
+    } else {
+      position += 1;
     }
   }
 
-  var startingStringNote = new StringNote(0, startingNote, position-1);
+  const startingStringNote = new StringNote(0, startingNote, position - 1);
 
   function traverse(stringNote) {
     // console.log(`adding string note: ${inspect(stringNote)}`)
@@ -38,7 +36,7 @@ function generate(baseNotes, strings, position) {
     // Add the new note to the sequence.
     sequence.push(stringNote);
 
-    //console.log(inspect(sequence, {depth: 4}))
+    // console.log(inspect(sequence, {depth: 4}))
 
     // console.log(`baseNoteSemitones: ${inspect(baseNoteSemitones)}`);
     // console.log(`stringNote.note.baseSemitones: ${inspect(stringNote.note.baseSemitones)}`);
@@ -49,10 +47,9 @@ function generate(baseNotes, strings, position) {
     // console.log(`index: ${inspect(index)}`);
 
     // Find the semitone interval from the new note to the next note in the chord
-    let nextInterval = baseNoteSemitones[(index + 1) % baseNoteSemitones.length] - baseNoteSemitones[(index)];
-    if (nextInterval < 0) {
-      nextInterval = nextInterval + 12;
-    }
+    const idx = (index + 1) % baseNoteSemitones.length; // TODO: name idx better
+    let nextInterval = baseNoteSemitones[idx] - baseNoteSemitones[index];
+    if (nextInterval < 0) nextInterval += 12;
 
     // console.log(`nextInterval: ${inspect(nextInterval)}`);
 
@@ -65,7 +62,7 @@ function generate(baseNotes, strings, position) {
     // The resulting array will contain a stringCount-length array with the
     // fret numbers, or undefined if the string does not contain a note instance.
     const targetNoteLocations = strings.map((string) => {
-      for (let i=0; i<string.length; i++) {
+      for (let i = 0; i < string.length; i += 1) {
         if (string[i].semitones === targetNote.semitones) {
           return i;
         }
@@ -77,7 +74,7 @@ function generate(baseNotes, strings, position) {
     let foundNext = false;
 
     // Test each note location as a potential candidate for the sequence.
-    for (let i=0; i<targetNoteLocations.length; i++) {
+    for (let i = 0; i < targetNoteLocations.length; i += 1) {
       // Skip the string if it doesn't contain the target note.
       if (!targetNoteLocations[i] === undefined) { continue; }
 
@@ -87,9 +84,9 @@ function generate(baseNotes, strings, position) {
 
       // console.log();
       // console.log(`checking string: ${i}, fret: ${targetNoteLocations[i]}`);
-      // console.log(`i >= stringNote.string: ${i >= stringNote.string}`);
-      // console.log(`newMax - newMin <= maxStringDistance: ${newMax - newMin <= maxStringDistance}`);
-      // console.log(`targetNoteLocations[i] >= position-1: ${targetNoteLocations[i] >= position-1}`);
+      // console.log(`${i >= stringNote.string}`);
+      // console.log(`${newMax - newMin <= maxStringDistance}`);
+      // console.log(`${targetNoteLocations[i] >= position-1}`);
 
       // Traverse to the new note if 3 conditions are true:
       // 1) the new string is gte to our current string
@@ -98,10 +95,10 @@ function generate(baseNotes, strings, position) {
       if (
         i >= stringNote.string
         && newMax - newMin <= maxStringDistance
-        && targetNoteLocations[i] >= position-1
+        && targetNoteLocations[i] >= position - 1
       ) {
         foundNext = true;
-        traverse(new StringNote(i, targetNote, targetNoteLocations[i]))
+        traverse(new StringNote(i, targetNote, targetNoteLocations[i]));
       } else {
         // console.log('done');
       }
@@ -109,7 +106,7 @@ function generate(baseNotes, strings, position) {
 
     // If we are at the last string and there are no more notes to find,
     // we have found a complete sequence.  Add it to the collection.
-    if (sequence.maxString === strings.length-1 && !foundNext) {
+    if (sequence.maxString === strings.length - 1 && !foundNext) {
       found.unshift(sequence.clone());
     }
 
@@ -124,21 +121,22 @@ function generate(baseNotes, strings, position) {
   // If removing the first or last note of a sequence optimizes
   // its total fret delta, then remove that note.
   found.forEach((seq) => {
-    if (seq.slice(0, seq.length-1).fretDelta < seq.fretDelta) {
+    if (seq.slice(0, seq.length - 1).fretDelta < seq.fretDelta) {
       seq.pop();
     }
+
     if (seq.slice(1).fretDelta < seq.fretDelta) {
       seq.shift();
     }
   });
 
   // Sort by fret width to show the most optimized path first.
-  found.sort((a,b) => a.fretDelta - b.fretDelta);
+  found.sort((a, b) => a.fretDelta - b.fretDelta);
 
   const t1 = performance.now();
 
-  console.log(`found ${found.length} sequences in ${t1-t0} ms`)
-  //console.log(inspect(found, {depth: 4}));
+  console.log(`found ${found.length} sequences in ${t1 - t0} ms`);
+  // console.log(inspect(found, {depth: 4}));
 
   return found;
 }

@@ -1,19 +1,18 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-class Label extends Component {
-  render() {
-    return (
-      <text className='label' x={this.props.xOffset} y={this.props.yOffset}>
-        {this.props.children}
-      </text>
-      );
-  }
-}
+const Label = props => (
+  <text
+    className="label"
+    x={props.xOffset}
+    y={props.yOffset}
+  > {props.children}
+  </text>
+);
 
 Label.propTypes = {
+  children: React.PropTypes.node.isRequired,
   xOffset: React.PropTypes.number.isRequired,
   yOffset: React.PropTypes.number.isRequired,
-  children: React.PropTypes.node.isRequired
-}
+};
 
 export default Label;

@@ -1,6 +1,7 @@
 module.exports = {
-    "extends": "airbnb",
-    "plugins": [
-        "react"
-    ]
+  "extends": "airbnb",
+  "env": {
+    "browser": true,
+  },
+  "plugins": ["react"],
 };

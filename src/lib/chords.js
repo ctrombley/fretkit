@@ -1,4 +1,7 @@
 // TODO - refactor out into config file
+
+/* eslint-disable dot-notation, quote-props */
+
 const chords = {
   'M': ['1', '3', '5'],
   'm': ['1', '♭3', '5'],
@@ -66,5 +69,7 @@ chords['+Δ7'] = chords['+M7'];
 chords['M6'] = chords['6'];
 chords['major 6th'] = chords['6'];
 chords['minor 6th'] = chords['m6'];
+
+/* eslint-enable dot-notation, quote-props */
 
 export default chords;

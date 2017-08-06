@@ -1,6 +1,8 @@
 import React from 'react';
-import Fret from './Fret.jsx'
-import String from './String.jsx'
+import PropTypes from 'prop-types';
+
+import Fret from './Fret';
+import String from './String';
 
 class Fretboard extends React.Component {
   constructor(props) {
@@ -9,42 +11,53 @@ class Fretboard extends React.Component {
     this.margin = 50;
   }
 
-  get stringCount() {
-    return this.props.tuning.length;
-  }
-
   getWidth() {
     return (this.calcWidth(this.props.fretCount)) + (this.margin * 2);
-  }
-
-  calcWidth(idx) {
-    if (idx === 0) {
-      return Fret.baseWidth;
-    } else {
-      return this.calcWidth(idx-1) + Fret.calcWidth(idx);
-    }
   }
 
   getHeight() {
     return (String.height * this.stringCount) + (this.margin * 2);
   }
 
+  calcWidth(idx) {
+    if (idx === 0) {
+      return Fret.baseWidth;
+    }
+
+    return this.calcWidth(idx - 1) + Fret.calcWidth(idx);
+  }
+
+  get stringCount() {
+    return this.props.tuning.length;
+  }
+
   render() {
+    const {
+      current,
+      filterEnd,
+      filterStart,
+      fretCount,
+      litNotes,
+      sequence,
+      sequenceEnabled,
+      startingFret,
+      tuning,
+    } = this.props;
     const frets = [];
-    for (var i = 0; i < this.props.fretCount; i++) {
+    for (let i = 0; i < fretCount; i += 1) {
       const fret = (
         <Fret
           key={i}
           idx={i}
-          fretNumber={this.props.startingFret + i}
+          fretNumber={startingFret + i}
           fretboardMargin={this.margin}
-          tuning={this.props.tuning}
-          litNotes={this.props.litNotes}
-          current={this.props.current}
-          filterStart={this.props.filterStart}
-          filterEnd={this.props.filterEnd}
-          sequence={this.props.sequence}
-          sequenceEnabled={this.props.sequenceEnabled}
+          tuning={tuning}
+          litNotes={litNotes}
+          current={current}
+          filterStart={filterStart}
+          filterEnd={filterEnd}
+          sequence={sequence}
+          sequenceEnabled={sequenceEnabled}
           startingFret={this.props.startingFret}
         />
       );
@@ -54,7 +67,7 @@ class Fretboard extends React.Component {
 
     return (
       <svg
-        className='fretboard'
+        className="fretboard"
         width={this.getWidth()}
         height={this.getHeight()}
       > {frets}
@@ -64,15 +77,15 @@ class Fretboard extends React.Component {
 }
 
 Fretboard.propTypes = {
-  startingFret: React.PropTypes.number.isRequired,
-  fretCount: React.PropTypes.number.isRequired,
-  tuning: React.PropTypes.array.isRequired,
-  litNotes: React.PropTypes.array,
-  current: React.PropTypes.object,
-  filterStart: React.PropTypes.number,
-  filterEnd: React.PropTypes.number,
-  sequence: React.PropTypes.object,
-  sequenceEnabled: React.PropTypes.bool
+  current: PropTypes.shape({}).isRequired,
+  filterEnd: PropTypes.number.isRequired,
+  filterStart: PropTypes.number.isRequired,
+  fretCount: PropTypes.number.isRequired,
+  litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  sequence: PropTypes.shape({}).isRequired,
+  sequenceEnabled: PropTypes.bool.isRequired,
+  startingFret: PropTypes.number.isRequired,
+  tuning: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default Fretboard;

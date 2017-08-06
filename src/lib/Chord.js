@@ -1,8 +1,7 @@
+import chords from './chords';
+import Note from './Note';
 
-import chords from './chords.js';
-import Note from './Note.js';
-
-const chordRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w°øΔ⑦♭♯\+\-\s]+?)\s*$/;
+const chordRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w°øΔ⑦♭♯+\-\s]+?)\s*$/;
 
 export default class Chord {
   constructor(input) {
@@ -10,24 +9,26 @@ export default class Chord {
       this.notes = [];
     }
 
-    if (typeof(input) === 'string') {
+    if (typeof input === 'string') {
       this.parseString(input);
     }
-    if (typeof(input) === 'object') {
-      this.parseOpts(input)
+    if (typeof input === 'object') {
+      this.parseOpts(input);
     }
   }
 
-  createNoteFromInterval(root, interval) {
-    return new Note(new Note(root).add(interval).baseSemitones)
+  static createNoteFromInterval(root, interval) {
+    return new Note(new Note(root).add(interval).baseSemitones);
   }
 
   parseString(chordStr) {
-    let match, root, chord;
+    let match;
+    let root;
+    let chord;
 
     try {
       [match, root, chord] = chordStr.match(chordRegex);
-    } catch(e) {
+    } catch (e) {
       throw new Error(`Invalid chord string: ${chordStr}`);
     }
 

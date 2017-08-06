@@ -1,4 +1,6 @@
-import modes from './modes.js';
+import modes from './modes';
+
+/* eslint-disable dot-notation, quote-props */
 
 const scales = {
   'bebop dominant': ['1', '2', '3', '4', '5', '6', '♭7', '7'],
@@ -16,8 +18,8 @@ const scales = {
   'melodic minor': ['1', '2', '♭3', '4', '5', '6', '7'],
   'minor pentatonic': ['1', '♭3', '4', '5', '♭7'],
   'tritone': ['1', '♭2', '3', '♭5', '5', '7'],
-  'whole tone': ['1', '2', '3', '♯4', '♯5', '♯6']
-}
+  'whole tone': ['1', '2', '3', '♯4', '♯5', '♯6'],
+};
 
 scales['bebop'] = scales['bebop dominant'];
 scales['major bebop'] = scales['bebop major'];
@@ -30,5 +32,6 @@ scales['half-diminished'] = scales['half diminished'];
 scales['natural minor'] = modes.aeolian;
 scales['pentatonic'] = scales['major pentatonic'];
 
+/* eslint-enable dot-notation, quote-props */
 
 export default scales;

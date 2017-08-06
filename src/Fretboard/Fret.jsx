@@ -1,97 +1,112 @@
 import React, { Component } from 'react';
-import String from './String.jsx';
-import Label from './Label.jsx';
-import FretMarker from './FretMarker.jsx';
-import Note from '../lib/Note.js';
+import PropTypes from 'prop-types';
+
+import String from './String';
+import Label from './Label';
+import FretMarker from './FretMarker';
+import Note from '../lib/Note';
 
 class Fret extends Component {
-  constructor(props) {
-    super(props);
+  static calcWidth(idx) {
+    if (idx === 0) {
+      return this.baseWidth;
+    }
 
-    this.singleMarkerFrets = [3,5,7,9,15,17,19,21] // 1-based
-    this.doubleMarkerFrets = [12,24] // 1-based
+    return Math.round(Fret.calcWidth(idx - 1) * 0.944);
   }
 
   static get baseWidth() {
     return 80;
   }
 
-  static calcWidth(idx) {
-    if (idx === 0) {
-      return this.baseWidth;
-    } else {
-      return Math.round(Fret.calcWidth(idx-1) * 0.944);
-    }
-  }
+  constructor(props) {
+    super(props);
 
-  calcXOffset(idx) {
-    if (idx === this.props.startingFret-1) {
-      return 0;
-    } else {
-      return this.calcXOffset(idx-1) + Fret.calcWidth(idx-1);
-    }
-  }
-
-  get width() {
-    return Fret.calcWidth(this.props.fretNumber - 1);
-  }
-
-  get stringCount() {
-    return this.props.tuning.length;
+    this.singleMarkerFrets = [3, 5, 7, 9, 15, 17, 19, 21]; // 1-based
+    this.doubleMarkerFrets = [12, 24]; // 1-based
   }
 
   getHeight() {
     return String.height * (this.stringCount - 1);
   }
 
+  get stringCount() {
+    return this.props.tuning.length;
+  }
+
+  get width() {
+    return Fret.calcWidth(this.props.fretNumber - 1);
+  }
+
+  calcXOffset(idx) {
+    if (idx === this.props.startingFret - 1) {
+      return 0;
+    }
+
+    return this.calcXOffset(idx - 1) + Fret.calcWidth(idx - 1);
+  }
 
   isFirst() {
     return this.props.idx === 0;
   }
 
   fretMarkerType() {
-    if (this.singleMarkerFrets.includes(this.props.fretNumber)) {
+    const { fretNumber } = this.props;
+
+    if (this.singleMarkerFrets.includes(fretNumber)) {
       return 'single';
-    } else if (this.doubleMarkerFrets.includes(this.props.fretNumber)) {
+    } else if (this.doubleMarkerFrets.includes(fretNumber)) {
       return 'double';
-    } else {
-      return null;
     }
+
+    return null;
   }
 
   render() {
-    const xOffset = this.props.fretboardMargin + this.calcXOffset(this.props.fretNumber-1);
+    const {
+      current,
+      filterEnd,
+      filterStart,
+      fretboardMargin,
+      fretNumber,
+      idx,
+      litNotes,
+      sequence,
+      sequenceEnabled,
+      tuning,
+    } = this.props;
+    const xOffset = fretboardMargin + this.calcXOffset(fretNumber - 1);
 
-    const reversedTuning = this.props.tuning.slice().reverse();
+    const reversedTuning = tuning.slice().reverse();
     const strings = reversedTuning.map((t, i) => {
       const openNote = new Note(t);
-      const yOffset = this.props.fretboardMargin + String.height * i;
+      const yOffset = fretboardMargin + (String.height * i);
       return (
         <String
-          key={i}
-          idx={i}
-          note={openNote.add(this.props.fretNumber)}
-          yOffset={yOffset}
-          xOffset={xOffset}
+          current={current}
+          filterEnd={filterEnd}
+          filterStart={filterStart}
+          fretIdx={idx}
           fretWidth={this.width}
-          fretIdx={this.props.idx}
+          idx={i}
+          key={i}
+          litNotes={litNotes}
+          note={openNote.add(fretNumber)}
+          sequence={sequence}
+          sequenceEnabled={sequenceEnabled}
           stringCount={this.stringCount}
-          litNotes={this.props.litNotes}
-          current={this.props.current}
-          filterStart={this.props.filterStart}
-          filterEnd={this.props.filterEnd}
-          sequence={this.props.sequence}
-          sequenceEnabled={this.props.sequenceEnabled}
+          xOffset={xOffset}
+          yOffset={yOffset}
         />
       );
-    })
+    });
 
     const fretNumberLabelPadding = 20;
     const fretNumberLabel = (
       <Label
         xOffset={xOffset + fretNumberLabelPadding}
-        yOffset={this.props.fretboardMargin - fretNumberLabelPadding}
-      > {this.props.fretNumber}
+        yOffset={fretboardMargin - fretNumberLabelPadding}
+      > {fretNumber}
       </Label>
     );
 
@@ -99,7 +114,7 @@ class Fret extends Component {
     const fretMarker = fretMarkerType && (
       <FretMarker
         xOffset={xOffset}
-        yOffset={this.props.fretboardMargin}
+        yOffset={fretboardMargin}
         fretWidth={this.width}
         fretHeight={this.getHeight()}
         type={fretMarkerType}
@@ -107,32 +122,33 @@ class Fret extends Component {
     );
 
     return (
-      <g className='fret'>
+      <g className="fret">
         {this.isFirst() ? fretNumberLabel : null}
         {fretMarker}
         <line
-          className='fret__wire'
-          x1={xOffset} x2={xOffset}
-          y1={this.props.fretboardMargin}
-          y2={this.props.fretboardMargin + this.getHeight()}/>
-        {strings}
+          className="fret__wire"
+          x1={xOffset}
+          x2={xOffset}
+          y1={fretboardMargin}
+          y2={fretboardMargin + this.getHeight()}
+        /> {strings}
       </g>
     );
   }
 }
 
 Fret.propTypes = {
-  current: React.PropTypes.object,
-  filterEnd: React.PropTypes.number,
-  filterStart: React.PropTypes.number,
-  fretNumber: React.PropTypes.number.isRequired,
-  fretboardMargin: React.PropTypes.number.isRequired,
-  idx: React.PropTypes.number.isRequired,
-  litNotes: React.PropTypes.array,
-  sequence: React.PropTypes.object,
-  sequenceEnabled: React.PropTypes.bool,
-  startingFret: React.PropTypes.number.isRequired,
-  tuning: React.PropTypes.array.isRequired
-}
+  current: PropTypes.shape({}).isRequired,
+  filterEnd: PropTypes.number.isRequired,
+  filterStart: PropTypes.number.isRequired,
+  fretNumber: PropTypes.number.isRequired,
+  fretboardMargin: PropTypes.number.isRequired,
+  idx: PropTypes.number.isRequired,
+  litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  sequence: PropTypes.shape({}).isRequired,
+  sequenceEnabled: PropTypes.bool.isRequired,
+  startingFret: PropTypes.number.isRequired,
+  tuning: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+};
 
 export default Fret;

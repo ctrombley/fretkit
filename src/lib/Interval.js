@@ -1,6 +1,9 @@
+
 const intervalRegex = /^\s*([pPmMdDb♭𝄫aA#♯']{0,2})([\d]{1})\s*$/;
 
 const perfectTones = ['4', '5', '8'];
+
+/* eslint-disable quote-props */
 
 const tones = {
   '1': 0,
@@ -10,8 +13,8 @@ const tones = {
   '5': 7,
   '6': 9,
   '7': 11,
-  '8': 12
-}
+  '8': 12,
+};
 
 const modifiers = {
   'p': 0,
@@ -27,8 +30,10 @@ const modifiers = {
   '𝄫': -2,
   'bb': -2,
   'd': -2,
-  'D': -2
+  'D': -2,
 };
+
+/* eslint-enable quote-props */
 
 export default class Interval {
   constructor(input) {
@@ -40,26 +45,29 @@ export default class Interval {
       this.semitones = input.semitones;
     }
 
-    if (typeof(input) === 'string') {
+    if (typeof input === 'string') {
       this.parseString(input);
     }
-    if (typeof(input) === 'number') {
+    if (typeof input === 'number') {
       this.parseNumber(input);
     }
-    if (typeof(input) === 'object') {
+    if (typeof input === 'object') {
       this.parseOpts(input);
     }
   }
 
   parseString(intervalStr) {
-    let match, modifier, tone;
+    let match;
+    let modifier;
+    let tone;
+
     try {
       [match, modifier, tone] = intervalStr.match(intervalRegex);
-    } catch(e) {
+    } catch (e) {
       throw new Error(`Invalid interval string: ${intervalStr}`);
     }
 
-    if (!match || !tone || (modifier && !modifiers.hasOwnProperty(modifier))) {
+    if (!match || !tone || (modifier && !modifiers.modifier)) {
       throw new Error(`Invalid interval string: ${intervalStr}`);
     }
 
@@ -68,11 +76,10 @@ export default class Interval {
     if (modifier) {
       if (modifier.toLowerCase() === 'd' &&
         perfectTones.includes(tone)) {
-        semitones = semitones - 1;
+        semitones -= 1;
       } else {
-        semitones = semitones + modifiers[modifier];
+        semitones += modifiers[modifier];
       }
-
     }
 
     this.semitones = semitones;

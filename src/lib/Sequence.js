@@ -3,10 +3,6 @@ export default class Sequence {
     this.stringNotes = stringNotes || [];
   }
 
-  get difficulty() {
-    
-  }
-
   get length() {
     return this.stringNotes.length;
   }

@@ -1,5 +1,5 @@
-import Note from './Note.js';
-import scales from './scales.js';
+import Note from './Note';
+import scales from './scales';
 
 const scaleRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w\s]+?)\s*$/;
 
@@ -9,20 +9,22 @@ export default class Scale {
       this.notes = [];
     }
 
-    if (typeof(input) === 'string') {
+    if (typeof input === 'string') {
       this.parseString(input);
     }
-    if (typeof(input) === 'object') {
+    if (typeof input === 'object') {
       this.parseOpts(input);
     }
   }
 
   parseString(scaleStr) {
-    let match, root, scale;
+    let match;
+    let root;
+    let scale;
 
     try {
       [match, root, scale] = scaleStr.match(scaleRegex);
-    } catch(e) {
+    } catch (e) {
       throw new Error(`Invalid scale string: ${scaleStr}`);
     }
 
@@ -33,7 +35,7 @@ export default class Scale {
     scale = scales[scale.toLowerCase()];
 
     this.name = scaleStr;
-    this.notes = scale.map((intervalStr) => new Note(new Note(root).add(intervalStr).baseSemitones));
+    this.notes = scale.map(intervalStr => new Note(new Note(root).add(intervalStr).baseSemitones));
     this.root = new Note(root);
   }
 

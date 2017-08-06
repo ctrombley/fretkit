@@ -1,16 +1,19 @@
-import Interval from './Interval.js';
+
+import Interval from './Interval';
 
 const noteRegex = /^\s*([A-Ga-g]{1})([♮#♯𝄪b♭𝄫]{0,2})([\d]{0,1})\s*$/;
 
-const notes = {
-  'c': 0,
-  'd': 2,
-  'e': 4,
-  'f': 5,
-  'g': 7,
-  'a': 9,
-  'b': 11
-};
+/* eslint quote-props: "off" */
+
+// const notes = {
+//   'c': 0,
+//   'd': 2,
+//   'e': 4,
+//   'f': 5,
+//   'g': 7,
+//   'a': 9,
+//   'b': 11,
+// };
 
 const modifiers = {
   '♮': 0,
@@ -23,23 +26,10 @@ const modifiers = {
   '♯♯': 2,
   'bb': -2,
   '♭♭': -2,
-  '𝄫': -2
+  '𝄫': -2,
 };
 
-function parseBaseNote(noteLetter, modifier) {
-  let semitones = notes[noteLetter.toLowerCase()];
-
-  if (modifier) {
-    semitones = semitones + modifiers[modifier]; 
-    semitones = semitones % 12;
-
-    if (semitones < 0) {
-      semitones = semitones + 12;
-    }
-  }
-
-  return semitones;
-}
+/* eslint quote-props: "off" */
 
 export default class Note {
   constructor(input) {
@@ -51,22 +41,26 @@ export default class Note {
       this.semitones = input.semitones;
     }
 
-    if (typeof(input) === 'string') {
+    if (typeof input === 'string') {
       this.parseString(input);
     }
-    if (typeof(input) === 'number') {
+    if (typeof input === 'number') {
       this.parseNumber(input);
     }
-    if (typeof(input) === 'object') {
-      this.parseOpts(input)
+    if (typeof input === 'object') {
+      this.parseOpts(input);
     }
   }
 
   parseString(noteStr) {
-    let match, noteLetter, modifier, octave;
+    let match;
+    let noteLetter;
+    let modifier;
+    let octave;
+
     try {
       [match, noteLetter, modifier, octave] = noteStr.match(noteRegex);
-    } catch(e) {
+    } catch (e) {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
@@ -74,13 +68,13 @@ export default class Note {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    let baseSemitones = parseBaseNote(noteLetter, modifier);
+    // const baseSemitones = parseBaseNote(noteLetter, modifier);
 
     if (octave) {
       this.octave = parseInt(octave, 10);
     }
 
-    this.semitones = baseSemitones + (this.octave || 0) * 12;
+    this.semitones += (this.octave || 0) * 12;
   }
 
   get baseSemitones() {
@@ -92,7 +86,7 @@ export default class Note {
   }
 
   get frequency() {
-    return 440 * Math.pow(Math.pow(2, 1/12), this.referenceSemitones);
+    return 440 * (this.referenceSemitones ** (2 ** (1 / 12)));
   }
 
   get baseNote() {
@@ -109,11 +103,11 @@ export default class Note {
 
   add(input) {
     let semitones;
-    if (input instanceof Interval || input instanceof Note){
+    if (input instanceof Interval || input instanceof Note) {
       semitones = input.semitones;
-    } else if (typeof(input) === 'string') {
+    } else if (typeof input === 'string') {
       semitones = new Interval(input).semitones;
-    } else if (typeof(input) === 'number') {
+    } else if (typeof input === 'number') {
       semitones = input;
     }
 
@@ -122,11 +116,11 @@ export default class Note {
 
   subtract(input) {
     let semitones;
-    if (input instanceof Interval || input instanceof Note){
+    if (input instanceof Interval || input instanceof Note) {
       semitones = input.semitones;
-    } else if (typeof(input) === 'string') {
+    } else if (typeof input === 'string') {
       semitones = new Interval(input).semitones;
-    } else if (typeof(input) === 'number') {
+    } else if (typeof input === 'number') {
       semitones = input;
     }
 
