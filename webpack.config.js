@@ -4,56 +4,57 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const DashboardPlugin = require('webpack-dashboard/plugin');
 
-const HOST = process.env.HOST || '127.0.0.1';
-const PORT = process.env.PORT || '3000';
-
 module.exports = {
   entry: [
-    'react-hot-loader',
+    'webpack-dev-server/client?http://localhost:8080',
+    'webpack/hot/only-dev-server',
+    'babel-polyfill',
     './src/index.jsx',
-    './styles/main.scss',
+    './styles/application.scss',
   ],
-  devtool: 'eval-source-map',
   output: {
     publicPath: '/',
-    path: path.join(__dirname, 'public'),
+    path: path.join(__dirname, '/dist'),
     filename: 'bundle.js',
   },
+  resolve: {
+    extensions: ['*', '.js', '.jsx'],
+  },
   module: {
-    loaders: [
+    rules: [
       {
-        test: /\.jsx?$/,
-        loaders: ['babel'],
-        include: path.join(__dirname, 'src'),
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['env'],
+          },
+        },
       },
       {
         test: /\.scss$/,
-        loader: ExtractTextPlugin.extract('style', 'css?sourceMap&localIdentName=[local]___[hash:base64:5]!sass?outputStyle=expanded'),
-        exclude: ['node_modules'],
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          // resolve-url-loader may be chained before sass-loader if necessary
+          use: ['css-loader', 'sass-loader'],
+        }),
       },
     ],
   },
   devServer: {
-    contentBase: './public',
-    noInfo: true,
+    contentBase: './dist',
     hot: true,
-    inline: true,
-    historyApiFallback: true,
-    port: PORT,
-    host: HOST,
   },
   plugins: [
-    new webpack.NoErrorsPlugin(),
+    new webpack.NoEmitOnErrorsPlugin(),
     new webpack.HotModuleReplacementPlugin(),
-    new ExtractTextPlugin('style.css', {
-      allChunks: true,
-    }),
+    new ExtractTextPlugin('style.css'),
     new DashboardPlugin(),
     new HtmlWebpackPlugin({
-      template: './src/index.html',
+      template: './src/public/index.html',
       files: {
         css: ['style.css'],
-        js: ['bundle.js'],
       },
     }),
   ],

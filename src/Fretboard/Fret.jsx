@@ -89,7 +89,7 @@ class Fret extends Component {
           fretIdx={idx}
           fretWidth={this.width}
           idx={i}
-          key={i}
+          key={t} // TODO: this can break if two strings have the same note
           litNotes={litNotes}
           note={openNote.add(fretNumber)}
           sequence={sequence}
@@ -138,17 +138,22 @@ class Fret extends Component {
 }
 
 Fret.propTypes = {
-  current: PropTypes.shape({}).isRequired,
+  current: PropTypes.shape({}),
   filterEnd: PropTypes.number.isRequired,
   filterStart: PropTypes.number.isRequired,
   fretNumber: PropTypes.number.isRequired,
   fretboardMargin: PropTypes.number.isRequired,
   idx: PropTypes.number.isRequired,
   litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-  sequence: PropTypes.shape({}).isRequired,
+  sequence: PropTypes.shape({}),
   sequenceEnabled: PropTypes.bool.isRequired,
   startingFret: PropTypes.number.isRequired,
-  tuning: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  tuning: PropTypes.arrayOf(PropTypes.string).isRequired,
+};
+
+Fret.defaultProps = {
+  current: null,
+  sequence: null,
 };
 
 export default Fret;

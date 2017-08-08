@@ -1,5 +1,6 @@
-import Chord from '../../src/lib/Chord.js';
 import chai from 'chai';
+
+import Chord from '../../src/lib/Chord';
 
 const expect = chai.expect;
 

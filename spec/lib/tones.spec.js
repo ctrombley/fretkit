@@ -1,7 +1,9 @@
-const chai = require('chai');
+import chai from 'chai';
+
+import tunings from '../../src/lib/tunings';
+import parse from '../../src/lib/tones';
+
 const expect = chai.expect;
-import tunings from '../../src/lib/tunings.js';
-import parse, {parseList} from '../../src/lib/tones.js';
 
 describe('tones', () => {
   describe('parse', () => {
@@ -21,8 +23,8 @@ describe('tones', () => {
       const parsedNotes = parse(tunings.standard);
       const parsedValues = parsedNotes.map(x => x.semitones);
       expect(parsedValues).to.deep.equal(
-        [28, 33, 38, 43, 47, 52]
+        [28, 33, 38, 43, 47, 52],
       );
-    })
-  })
+    });
+  });
 });

@@ -1,11 +1,11 @@
-import Note from '../../src/lib/Note.js';
-import Notes from '../../src/lib/Notes.js';
 import chai from 'chai';
 
-const expect = chai.expect;
-const assert = chai.assert;
+import Note from '../../src/lib/Note';
+import Notes from '../../src/lib/Notes';
 
-describe("Notes", () => {
+const expect = chai.expect;
+
+describe('Notes', () => {
   const A0 = new Note('A0');
   const B0 = new Note('B0');
   const C0 = new Note('C0');
@@ -13,22 +13,21 @@ describe("Notes", () => {
   const B1 = new Note('B1');
   const C1 = new Note('C1');
 
-  describe("constructor", () => {
-
-    it("should return an empty array without args", () => {
+  describe('constructor', () => {
+    it('should return an empty array without args', () => {
       expect(new Notes()).to.deep.equal([]);
     });
 
-    it("should return an empty array when passed an empty array", () => {
+    it('should return an empty array when passed an empty array', () => {
       expect(new Notes([])).to.deep.equal([]);
     });
 
-    it("should return the same array it's passed", () => {
+    it('should return the same array it is passed', () => {
       expect(new Notes([A0, B0, C0])).to.deep.equal([A0, B0, C0]);
     });
   });
 
-  describe("baseNotes", () => {
+  describe('baseNotes', () => {
     const notes = new Notes([A1, B1, C1]);
     const baseNotes = new Notes([A0, B0, C0]);
 
@@ -36,8 +35,8 @@ describe("Notes", () => {
     console.log(notes instanceof Array);
 
     // TODO: figure out why this doesn't work
-    it.skip("should return base notes", () => {
+    it.skip('should return base notes', () => {
       expect(notes.baseNotes()).to.deep.equal(baseNotes);
-    })
-  })
+    });
+  });
 });

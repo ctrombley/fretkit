@@ -1,19 +1,18 @@
-
 import Interval from './Interval';
 
 const noteRegex = /^\s*([A-Ga-g]{1})([♮#♯𝄪b♭𝄫]{0,2})([\d]{0,1})\s*$/;
 
 /* eslint quote-props: "off" */
 
-// const notes = {
-//   'c': 0,
-//   'd': 2,
-//   'e': 4,
-//   'f': 5,
-//   'g': 7,
-//   'a': 9,
-//   'b': 11,
-// };
+const notes = {
+  'c': 0,
+  'd': 2,
+  'e': 4,
+  'f': 5,
+  'g': 7,
+  'a': 9,
+  'b': 11,
+};
 
 const modifiers = {
   '♮': 0,
@@ -52,6 +51,21 @@ export default class Note {
     }
   }
 
+  static parseBaseNote(noteLetter, modifier) {
+    let semitones = notes[noteLetter.toLowerCase()];
+
+    if (modifier) {
+      semitones += modifiers[modifier];
+      semitones %= 12;
+
+      if (semitones < 0) {
+        semitones += 12;
+      }
+    }
+
+    return semitones;
+  }
+
   parseString(noteStr) {
     let match;
     let noteLetter;
@@ -68,13 +82,13 @@ export default class Note {
       throw new Error(`Invalid note string: ${noteStr}`);
     }
 
-    // const baseSemitones = parseBaseNote(noteLetter, modifier);
+    const baseSemitones = Note.parseBaseNote(noteLetter, modifier);
 
     if (octave) {
       this.octave = parseInt(octave, 10);
     }
 
-    this.semitones += (this.octave || 0) * 12;
+    this.semitones = baseSemitones + ((this.octave || 0) * 12);
   }
 
   get baseSemitones() {

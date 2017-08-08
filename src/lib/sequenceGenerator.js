@@ -1,6 +1,6 @@
 import StringNote from './StringNote';
 import Sequence from './Sequence';
-import { inspect } from 'util';
+// import { inspect } from 'util';
 
 function generate(baseNotes, strings, position) {
   const sequence = new Sequence();
@@ -22,9 +22,11 @@ function generate(baseNotes, strings, position) {
     const noteToCheck = strings[0][position - 1];
     if (baseNoteSemitones.includes(noteToCheck.baseSemitones)) {
       startingNote = noteToCheck;
-      // console.log(`found starting note: ${startingNote.semitones}, base semitones: ${startingNote.baseSemitones}, starting index: ${baseNoteSemitones.indexOf(startingNote.baseSemitones)}`);
+      // console.log(`found starting note: ${startingNote.semitones},
+      // base semitones: ${startingNote.baseSemitones},
+      // starting index: ${baseNoteSemitones.indexOf(startingNote.baseSemitones)}`);
     } else {
-      position += 1;
+      position += 1; // eslint-disable-line no-param-reassign
     }
   }
 
@@ -67,6 +69,8 @@ function generate(baseNotes, strings, position) {
           return i;
         }
       }
+
+      return null;
     });
 
     // console.log(`targetNoteLocations: ${inspect(targetNoteLocations)}`)
@@ -76,31 +80,31 @@ function generate(baseNotes, strings, position) {
     // Test each note location as a potential candidate for the sequence.
     for (let i = 0; i < targetNoteLocations.length; i += 1) {
       // Skip the string if it doesn't contain the target note.
-      if (!targetNoteLocations[i] === undefined) { continue; }
+      if (!targetNoteLocations[i]) {
+        // Find the new min and max fret if we were to choose this note
+        const newMin = Math.min(sequence.minFret, targetNoteLocations[i]);
+        const newMax = Math.max(sequence.maxFret, targetNoteLocations[i]);
 
-      // Find the new min and max fret if we were to choose this note
-      const newMin = Math.min(sequence.minFret, targetNoteLocations[i]);
-      const newMax = Math.max(sequence.maxFret, targetNoteLocations[i]);
+        // console.log();
+        // console.log(`checking string: ${i}, fret: ${targetNoteLocations[i]}`);
+        // console.log(`${i >= stringNote.string}`);
+        // console.log(`${newMax - newMin <= maxStringDistance}`);
+        // console.log(`${targetNoteLocations[i] >= position-1}`);
 
-      // console.log();
-      // console.log(`checking string: ${i}, fret: ${targetNoteLocations[i]}`);
-      // console.log(`${i >= stringNote.string}`);
-      // console.log(`${newMax - newMin <= maxStringDistance}`);
-      // console.log(`${targetNoteLocations[i] >= position-1}`);
-
-      // Traverse to the new note if 3 conditions are true:
-      // 1) the new string is gte to our current string
-      // 2) the distance between the new min and max frets does not exceed the max string distance
-      // 3) the new note's fret is gte to the selected position
-      if (
-        i >= stringNote.string
-        && newMax - newMin <= maxStringDistance
-        && targetNoteLocations[i] >= position - 1
-      ) {
-        foundNext = true;
-        traverse(new StringNote(i, targetNote, targetNoteLocations[i]));
-      } else {
-        // console.log('done');
+        // Traverse to the new note if 3 conditions are true:
+        // 1) the new string is gte to our current string
+        // 2) the distance between the new min and max frets does not exceed the max string distance
+        // 3) the new note's fret is gte to the selected position
+        if (
+          i >= stringNote.string
+          && newMax - newMin <= maxStringDistance
+          && targetNoteLocations[i] >= position - 1
+        ) {
+          foundNext = true;
+          traverse(new StringNote(i, targetNote, targetNoteLocations[i]));
+        } else {
+          // console.log('done');
+        }
       }
     }
 
@@ -113,9 +117,12 @@ function generate(baseNotes, strings, position) {
     sequence.pop();
   }
 
-  // TODO: find a node implementation of performance
-  const performance = performance || Date;
-  const t0 = performance.now();
+  let t0 = 0;
+  let t1 = 0;
+  if (window.performance) {
+    t0 = window.performance.now();
+  }
+
   traverse(startingStringNote);
 
   // If removing the first or last note of a sequence optimizes
@@ -133,7 +140,9 @@ function generate(baseNotes, strings, position) {
   // Sort by fret width to show the most optimized path first.
   found.sort((a, b) => a.fretDelta - b.fretDelta);
 
-  const t1 = performance.now();
+  if (window.performance) {
+    t1 = window.performance.now();
+  }
 
   console.log(`found ${found.length} sequences in ${t1 - t0} ms`);
   // console.log(inspect(found, {depth: 4}));

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const Label = props => (
   <text
@@ -10,9 +11,9 @@ const Label = props => (
 );
 
 Label.propTypes = {
-  children: React.PropTypes.node.isRequired,
-  xOffset: React.PropTypes.number.isRequired,
-  yOffset: React.PropTypes.number.isRequired,
+  children: PropTypes.node.isRequired,
+  xOffset: PropTypes.number.isRequired,
+  yOffset: PropTypes.number.isRequired,
 };
 
 export default Label;

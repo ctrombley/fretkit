@@ -7,27 +7,35 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 module.exports = {
   entry: [
     './src/index.jsx',
-    './styles/main.scss',
+    './styles/application.scss',
   ],
   output: {
     publicPath: '/',
-    path: path.join(__dirname, 'public'),
+    path: path.join(__dirname, 'dist'),
     filename: '[chunkhash].js',
   },
   resolve: {
-    extensions: ['', '.js', '.jsx'],
+    extensions: ['.js', '.jsx'],
   },
   module: {
-    loaders: [
+    rules: [
       {
-        test: /\.jsx?$/,
-        loaders: ['babel'],
-        include: path.join(__dirname, 'src'),
+        test: /\.(js|jsx)$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['env'],
+          },
+        },
       },
       {
         test: /\.scss$/,
-        loader: ExtractTextPlugin.extract('style', 'css?sourceMap&localIdentName=[local]___[hash:base64:5]!sass?outputStyle=expanded'),
-        exclude: ['node_modules'],
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          // resolve-url-loader may be chained before sass-loader if necessary
+          use: ['css-loader', 'sass-loader'],
+        }),
       },
     ],
   },
@@ -46,11 +54,8 @@ module.exports = {
         drop_debugger: true,
       },
     }),
-    new webpack.optimize.OccurenceOrderPlugin(),
-    new webpack.optimize.DedupePlugin(),
-    new ExtractTextPlugin('style.css', {
-      allChunks: true,
-    }),
+    new webpack.optimize.OccurrenceOrderPlugin(),
+    new ExtractTextPlugin('style.css'),
     new HtmlWebpackPlugin({
       template: './src/index.html',
       files: {

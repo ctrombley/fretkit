@@ -1,5 +1,6 @@
-import Mode from '../../src/lib/Mode.js';
 import chai from 'chai';
+
+import Mode from '../../src/lib/Mode';
 
 const expect = chai.expect;
 

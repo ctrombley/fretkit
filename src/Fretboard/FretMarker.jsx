@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 class FretMarker extends Component {
   render() {
@@ -44,11 +45,11 @@ class FretMarker extends Component {
 }
 
 FretMarker.propTypes = {
-  fretHeight: React.PropTypes.number.isRequired,
-  fretWidth: React.PropTypes.number.isRequired,
-  type: React.PropTypes.string.isRequired,
-  xOffset: React.PropTypes.number.isRequired,
-  yOffset: React.PropTypes.number.isRequired,
+  fretHeight: PropTypes.number.isRequired,
+  fretWidth: PropTypes.number.isRequired,
+  type: PropTypes.string.isRequired,
+  xOffset: PropTypes.number.isRequired,
+  yOffset: PropTypes.number.isRequired,
 };
 
 export default FretMarker;

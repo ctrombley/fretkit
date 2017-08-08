@@ -1,15 +1,18 @@
+/* eslint-disable no-use-before-define */
+
 import Note from './Note';
 
 export function parseList(input) {
+  let match = null;
   if (typeof input === 'string') {
-    input = input.match(/[^ ]+/g);
+    match = input.match(/[^ ]+/g);
   }
 
   if (!input) {
     return [];
   }
 
-  return input.map(parse).filter(n => !!n);
+  return match.map(parse).filter(n => !!n);
 }
 
 export default function parse(input) {
@@ -32,3 +35,4 @@ export default function parse(input) {
     return null;
   }
 }
+/* eslint-enable no-use-before-define */

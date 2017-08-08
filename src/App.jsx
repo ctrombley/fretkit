@@ -167,12 +167,14 @@ class App extends Component {
   }
 
   nextSequence() {
+    const { sequenceIdx, sequences } = this.state;
     if (sequenceIdx < sequences.length - 1) {
       this.setState({ sequenceIdx: sequenceIdx + 1 });
     }
   }
 
   prevSequence() {
+    const { sequenceIdx } = this.state;
     if (sequenceIdx > 0) {
       this.setState({ sequenceIdx: sequenceIdx - 1 });
     }
@@ -211,11 +213,11 @@ class App extends Component {
 
     return (
       <div className="main">
-        <label className="selected-label">
+        <div className="selected-label">
           {current ? current.name : ''}
           {sequenceEnabled && this.getCurrentSequence() ?
             ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
-        </label>
+        </div>
         <Fretboard
           startingFret={startingFret}
           fretCount={fretCount}

@@ -77,15 +77,20 @@ class Fretboard extends React.Component {
 }
 
 Fretboard.propTypes = {
-  current: PropTypes.shape({}).isRequired,
+  current: PropTypes.shape({}),
   filterEnd: PropTypes.number.isRequired,
   filterStart: PropTypes.number.isRequired,
   fretCount: PropTypes.number.isRequired,
   litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-  sequence: PropTypes.shape({}).isRequired,
+  sequence: PropTypes.shape({}),
   sequenceEnabled: PropTypes.bool.isRequired,
   startingFret: PropTypes.number.isRequired,
-  tuning: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  tuning: PropTypes.arrayOf(PropTypes.string).isRequired,
+};
+
+Fretboard.defaultProps = {
+  current: null,
+  sequence: null,
 };
 
 export default Fretboard;

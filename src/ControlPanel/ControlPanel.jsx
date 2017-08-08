@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 class ControlPanel extends Component {
   constructor(props) {
@@ -73,8 +74,8 @@ class ControlPanel extends Component {
     } = this.props;
 
     const {
-      filterEnd,
-      filterStart,
+      // filterEnd,
+      // filterStart,
       fretCount,
       position,
       search,
@@ -186,16 +187,16 @@ class ControlPanel extends Component {
 }
 
 ControlPanel.propTypes = {
-  clear: React.PropTypes.func.isRequired,
-  next: React.PropTypes.func.isRequired,
-  prev: React.PropTypes.func.isRequired,
-  search: React.PropTypes.func.isRequired,
-  setFilterEnd: React.PropTypes.func.isRequired,
-  setFilterStart: React.PropTypes.func.isRequired,
-  setFretCount: React.PropTypes.func.isRequired,
-  setPosition: React.PropTypes.func.isRequired,
-  setSequenceEnabled: React.PropTypes.func.isRequired,
-  setStartingFret: React.PropTypes.func.isRequired,
+  clear: PropTypes.func.isRequired,
+  next: PropTypes.func.isRequired,
+  prev: PropTypes.func.isRequired,
+  search: PropTypes.func.isRequired,
+  setFilterEnd: PropTypes.func.isRequired,
+  setFilterStart: PropTypes.func.isRequired,
+  setFretCount: PropTypes.func.isRequired,
+  setPosition: PropTypes.func.isRequired,
+  setSequenceEnabled: PropTypes.func.isRequired,
+  setStartingFret: PropTypes.func.isRequired,
 };
 
 export default ControlPanel;

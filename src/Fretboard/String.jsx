@@ -176,7 +176,7 @@ class String extends Component {
 }
 
 String.propTypes = {
-  current: PropTypes.shape({}).isRequired,
+  current: PropTypes.shape({}),
   filterEnd: PropTypes.number.isRequired,
   filterStart: PropTypes.number.isRequired,
   fretIdx: PropTypes.number.isRequired,
@@ -184,11 +184,16 @@ String.propTypes = {
   idx: PropTypes.number.isRequired,
   litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   note: PropTypes.instanceOf(Note).isRequired,
-  sequence: PropTypes.shape({}).isRequired,
+  sequence: PropTypes.shape({}),
   sequenceEnabled: PropTypes.bool.isRequired,
   stringCount: PropTypes.number.isRequired,
   xOffset: PropTypes.number.isRequired,
   yOffset: PropTypes.number.isRequired,
+};
+
+String.defaultProps = {
+  current: null,
+  sequence: null,
 };
 
 export default String;

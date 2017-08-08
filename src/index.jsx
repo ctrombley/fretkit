@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom';
 
 import App from './App';
 
-require('../styles/application.scss');
+ReactDOM.render(
+  <App />,
+  document.getElementById('react-root'),
+);
 
-ReactDOM.render(<App />, document.getElementById('react-root'));
+if (module.hot) {
+  module.hot.accept();
+}

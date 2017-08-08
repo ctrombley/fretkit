@@ -1,5 +1,6 @@
-import Note from '../../src/lib/Note.js';
 import chai from 'chai';
+
+import Note from '../../src/lib/Note';
 
 const expect = chai.expect;
 const assert = chai.assert;
@@ -11,7 +12,6 @@ describe('Note', () => {
   const B8Freq = 7902.13;
 
   describe('constructor', () => {
-
     it('should return default without args', () => {
       const note = new Note();
       expect(note.semitones).to.equal(0);

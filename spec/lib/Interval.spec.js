@@ -1,11 +1,11 @@
-import Interval from '../../src/lib/Interval.js';
 import chai from 'chai';
 
+import Interval from '../../src/lib/Interval';
+
 const expect = chai.expect;
-const assert = chai.assert;
 
 describe('Interval', () => {
-  describe ('constructor', () => {
+  describe('constructor', () => {
     it('should parse a perfect unison/diminished second', () => {
       expect(new Interval('1').semitones).to.equal(0);
       expect(new Interval('p1').semitones).to.equal(0);

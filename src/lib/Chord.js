@@ -40,7 +40,7 @@ export default class Chord {
     this.root = new Note(root);
 
     const chordIntervals = chords[chord];
-    this.notes = chordIntervals.map(interval => this.createNoteFromInterval(root, interval));
+    this.notes = chordIntervals.map(interval => Chord.createNoteFromInterval(root, interval));
   }
 
   semitones() {
