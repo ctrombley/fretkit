@@ -67,7 +67,7 @@ export default class Interval {
       throw new Error(`Invalid interval string: ${intervalStr}`);
     }
 
-    if (!match || !tone || (modifier && !modifiers[modifier])) {
+    if (!match || !tone || (modifier && modifiers[modifier] === undefined)) {
       throw new Error(`Invalid interval string: ${intervalStr}`);
     }
 

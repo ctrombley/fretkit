@@ -7,7 +7,7 @@
     "start": "node src/server",
     "dev": "webpack-dashboard -- webpack-dev-server -d --progress --profile --colors",
     "lint": "eslint *.jsx *.js src/**/*.js src/**/*.jsx spec/**/*.js",
-    "test": "mocha --compilers js:babel-core/register  spec/**/*",
+    "test": "mocha -r jsdom-global/register --compilers js:babel-core/register  spec/**/*",
     "watch": "npm run test -- --watch"
   },
   "repository": {
@@ -45,6 +45,8 @@
     "eslint-plugin-react": "^7.0.0",
     "extract-text-webpack-plugin": "^3.0.0",
     "html-webpack-plugin": "^2.30.1",
+    "jsdom": "^11.1.0",
+    "jsdom-global": "^3.0.2",
     "mocha": "^3.2.0",
     "node-sass": "^4.5.3",
     "react-hot-loader": "^1.3.1",

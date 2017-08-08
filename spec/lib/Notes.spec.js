@@ -31,9 +31,6 @@ describe('Notes', () => {
     const notes = new Notes([A1, B1, C1]);
     const baseNotes = new Notes([A0, B0, C0]);
 
-    console.log(notes instanceof Notes);
-    console.log(notes instanceof Array);
-
     // TODO: figure out why this doesn't work
     it.skip('should return base notes', () => {
       expect(notes.baseNotes()).to.deep.equal(baseNotes);

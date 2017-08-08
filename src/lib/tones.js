@@ -3,16 +3,15 @@
 import Note from './Note';
 
 export function parseList(input) {
-  let match = null;
   if (typeof input === 'string') {
-    match = input.match(/[^ ]+/g);
+    input = input.match(/[^ ]+/g);
   }
 
   if (!input) {
     return [];
   }
 
-  return match.map(parse).filter(n => !!n);
+  return input.map(parse).filter(n => !!n);
 }
 
 export default function parse(input) {

@@ -100,7 +100,7 @@ export default class Note {
   }
 
   get frequency() {
-    return 440 * (this.referenceSemitones ** (2 ** (1 / 12)));
+    return 440 * ((2 ** (1 / 12)) ** this.referenceSemitones);
   }
 
   get baseNote() {
