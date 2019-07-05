@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
 import tunings from './lib/tunings';
 import ControlPanel from './ControlPanel/ControlPanel';
+import Header from './Header/Header';
 import Fretboard from './Fretboard/Fretboard';
 import Transport from './ControlPanel/Transport';
 import Chord from './lib/Chord';
@@ -220,39 +222,62 @@ class App extends Component {
 
     return (
       <div className="main">
-        <div className="selected-label">
-          {current ? current.name : ''}
-          {sequenceEnabled && this.getCurrentSequence() ?
-            ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
-        </div>
-        <Fretboard
-          startingFret={startingFret}
-          fretCount={fretCount}
-          tuning={tuning}
-          litNotes={litNotes}
-          markedNotes={markedNotes}
-          current={current}
-          filterStart={filterStart}
-          filterEnd={filterEnd}
-          sequence={this.getCurrentSequence()}
-          sequenceEnabled={sequenceEnabled}
-        />
-        <ControlPanel
-          search={this.search}
-          setStartingFret={this.setStartingFret}
-          setPosition={this.setPosition}
-          setFilterStart={this.setFilterStart}
-          setFilterEnd={this.setFilterEnd}
-          setFretCount={this.setFretCount}
-          setSequenceEnabled={this.setSequenceEnabled}
-          setTuning={this.setTuning}
-          tuning={this.tuning}
-          tunings={tunings}
-          clear={this.clear}
-          next={this.next}
-          prev={this.prev}
-        />
-        <Transport />
+        <Header />
+        <Container>
+          <Row>
+            <Col>
+              <div className="selected-label">
+                {current ? current.name : ''}
+                {sequenceEnabled && this.getCurrentSequence() ?
+                  ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
+              </div>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Fretboard
+                startingFret={startingFret}
+                fretCount={fretCount}
+                tuning={tuning}
+                litNotes={litNotes}
+                markedNotes={markedNotes}
+                current={current}
+                filterStart={filterStart}
+                filterEnd={filterEnd}
+                sequence={this.getCurrentSequence()}
+                sequenceEnabled={sequenceEnabled}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <ControlPanel
+                search={this.search}
+                setStartingFret={this.setStartingFret}
+                setPosition={this.setPosition}
+                setFilterStart={this.setFilterStart}
+                setFilterEnd={this.setFilterEnd}
+                setFretCount={this.setFretCount}
+                setSequenceEnabled={this.setSequenceEnabled}
+                setTuning={this.setTuning}
+                tuning={this.tuning}
+                tunings={tunings}
+                clear={this.clear}
+                next={this.next}
+                prev={this.prev}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Transport />
+            </Col>
+          </Row>
+        </Container>
       </div>
     );
   }
