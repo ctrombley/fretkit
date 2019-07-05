@@ -1,9 +1,12 @@
 # Fretboard
 
-A tool for helping guitar players drill scales and chords.
+A tool for helping drill scales and chords for string instruments.
 
 ## Live demo
 https://fretboard.trombs.com
+
+## Deploying
+git push dokku master
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

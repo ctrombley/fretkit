@@ -8,7 +8,7 @@ import generate from '../../src/lib/sequenceGenerator';
 const expect = chai.expect;
 
 describe('sequenceGenerator', () => {
-  const openNotes = tunings.standard.map(noteStr => new Note(noteStr));
+  const openNotes = tunings.guitar.standard.map(noteStr => new Note(noteStr));
 
   const strings = openNotes.map((note) => {
     const notes = [];

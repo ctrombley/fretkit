@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css?family=Cabin');
+
+$magenta: #F73667;
+$green: #99C432;
+$blue: #00C4CC;
+$darkGrey: #1E2329;
+$lightGrey: #343B40;
+
+body, button {
+  font-family: 'Cabin', sans-serif;
+  color: $darkGrey;
+}
+
+.selected-label {
+  display: block;
+  margin: 0 auto;
+  height: 20px;
+  font-size: 24px;
+  text-align: center;
+}

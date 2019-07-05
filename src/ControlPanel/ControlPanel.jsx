@@ -13,6 +13,7 @@ class ControlPanel extends Component {
       filterStart: '1',
       filterEnd: '24',
       sequenceEnabled: false,
+      tuning: null,
     };
 
     this.search = this.search.bind(this);
@@ -22,6 +23,7 @@ class ControlPanel extends Component {
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
     this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
+    this.setTuning = this.setTuning.bind(this);
   }
 
   setStartingFret(event) {
@@ -60,6 +62,13 @@ class ControlPanel extends Component {
     this.setState({ fretCount: value });
   }
 
+  setTuning(event) {
+    const value = event.target.selectedOptions[0].value;
+    const [instrument, tuning] = value.split(".")
+    this.props.setTuning(this.props.tunings[instrument][tuning]);
+    this.setState({ tuning: value });
+  }
+
   search(event) {
     const value = event.target.value;
     this.props.search(value);
@@ -71,6 +80,7 @@ class ControlPanel extends Component {
       clear,
       prev,
       next,
+      tunings,
     } = this.props;
 
     const {
@@ -82,6 +92,14 @@ class ControlPanel extends Component {
       sequenceEnabled,
       startingFret,
     } = this.state;
+
+    const tuningOptions = (
+      Object.keys(tunings).map(instrument =>
+        Object.keys(tunings[instrument]).map(tuning =>
+           <option value={`${instrument}.${tuning}`}>{instrument} -> {tuning}</option>
+        )
+      )
+    )
 
     return (
       <div className="control-panel">
@@ -147,6 +165,20 @@ class ControlPanel extends Component {
               onChange={this.setFretCount}
             />
           </label>
+          <label
+            className="control-panel__label"
+            htmlFor="tuning"
+          >
+            Tuning:
+            <select
+              className="control-panel__select"
+              name="tuning"
+              value={this.tuning}
+              onChange={this.setTuning}
+            >
+              {tuningOptions}
+            </select>
+          </label>
           {/*
             <label className="control-panel__label">
               Start filter:
@@ -197,6 +229,7 @@ ControlPanel.propTypes = {
   setPosition: PropTypes.func.isRequired,
   setSequenceEnabled: PropTypes.func.isRequired,
   setStartingFret: PropTypes.func.isRequired,
+  setTuning: PropTypes.func.isRequired,
 };
 
 export default ControlPanel;
