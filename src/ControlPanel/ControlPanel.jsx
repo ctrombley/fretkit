@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { ButtonToolbar, Button, Form, Row } from 'react-bootstrap';
+import { ButtonToolbar, Button, Form } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 
 class ControlPanel extends Component {

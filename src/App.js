@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Button, Container, Row, Col } from 'react-bootstrap';
 import tunings from './lib/tunings';
 import ControlPanel from './ControlPanel/ControlPanel';
-import Sidebar from './Sidebar/Sidebar';
+import Sidebar from 'react-sidebar';
 import Header from './Header/Header';
 import Fretboard from './Fretboard/Fretboard';
 import Transport from './ControlPanel/Transport';
@@ -31,6 +31,7 @@ class App extends Component {
       sequenceEnabled: false,
       sequenceIdx: null,
       sequences: [],
+      sidebarOpen: false,
       startingFret: 1,
       tuning: tunings.guitar.standard,
     };
@@ -41,6 +42,7 @@ class App extends Component {
     this.setFretCount = this.setFretCount.bind(this);
     this.setFilterStart = this.setFilterStart.bind(this);
     this.setFilterEnd = this.setFilterEnd.bind(this);
+    this.setSidebarOpen = this.setSidebarOpen.bind(this);
     this.setTuning = this.setTuning.bind(this);
     this.clear = this.clear.bind(this);
     this.setSequenceEnabled = this.setSequenceEnabled.bind(this);
@@ -92,6 +94,10 @@ class App extends Component {
 
   setMarkedNotes(value) {
     this.setState({ markedNotes: value });
+  }
+
+  setSidebarOpen(open) {
+    this.setState({ sidebarOpen: open });
   }
 
   getCurrentSequence() {
@@ -217,57 +223,74 @@ class App extends Component {
       sequenceEnabled,
       sequenceIdx,
       sequences,
+      sidebarOpen,
       startingFret,
       tuning,
     } = this.state;
 
+    const sidebarStyles = {
+      overlay: {
+        transition: "none",
+        backgroundColor: "inherit",
+        zIndex: 0
+      },
+      sidebar: {
+        top: "56px",
+        padding: "10px",
+        backgroundColor: "#fff",
+      }
+    }
+
     return (
-      <div>
+      <Sidebar
+        open={this.state.sidebarOpen}
+        onSetOpen={this.onSetSidebarOpen}
+        styles={sidebarStyles}
+        sidebar={<ControlPanel
+            search={this.search}
+            setStartingFret={this.setStartingFret}
+            setPosition={this.setPosition}
+            setFilterStart={this.setFilterStart}
+            setFilterEnd={this.setFilterEnd}
+            setFretCount={this.setFretCount}
+            setSequenceEnabled={this.setSequenceEnabled}
+            setTuning={this.setTuning}
+            tuning={this.tuning}
+            tunings={tunings}
+            clear={this.clear}
+            next={this.next}
+            prev={this.prev}
+          />}
+      >
         <Header />
         <Container>
           <Row>
             <Col>
-              <Sidebar>
-                <ControlPanel
-                  search={this.search}
-                  setStartingFret={this.setStartingFret}
-                  setPosition={this.setPosition}
-                  setFilterStart={this.setFilterStart}
-                  setFilterEnd={this.setFilterEnd}
-                  setFretCount={this.setFretCount}
-                  setSequenceEnabled={this.setSequenceEnabled}
-                  setTuning={this.setTuning}
-                  tuning={this.tuning}
-                  tunings={tunings}
-                  clear={this.clear}
-                  next={this.next}
-                  prev={this.prev}
+                <div className="selected-label">
+                  {current ? current.name : ''}
+                  {sequenceEnabled && this.getCurrentSequence() ?
+                    ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
+                </div>
+                <Fretboard
+                  startingFret={startingFret}
+                  fretCount={fretCount}
+                  tuning={tuning}
+                  litNotes={litNotes}
+                  markedNotes={markedNotes}
+                  current={current}
+                  filterStart={filterStart}
+                  filterEnd={filterEnd}
+                  sequence={this.getCurrentSequence()}
+                  sequenceEnabled={sequenceEnabled}
                 />
-              </Sidebar>
-            </Col>
-            <Col>
-              <div className="selected-label">
-                {current ? current.name : ''}
-                {sequenceEnabled && this.getCurrentSequence() ?
-                  ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
-              </div>
-              <Fretboard
-                startingFret={startingFret}
-                fretCount={fretCount}
-                tuning={tuning}
-                litNotes={litNotes}
-                markedNotes={markedNotes}
-                current={current}
-                filterStart={filterStart}
-                filterEnd={filterEnd}
-                sequence={this.getCurrentSequence()}
-                sequenceEnabled={sequenceEnabled}
-              />
-              <Transport />
+                <Transport />
+                <Button onClick={() => this.setSidebarOpen(!sidebarOpen)}>
+                  Settings
+                </Button>
             </Col>
           </Row>
         </Container>
-      </div>
+      </Sidebar>
     );
   }
 }

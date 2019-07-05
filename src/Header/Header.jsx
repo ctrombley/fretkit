@@ -6,7 +6,9 @@ import Navbar from 'react-bootstrap/Navbar';
 const Header = props => {
   return (
     <Navbar bg="light" expand="lg">
-      <Navbar.Brand href="#home">Fretboard</Navbar.Brand>
+      <Navbar.Brand href="#home">
+        Fretboard
+      </Navbar.Brand>
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="mr-auto">
