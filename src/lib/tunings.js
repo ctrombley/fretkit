@@ -9,4 +9,7 @@ export default {
     standard: ['D3', 'G3', 'B3', 'D4'],
     double_c: ['C3', 'G3', 'C3', 'D4'],
   },
+  mandolin: {
+    standard: ['G3', 'D4', 'A4', 'E5'],
+  },
 };

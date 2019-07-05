@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { ButtonToolbar, Button, Form } from 'react-bootstrap';
+import { ButtonToolbar, Button, Form, Row } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 
 class ControlPanel extends Component {
@@ -103,94 +103,92 @@ class ControlPanel extends Component {
     )
 
     return (
-      <div className="control-panel">
-        <Form>
-          <Form.Group controlId="controlPanel.Search">
-            <Form.Label>Show</Form.Label>
-            <Form.Control
-              type="search"
-              name="search"
-              placeholder="Chord or scale"
-              value={search}
-              onChange={this.search}
-            />
-          </Form.Group>
-          <Form.Group controlId="controlPanel.StartingFret">
-            <Form.Label>Starting Fret</Form.Label>
-            <Form.Control
-              type="number"
-              name="startingFret"
-              min="1"
-              max="24"
-              value={startingFret}
-              onChange={this.setStartingFret}
-            />
-          </Form.Group>
-          <Form.Group controlId="controlPanel.FretCount">
-            <Form.Label>Fret Count</Form.Label>
-            <Form.Control
-              type="number"
-              name="fretCount"
-              min="1"
-              max="24"
-              value={fretCount}
-              onChange={this.setFretCount}
-            />
-          </Form.Group>
-          <Form.Group controlId="controlPanel.FretCount">
-            <Form.Label>Tuning</Form.Label>
-            <Form.Control as="select"
-              type="select"
-              name="tuning"
-              value={this.tuning}
-              onChange={this.setTuning}
-            >
-              {tuningOptions}
-            </Form.Control>
-          </Form.Group>
-          {/*
-          <Form.Group controlId="controlPanel.FilterStart">
-            <Form.Label>Filter Start</Form.Label>
-            <Form.Control
-              type="number"
-              min="1"
-              max="24"
-              value={filterStart}
-              onChange={this.setFilterStart} />
-          </Form.Group>
-          <Form.Group controlId="controlPanel.FilterEnd">
-            <Form.Label>Filter End</Form.Label>
-            <Form.Control
-              type="number"
-              min="1"
-              max="24"
-              value={filterEnd}
-              onChange={this.setFilterEnd} />
-          </Form.Group>
-          */}
-          <Form.Check inline
-            name="sequenceEnabled"
-            label="Sequence"
-            value={sequenceEnabled}
-            onChange={this.setSequenceEnabled} />
-          <Form.Group controlId="controlPanel.Position">
-            <Form.Label>Position</Form.Label>
-            <Form.Control
-              type="number"
-              name="position"
-              min="1"
-              max="24"
-              value={position}
-              onChange={this.setPosition}
-            />
-          </Form.Group>
-          <ButtonToolbar>
-            <Button variant="outline-primary" onClick={clear}>Clear Fretboard</Button>
-            <Button variant="outline-primary" onClick={prev}>Prev</Button>
-            <Button variant="outline-primary" onClick={next}>Next</Button>
-          </ButtonToolbar>
-        </Form>
-      </div>
+      <Form>
+        <Form.Group controlId="controlPanel.Search">
+          <Form.Label>Show</Form.Label>
+          <Form.Control
+            type="search"
+            name="search"
+            placeholder="Chord or scale"
+            value={search}
+            onChange={this.search}
+          />
+        </Form.Group>
+        <Form.Group controlId="controlPanel.StartingFret">
+          <Form.Label>Starting Fret</Form.Label>
+          <Form.Control
+            type="number"
+            name="startingFret"
+            min="1"
+            max="24"
+            value={startingFret}
+            onChange={this.setStartingFret}
+          />
+        </Form.Group>
+        <Form.Group controlId="controlPanel.FretCount">
+          <Form.Label>Fret Count</Form.Label>
+          <Form.Control
+            type="number"
+            name="fretCount"
+            min="1"
+            max="24"
+            value={fretCount}
+            onChange={this.setFretCount}
+          />
+        </Form.Group>
+        <Form.Group controlId="controlPanel.FretCount">
+          <Form.Label>Tuning</Form.Label>
+          <Form.Control as="select"
+            type="select"
+            name="tuning"
+            value={this.tuning}
+            onChange={this.setTuning}
+          >
+            {tuningOptions}
+          </Form.Control>
+        </Form.Group>
+        {/*
+        <Form.Group controlId="controlPanel.FilterStart">
+          <Form.Label>Filter Start</Form.Label>
+          <Form.Control
+            type="number"
+            min="1"
+            max="24"
+            value={filterStart}
+            onChange={this.setFilterStart} />
+        </Form.Group>
+        <Form.Group controlId="controlPanel.FilterEnd">
+          <Form.Label>Filter End</Form.Label>
+          <Form.Control
+            type="number"
+            min="1"
+            max="24"
+            value={filterEnd}
+            onChange={this.setFilterEnd} />
+        </Form.Group>
+        */}
+        <Form.Check inline
+          name="sequenceEnabled"
+          label="Sequence"
+          value={sequenceEnabled}
+          onChange={this.setSequenceEnabled} />
+        <Form.Group controlId="controlPanel.Position">
+          <Form.Label>Position</Form.Label>
+          <Form.Control
+            type="number"
+            name="position"
+            min="1"
+            max="24"
+            value={position}
+            onChange={this.setPosition}
+          />
+        </Form.Group>
+        <ButtonToolbar>
+          <Button variant="outline-primary" onClick={clear}>Clear Fretboard</Button>
+          <Button variant="outline-primary" onClick={prev}>Prev</Button>
+          <Button variant="outline-primary" onClick={next}>Next</Button>
+        </ButtonToolbar>
+      </Form>
     );
   }
 }

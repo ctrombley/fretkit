@@ -6,9 +6,21 @@ $blue: #00C4CC;
 $darkGrey: #1E2329;
 $lightGrey: #343B40;
 
+/*
+ * Content
+ */
+
+[role="main"] {
+  padding-top: 48px; /* Space for fixed navbar */
+}
+
 body {
   font-family: 'Cabin', sans-serif;
   color: $darkGrey;
+}
+
+.navbar {
+  z-index: 2000;
 }
 
 .selected-label {
@@ -18,3 +30,4 @@ body {
   font-size: 24px;
   text-align: center;
 }
+

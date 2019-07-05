@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import tunings from './lib/tunings';
 import ControlPanel from './ControlPanel/ControlPanel';
+import Sidebar from './Sidebar/Sidebar';
 import Header from './Header/Header';
 import Fretboard from './Fretboard/Fretboard';
 import Transport from './ControlPanel/Transport';
@@ -221,24 +222,35 @@ class App extends Component {
     } = this.state;
 
     return (
-      <div className="main">
+      <div>
         <Header />
         <Container>
           <Row>
+            <Col>
+              <Sidebar>
+                <ControlPanel
+                  search={this.search}
+                  setStartingFret={this.setStartingFret}
+                  setPosition={this.setPosition}
+                  setFilterStart={this.setFilterStart}
+                  setFilterEnd={this.setFilterEnd}
+                  setFretCount={this.setFretCount}
+                  setSequenceEnabled={this.setSequenceEnabled}
+                  setTuning={this.setTuning}
+                  tuning={this.tuning}
+                  tunings={tunings}
+                  clear={this.clear}
+                  next={this.next}
+                  prev={this.prev}
+                />
+              </Sidebar>
+            </Col>
             <Col>
               <div className="selected-label">
                 {current ? current.name : ''}
                 {sequenceEnabled && this.getCurrentSequence() ?
                   ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
               </div>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
               <Fretboard
                 startingFret={startingFret}
                 fretCount={fretCount}
@@ -251,29 +263,6 @@ class App extends Component {
                 sequence={this.getCurrentSequence()}
                 sequenceEnabled={sequenceEnabled}
               />
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <ControlPanel
-                search={this.search}
-                setStartingFret={this.setStartingFret}
-                setPosition={this.setPosition}
-                setFilterStart={this.setFilterStart}
-                setFilterEnd={this.setFilterEnd}
-                setFretCount={this.setFretCount}
-                setSequenceEnabled={this.setSequenceEnabled}
-                setTuning={this.setTuning}
-                tuning={this.tuning}
-                tunings={tunings}
-                clear={this.clear}
-                next={this.next}
-                prev={this.prev}
-              />
-            </Col>
-          </Row>
-          <Row>
-            <Col>
               <Transport />
             </Col>
           </Row>
