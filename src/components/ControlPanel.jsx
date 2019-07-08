@@ -12,9 +12,9 @@ const ControlPanel = ({
   filterEnd,
   filterStart,
   fretCount,
-  next,
+  nextSequence,
   position,
-  prev,
+  prevSequence,
   search,
   searchTerm,
   sequenceEnabled,
@@ -161,8 +161,8 @@ const ControlPanel = ({
       </Form.Group>
       <ButtonToolbar>
         <Button variant="outline-primary" onClick={clear}>Clear Fretboard</Button>
-        <Button variant="outline-primary" onClick={prev}>Prev</Button>
-        <Button variant="outline-primary" onClick={next}>Next</Button>
+        <Button variant="outline-primary" onClick={prevSequence}>Prev</Button>
+        <Button variant="outline-primary" onClick={nextSequence}>Next</Button>
       </ButtonToolbar>
     </Form>
   );
@@ -170,8 +170,8 @@ const ControlPanel = ({
 
 ControlPanel.propTypes = {
   clear: PropTypes.func.isRequired,
-  next: PropTypes.func.isRequired,
-  prev: PropTypes.func.isRequired,
+  nextSequence: PropTypes.func.isRequired,
+  prevSequence: PropTypes.func.isRequired,
   search: PropTypes.func.isRequired,
   setFilterEnd: PropTypes.func.isRequired,
   setFilterStart: PropTypes.func.isRequired,

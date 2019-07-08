@@ -13,7 +13,7 @@ const Header = ({
     <Navbar bg="light" expand="lg">
       <Button onClick={toggleSidebar}>Settings</Button>
       <Navbar.Brand href="#home">
-        Fretboard
+        Fretkit
       </Navbar.Brand>
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse id="basic-navbar-nav">

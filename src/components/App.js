@@ -69,23 +69,6 @@ const App = ({
   //   }
   // }
 
-  // get strings() {
-  //   const { fretCount, tuning } = this.state;
-  //   const openNotes = tuning.map(noteStr => new Note(noteStr));
-
-  //   const strings = openNotes.map((note) => {
-  //     const notes = [];
-  //     for (let i = 1; i < fretCount; i += 1) {
-  //       notes.push(new Note(note.semitones + i));
-  //     }
-
-  //     return notes;
-  //   });
-
-  //   return strings;
-  // }
-
-
   const sidebarStyles = {
     overlay: {
       transition: "none",
@@ -112,7 +95,7 @@ const App = ({
           <Col>
               <div className="selected-label">
                 {current ? current.name : ''}
-                {sequenceEnabled && this.getCurrentSequence() ?
+                {sequenceEnabled && sequences && sequences[sequenceIdx] ?
                   ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
               </div>
               <FretboardContainer />

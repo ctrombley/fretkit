@@ -28,6 +28,8 @@ const Fretboard = ({
   }
 
   function calcWidth(idx) {
+    if (!idx) { return Fret.baseWidth; }
+
     if (idx === 0) {
       return Fret.baseWidth;
     }
@@ -85,7 +87,10 @@ Fretboard.propTypes = {
 };
 
 const mapStateToProps = state => {
-  return state;
+  return {
+    ...state,
+    sequence: state.sequences && state.sequences[state.sequenceIdx]
+  };
 }
 
 export default connect(mapStateToProps)(Fretboard);

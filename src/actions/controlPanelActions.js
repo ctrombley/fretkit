@@ -2,6 +2,8 @@
  * action types
  */
 
+export const NEXT_SEQUENCE = 'NEXT_SEQUENCE'
+export const PREV_SEQUENCE = 'PREV_SEQUENCE'
 export const SEARCH = 'SEARCH'
 export const SET_FILTER_END = 'SET_FILTER_END'
 export const SET_FILTER_START = 'SET_FILTER_START'
@@ -14,6 +16,14 @@ export const SET_TUNING = 'SET_TUNING'
 /*
  * action creators
  */
+
+export function nextSequence() {
+  return { type: NEXT_SEQUENCE }
+}
+
+export function prevSequence() {
+  return { type: PREV_SEQUENCE }
+}
 
 export function search(searchTerm) {
   return { type: SEARCH, searchTerm }

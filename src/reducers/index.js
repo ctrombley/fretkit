@@ -10,27 +10,36 @@ function rootReducer(state = initialState, action) {
   let strings, sequences = null;
 
   switch (action.type) {
+    case controlPanelActions.NEXT_SEQUENCE:
+      return  {
+        ...state,
+        sequenceIdx: state.sequenceIdx + 1,
+      }
+    case controlPanelActions.PREV_SEQUENCE:
+      return {
+        ...state,
+        sequenceIdx: state.sequenceIdx - 1,
+      }
     case controlPanelActions.SEARCH:
       const {current, notes} = search(action.searchTerm);
-    //strings = getStrings(state);
-    //sequences = generate(notes, strings, state.position);
+      strings = getStrings(state);
+      sequences = current ? generate(notes, strings, state.position) : [];
       return {
         ...state,
         litNotes: notes,
         current: current,
         searchStr: action.searchTerm,
-        //sequences: sequences,
-        //sequenceIdx: sequences.length > 0 ? 0 : null
+        sequences: sequences,
+        sequenceIdx: sequences.length > 0 ? 0 : null,
       };
     case controlPanelActions.SET_FILTER_END:
       return {
-        ...state.sequence,
+        ...state,
         filterEnd: action.filterEnd
       };
     case controlPanelActions.SET_FILTER_START:
       return {
         ...state,
-        ...state.sequence,
         filterStart: action.filterStart
       };
     case controlPanelActions.SET_FRET_COUNT:
@@ -40,16 +49,17 @@ function rootReducer(state = initialState, action) {
       };
     case controlPanelActions.SET_POSITION:
       strings = getStrings(state);
-      sequences = generate(state.litNotes, strings, action.position);
+      sequences = state.current ? generate(state.litNotes, strings, state.position) : [];
       return {
-        ...state.sequence,
+        ...state,
+        position: action.position,
         sequences: sequences,
         sequenceIdx: sequences.length > 0 ? 0 : null,
-        position: action.position
       };
+
     case controlPanelActions.SET_SEQUENCE_ENABLED:
       return {
-        ...state.sequence,
+        ...state,
         sequenceEnabled: action.value
       };
     case controlPanelActions.SET_STARTING_FRET:

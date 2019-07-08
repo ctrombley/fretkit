@@ -3,6 +3,8 @@ import Sequence from './Sequence';
 import { inspect } from 'util';
 
 function generate(baseNotes, strings, position) {
+  if (!baseNotes) { return [] };
+
   const sequence = new Sequence();
   const found = [];
   const baseNoteSemitones = baseNotes.map(n => n.baseSemitones);
