@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import String from './String';
 import Label from './Label';
 import FretMarker from './FretMarker';
-import Note from '../lib/Note';
+import Note from '../../lib/Note';
 
 class Fret extends Component {
   static calcWidth(idx) {

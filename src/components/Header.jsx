@@ -1,11 +1,17 @@
 import React from 'react';
-import Nav from 'react-bootstrap/Nav';
-import NavDropdown from 'react-bootstrap/NavDropdown';
-import Navbar from 'react-bootstrap/Navbar';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { Button, Navbar, Nav, NavDropdown } from 'react-bootstrap';
 
-const Header = props => {
+import * as settingsActions from '../actions/settingsActions';
+
+const Header = ({
+  toggleSidebar
+}) => {
+
   return (
     <Navbar bg="light" expand="lg">
+      <Button onClick={toggleSidebar}>Settings</Button>
       <Navbar.Brand href="#home">
         Fretboard
       </Navbar.Brand>
@@ -27,4 +33,12 @@ const Header = props => {
   )
 }
 
-export default Header;
+function mapStateToProps(state) {
+  return state;
+}
+
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators(settingsActions, dispatch);
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Header);

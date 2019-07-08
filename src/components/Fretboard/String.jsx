@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { CSSTransitionGroup } from 'react-transition-group';
 
-import Note from '../lib/Note';
-import musicbox from '../lib/musicbox';
+import Note from '../../lib/Note';
+import musicbox from '../../lib/musicbox';
 import StringMarker from './StringMarker';
 
 class String extends Component {
