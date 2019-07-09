@@ -9,7 +9,7 @@ function play(frequency) {
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
 
-  oscillator.type = 'square';
+  oscillator.type = 'sine';
   oscillator.frequency.value = frequency;
   oscillator.start();
 

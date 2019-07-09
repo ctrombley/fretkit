@@ -26,47 +26,12 @@ const App = ({
     setSidebarOpen(event.value.checked);
   }
 
-  //  next(e) {
-  //    e.preventDefault();
-  //    if (!this.state.sequences.length) return;
-  //
-  //    const nextSequenceIdx = this.state.sequenceIdx + 1;
-  //    if (nextSequenceIdx < this.state.sequences.length) {
-  //      this.setState({ sequenceIdx: nextSequenceIdx });
-  //    }
-  //  }
-  //
-  //  prev(e) {
-  //    e.preventDefault();
-  //    if (!this.state.sequences.length) return;
-  //
-  //    const nextSequenceIdx = this.state.sequenceIdx - 1;
-  //    if (nextSequenceIdx >= 0) {
-  //      this.setState({ sequenceIdx: nextSequenceIdx });
-  //    }
-  //  }
-  //
   //  clear() {
   //    this.setState({ markedNotes: null });
   //  }
   //
   // toggleMarkedNote(string, value) {
   //   this.setState({ markedNote: value });
-  // }
-
-
-  // nextSequence() {
-  //   const { sequenceIdx, sequences } = this.state;
-  //   if (sequenceIdx < sequences.length - 1) {
-  //     this.setState({ sequenceIdx: sequenceIdx + 1 });
-  //   }
-  // }
-
-  // prevSequence() {
-  //   const { sequenceIdx } = this.state;
-  //   if (sequenceIdx > 0) {
-  //     this.setState({ sequenceIdx: sequenceIdx - 1 });
-  //   }
   // }
 
   const sidebarStyles = {
@@ -94,7 +59,7 @@ const App = ({
         <Row>
           <Col>
               <div className="selected-label">
-                {current ? current.name : ''}
+                {current ? `${current.name} (${current.constructor.name})` : ''}
                 {sequenceEnabled && sequences && sequences[sequenceIdx] ?
                   ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
               </div>

@@ -18,6 +18,8 @@ const ControlPanel = ({
   search,
   searchTerm,
   sequenceEnabled,
+  sequenceIdx,
+  sequences,
   //setFilterEnd,
   //setFilterStart,
   setFretCount,
@@ -61,8 +63,7 @@ const ControlPanel = ({
 
   function onSetTuning(event) {
     const value = event.target.selectedOptions[0].value;
-    const [instrument, tuning] = value.split(".")
-    setTuning(tunings[instrument][tuning]);
+    setTuning(value.split(','));
   }
 
   function onSearch(event) {
@@ -70,10 +71,22 @@ const ControlPanel = ({
     search(value);
   }
 
+  function prevSequenceDisabled() {
+    return sequenceControlDisabled() || sequenceIdx === 0;
+  }
+
+  function nextSequenceDisabled() {
+    return sequenceControlDisabled() || sequenceIdx === sequences.length - 1;
+  }
+
+  function sequenceControlDisabled() {
+    return !sequenceEnabled || !sequences.length;
+  }
+
   const tuningOptions = (
     Object.keys(tunings).map(instrument =>
       Object.keys(tunings[instrument]).map(tuning =>
-         <option key={`${instrument}.${tuning}`} value={`${instrument}.${tuning}`}>{instrument} -> {tuning}</option>
+         <option key={`${instrument}.${tuning}`} value={tunings[instrument][tuning]}>{instrument} -> {tuning}</option>
       )
     )
   )
@@ -112,7 +125,7 @@ const ControlPanel = ({
           onChange={onSetFretCount}
         />
       </Form.Group>
-      <Form.Group controlId="controlPanel.FretCount">
+      <Form.Group controlId="controlPanel.Tuning">
         <Form.Label>Tuning</Form.Label>
         <Form.Control as="select"
           type="select"
@@ -123,6 +136,9 @@ const ControlPanel = ({
           {tuningOptions}
         </Form.Control>
       </Form.Group>
+      <ButtonToolbar>
+        <Button variant="outline-primary" onClick={clear}>Clear Fretboard</Button>
+      </ButtonToolbar>
       {/*
       <Form.Group controlId="controlPanel.FilterStart">
         <Form.Label>Filter Start</Form.Label>
@@ -147,6 +163,7 @@ const ControlPanel = ({
         name="sequenceEnabled"
         label="Sequence"
         value={sequenceEnabled}
+        disabled={!sequences.length}
         onChange={onSetSequenceEnabled} />
       <Form.Group controlId="controlPanel.Position">
         <Form.Label>Position</Form.Label>
@@ -155,14 +172,14 @@ const ControlPanel = ({
           name="position"
           min="1"
           max="24"
+          disabled={sequenceControlDisabled()}
           value={position}
           onChange={onSetPosition}
         />
       </Form.Group>
       <ButtonToolbar>
-        <Button variant="outline-primary" onClick={clear}>Clear Fretboard</Button>
-        <Button variant="outline-primary" onClick={prevSequence}>Prev</Button>
-        <Button variant="outline-primary" onClick={nextSequence}>Next</Button>
+        <Button variant="outline-primary" onClick={prevSequence} disabled={prevSequenceDisabled()}>Prev</Button>
+        <Button variant="outline-primary" onClick={nextSequence} disabled={nextSequenceDisabled()}>Next</Button>
       </ButtonToolbar>
     </Form>
   );
