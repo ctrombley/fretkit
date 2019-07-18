@@ -9,12 +9,11 @@ const MARGIN = 50;
 
 const Fretboard = ({
   current,
-  filterEnd,
-  filterStart,
   fretCount,
   litNotes,
-  sequence,
+  sequences,
   sequenceEnabled,
+  sequenceIdx,
   startingFret,
   tuning,
 }) => {
@@ -52,9 +51,7 @@ const Fretboard = ({
         tuning={tuning}
         litNotes={litNotes}
         current={current}
-        filterStart={filterStart}
-        filterEnd={filterEnd}
-        sequence={sequence}
+        sequence={sequences[sequenceIdx]}
         sequenceEnabled={sequenceEnabled}
         startingFret={startingFret}
       />
@@ -76,8 +73,6 @@ const Fretboard = ({
 
 Fretboard.propTypes = {
   current: PropTypes.shape({}),
-  filterEnd: PropTypes.number.isRequired,
-  filterStart: PropTypes.number.isRequired,
   fretCount: PropTypes.number.isRequired,
   litNotes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   sequence: PropTypes.shape({}),
@@ -86,11 +81,6 @@ Fretboard.propTypes = {
   tuning: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
-const mapStateToProps = state => {
-  return {
-    ...state,
-    sequence: state.sequences && state.sequences[state.sequenceIdx]
-  };
-}
+const mapStateToProps = state => (state);
 
 export default connect(mapStateToProps)(Fretboard);

@@ -1,38 +1,28 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Button, ButtonToolbar } from 'react-bootstrap';
 import Sidebar from 'react-sidebar';
 
 import ControlPanel from './ControlPanel';
-import FretboardContainer from './Fretboard/Fretboard';
-
+import FretboardSection from './FretboardSection';
 import Header from './Header';
-import Transport from './Transport';
+
 import * as settingsActions from '../actions/settingsActions';
+import * as fretboardActions from '../actions/fretboardActions';
 
 import '../styles/application.scss'
 
 const App = ({
-  current,
-  sequenceEnabled,
-  sequenceIdx,
-  sequences,
+  createFretboard,
+  fretboards,
   sidebarOpen,
   setSidebarOpen,
+  settingsId,
 }) => {
-
   function onSetSidebarOpen(event) {
     setSidebarOpen(event.value.checked);
   }
-
-  //  clear() {
-  //    this.setState({ markedNotes: null });
-  //  }
-  //
-  // toggleMarkedNote(string, value) {
-  //   this.setState({ markedNote: value });
-  // }
 
   const sidebarStyles = {
     overlay: {
@@ -52,19 +42,22 @@ const App = ({
       open={sidebarOpen}
       onSetOpen={onSetSidebarOpen}
       styles={sidebarStyles}
-      sidebar={<ControlPanel />}
+      sidebar={<ControlPanel {...fretboards[settingsId]}/>}
     >
       <Header />
       <Container>
         <Row>
           <Col>
-              <div className="selected-label">
-                {current ? `${current.name} (${current.constructor.name})` : ''}
-                {sequenceEnabled && sequences && sequences[sequenceIdx] ?
-                  ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
-              </div>
-              <FretboardContainer />
-              <Transport />
+            {
+              Object.keys(fretboards).map(id => (
+                <FretboardSection key={id} id={id} />
+              ))
+            }
+            <ButtonToolbar>
+              <Button className="btn-sm btn-light">
+                <span className="oi oi-plus" onClick={createFretboard}></span>
+              </Button>
+            </ButtonToolbar>
           </Col>
         </Row>
       </Container>
@@ -73,11 +66,16 @@ const App = ({
 }
 
 function mapStateToProps(state) {
-  return state;
+  return {
+    fretboards: state.fretboards,
+    ...state.settings,
+  };
 }
 
 function mapDispatchToProps(dispatch) {
-  return bindActionCreators(settingsActions, dispatch);
-}
+  return {
+    ...bindActionCreators(settingsActions, dispatch),
+    ...bindActionCreators(fretboardActions, dispatch),
+  }}
 
 export default connect(mapStateToProps, mapDispatchToProps)(App);

@@ -2,12 +2,18 @@
  * action types
  */
 
-export const TOGGLE_SIDEBAR = 'TOGGLE_SIDEBAR'
+export const OPEN_SETTINGS = 'OPEN_SETTINGS'
+export const UPDATE_SETTINGS = 'UPDATE_SETTINGS'
 
 /*
  * action creators
  */
 
-export function toggleSidebar() {
-  return { type: TOGGLE_SIDEBAR };
+export function openSettings(id) {
+  return { type: OPEN_SETTINGS, id };
 }
+
+export function updateSettings(data) {
+  return { type: UPDATE_SETTINGS, data };
+}
+

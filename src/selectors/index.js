@@ -1,8 +1,8 @@
 import Note from '../lib/Note'
 import { createSelector } from 'reselect'
 
-const getFretCount = (state) => state.fretCount;
-const getTuning = (state) => state.tuning;
+const getFretCount = (state) => state.fretboards[state.settings.settingsId].fretCount;
+const getTuning = (state) => state.fretboards[state.settings.settingsId].tuning;
 
 export const getStrings = createSelector(
   [ getFretCount, getTuning ],

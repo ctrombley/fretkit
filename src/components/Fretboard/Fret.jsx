@@ -65,8 +65,6 @@ class Fret extends Component {
   render() {
     const {
       current,
-      filterEnd,
-      filterStart,
       fretboardMargin,
       fretNumber,
       idx,
@@ -84,8 +82,6 @@ class Fret extends Component {
       return (
         <String
           current={current}
-          filterEnd={filterEnd}
-          filterStart={filterStart}
           fretIdx={idx}
           fretWidth={this.width}
           idx={i}
@@ -139,8 +135,6 @@ class Fret extends Component {
 
 Fret.propTypes = {
   current: PropTypes.shape({}),
-  filterEnd: PropTypes.number.isRequired,
-  filterStart: PropTypes.number.isRequired,
   fretNumber: PropTypes.number.isRequired,
   fretboardMargin: PropTypes.number.isRequired,
   idx: PropTypes.number.isRequired,

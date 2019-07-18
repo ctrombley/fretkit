@@ -1,9 +1,7 @@
-import tunings from '../lib/tunings'
+import tunings from '../lib/tunings';
 
-export default {
+const defaultFretboard = {
   current: null,
-  filterEnd: 24,
-  filterStart: 1,
   fretCount: 24,
   litNotes: [],
   markedNotes: [],
@@ -12,8 +10,18 @@ export default {
   sequenceEnabled: false,
   sequenceIdx: null,
   sequences: [],
-  sidebarOpen: false,
-  soundEnabled: false,
   startingFret: 1,
   tuning: tunings.guitar.standard,
+};
+
+export default {
+  defaultFretboard,
+  fretboards: {
+    "0": { id: 0, ...defaultFretboard }
+  },
+  settings: {
+    settingsId: "0",
+    sidebarOpen: false,
+    soundEnabled: false,
+  }
 }

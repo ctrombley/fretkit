@@ -23,7 +23,6 @@ class String extends Component {
     this.enablePreview = this.enablePreview.bind(this);
     this.disablePreview = this.disablePreview.bind(this);
     this.registerOverlay = this.registerOverlay.bind(this);
-    this.showMarker = this.showMarker.bind(this);
     this.isLit = this.isLit.bind(this);
   }
 
@@ -42,10 +41,6 @@ class String extends Component {
   get stringNumber() {
     const { idx, stringCount } = this.props;
     return (stringCount - 1) - idx;
-  }
-
-  showMarker() {
-    return this.isLit() || this.isMarked();
   }
 
   toggleMarked() {
@@ -97,11 +92,6 @@ class String extends Component {
     return litNoteSemitones.includes(note.baseSemitones);
   }
 
-  isVisible() {
-    const { filterEnd, filterStart, fretIdx } = this.props;
-    return filterStart - 1 <= fretIdx && filterEnd - 1 >= fretIdx;
-  }
-
   isRoot() {
     const { current, note } = this.props;
     return current && current.root &&
@@ -123,7 +113,7 @@ class String extends Component {
       />
     ) : null;
 
-    const litMarker = (this.isLit() && this.isVisible()) ? (
+    const litMarker = (this.isLit()) ? (
       <StringMarker
         className={`string__marker-lit ${this.isRoot() ? 'string__marker-root' : ''}`}
         fretWidth={fretWidth}
@@ -177,8 +167,6 @@ class String extends Component {
 
 String.propTypes = {
   current: PropTypes.shape({}),
-  filterEnd: PropTypes.number.isRequired,
-  filterStart: PropTypes.number.isRequired,
   fretIdx: PropTypes.number.isRequired,
   fretWidth: PropTypes.number.isRequired,
   idx: PropTypes.number.isRequired,

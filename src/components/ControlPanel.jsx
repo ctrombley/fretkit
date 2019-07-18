@@ -5,70 +5,67 @@ import PropTypes from 'prop-types';
 import { ButtonToolbar, Button, Form } from 'react-bootstrap';
 
 import tunings from '../lib/tunings'
-import * as controlPanelActions from '../actions/controlPanelActions'
+import { getStrings } from '../selectors/index'
+import * as settingsActions from '../actions/settingsActions'
+import * as fretboardActions from '../actions/fretboardActions'
 
 const ControlPanel = ({
-  clear,
-  filterEnd,
-  filterStart,
   fretCount,
-  nextSequence,
   position,
-  prevSequence,
   search,
-  searchTerm,
+  searchStr,
   sequenceEnabled,
   sequenceIdx,
   sequences,
-  //setFilterEnd,
-  //setFilterStart,
-  setFretCount,
-  setPosition,
-  setSequenceEnabled,
-  setStartingFret,
-  setTuning,
+  settingsId,
   startingFret,
+  strings,
+  toggleSidebar,
   tuning,
+  updateFretboard,
+  updateSettings,
 }) => {
-
   function onSetStartingFret(event) {
-    const value = parseInt(event.target.value, 10);
-    setStartingFret(value);
+    const startingFret = parseInt(event.target.value, 10);
+    updateFretboard(settingsId, { startingFret });
   }
 
   function onSetPosition(event) {
-    const value = parseInt(event.target.value, 10);
-    setPosition(value);
+    const position = parseInt(event.target.value, 10);
+    updateFretboard(settingsId, { position });
   }
 
-  // function onSetFilterStart(event) {
-  //   const value = parseInt(event.target.value, 10);
-  //   setFilterStart(value);
-  // }
-
-  // function onSetFilterEnd(event) {
-  //   const value = parseInt(event.target.value, 10);
-  //   setFilterEnd(value);
-  // }
-
   function onSetSequenceEnabled(event) {
-    const value = event.target.checked;
-    setSequenceEnabled(value);
+    const sequenceEnabled = event.target.checked;
+    updateFretboard(settingsId, { sequenceEnabled });
   }
 
   function onSetFretCount(event) {
-    const value = parseInt(event.target.value, 10);
-    setFretCount(value);
+    const fretCount = parseInt(event.target.value, 10);
+    updateFretboard(settingsId, { fretCount });
   }
 
   function onSetTuning(event) {
-    const value = event.target.selectedOptions[0].value;
-    setTuning(value.split(','));
+    const tuning = event.target.selectedOptions[0].value.split(',');
+    updateFretboard(settingsId, { tuning });
   }
 
   function onSearch(event) {
     const value = event.target.value;
-    search(value);
+    console.log([settingsId, strings, value])
+    search(settingsId, strings, value);
+  }
+
+  function onNextSequence() {
+    updateFretboard(settingsId, { sequenceIdx: sequenceIdx + 1 });
+  }
+
+  function onPrevSequence() {
+    updateFretboard(settingsId, { sequenceIdx: sequenceIdx - 1 });
+  }
+
+  function onCloseSidebar() {
+    updateSettings({ sidebarOpen: false });
   }
 
   function prevSequenceDisabled() {
@@ -93,13 +90,18 @@ const ControlPanel = ({
 
   return (
     <Form>
+      <ButtonToolbar className="float-right">
+        <Button className="btn-sm btn-light">
+          <span className="oi oi-x" onClick={onCloseSidebar}></span>
+        </Button>
+      </ButtonToolbar>
       <Form.Group controlId="controlPanel.Search">
         <Form.Label>Show</Form.Label>
         <Form.Control
           type="search"
           name="search"
           placeholder="Chord or scale"
-          value={searchTerm}
+          value={searchStr}
           onChange={onSearch}
         />
       </Form.Group>
@@ -136,29 +138,6 @@ const ControlPanel = ({
           {tuningOptions}
         </Form.Control>
       </Form.Group>
-      <ButtonToolbar>
-        <Button variant="outline-primary" onClick={clear}>Clear Fretboard</Button>
-      </ButtonToolbar>
-      {/*
-      <Form.Group controlId="controlPanel.FilterStart">
-        <Form.Label>Filter Start</Form.Label>
-        <Form.Control
-          type="number"
-          min="1"
-          max="24"
-          value={filterStart}
-          onChange={onSetFilterStart} />
-      </Form.Group>
-      <Form.Group controlId="controlPanel.FilterEnd">
-        <Form.Label>Filter End</Form.Label>
-        <Form.Control
-          type="number"
-          min="1"
-          max="24"
-          value={filterEnd}
-          onChange={onSetFilterEnd} />
-      </Form.Group>
-      */}
       <Form.Check inline
         name="sequenceEnabled"
         label="Sequence"
@@ -178,33 +157,30 @@ const ControlPanel = ({
         />
       </Form.Group>
       <ButtonToolbar>
-        <Button variant="outline-primary" onClick={prevSequence} disabled={prevSequenceDisabled()}>Prev</Button>
-        <Button variant="outline-primary" onClick={nextSequence} disabled={nextSequenceDisabled()}>Next</Button>
+        <Button variant="outline-primary" onClick={onPrevSequence} disabled={prevSequenceDisabled()}>Prev</Button>
+        <Button variant="outline-primary" onClick={onNextSequence} disabled={nextSequenceDisabled()}>Next</Button>
       </ButtonToolbar>
     </Form>
   );
 }
 
 ControlPanel.propTypes = {
-  clear: PropTypes.func.isRequired,
-  nextSequence: PropTypes.func.isRequired,
-  prevSequence: PropTypes.func.isRequired,
   search: PropTypes.func.isRequired,
-  setFilterEnd: PropTypes.func.isRequired,
-  setFilterStart: PropTypes.func.isRequired,
-  setFretCount: PropTypes.func.isRequired,
-  setPosition: PropTypes.func.isRequired,
-  setSequenceEnabled: PropTypes.func.isRequired,
-  setStartingFret: PropTypes.func.isRequired,
-  setTuning: PropTypes.func.isRequired,
+  settingsId: PropTypes.string.isRequired,
+  updateFretboard: PropTypes.func.isRequired,
 };
 
-const mapStateToProps = state => {
-  return state;
-}
+const mapStateToProps = state => ({
+  settingsId: state.settings.settingsId,
+  strings: getStrings(state),
+  ...state.fretboards[state.settings.settingsId],
+});
 
 const mapDispatchToProps = dispatch => {
-  return bindActionCreators(controlPanelActions, dispatch);
+  return {
+    ...bindActionCreators(settingsActions, dispatch),
+    ...bindActionCreators(fretboardActions, dispatch),
+  }
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ControlPanel);
