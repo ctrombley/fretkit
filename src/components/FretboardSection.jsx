@@ -17,11 +17,11 @@ const FretboardSection = ({
 }) => (
   <div>
     <ButtonToolbar className="float-right">
-      <Button className="btn-sm btn-light">
-        <span className="oi oi-x" onClick={() => deleteFretboard(id)}></span>
+      <Button className="btn-sm btn-light" onClick={() => deleteFretboard(id)}>
+        <span className="oi oi-x"></span>
       </Button>
-      <Button className="btn-sm btn-light">
-        <span className="oi oi-pencil" onClick={() => openSettings(id)}></span>
+      <Button className="btn-sm btn-light" onClick={() => openSettings(id)}>
+        <span className="oi oi-pencil"></span>
       </Button>
     </ButtonToolbar>
     <FretboardLabel {...fretboards[id]} />

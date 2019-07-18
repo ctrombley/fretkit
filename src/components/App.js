@@ -54,8 +54,8 @@ const App = ({
               ))
             }
             <ButtonToolbar>
-              <Button className="btn-sm btn-light">
-                <span className="oi oi-plus" onClick={createFretboard}></span>
+              <Button className="btn-sm btn-light" onClick={createFretboard}>
+                <span className="oi oi-plus"></span>
               </Button>
             </ButtonToolbar>
           </Col>

@@ -91,8 +91,8 @@ const ControlPanel = ({
   return (
     <Form>
       <ButtonToolbar className="float-right">
-        <Button className="btn-sm btn-light">
-          <span className="oi oi-x" onClick={onCloseSidebar}></span>
+        <Button className="btn-sm btn-light" onClick={onCloseSidebar}>
+          <span className="oi oi-x"></span>
         </Button>
       </ButtonToolbar>
       <Form.Group controlId="controlPanel.Search">
