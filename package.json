@@ -15,7 +15,8 @@
     "react-sidebar": "^3.0.2",
     "react-transition-group": "1.x",
     "redux": "^4.0.1",
-    "reselect": "^4.0.0"
+    "reselect": "^4.0.0",
+    "serve": "^11.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
