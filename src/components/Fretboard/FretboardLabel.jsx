@@ -8,7 +8,7 @@ const FretboardLabel = ({
     sequenceIdx,
 }) => (
   <div className="selected-label">
-    {current ? `${current.name} (${current.constructor.name})` : ''}
+    {current ? `${current.name} (${current.type})` : ''}
     {sequenceEnabled && sequences && sequences[sequenceIdx] ?
     ` (${sequenceIdx + 1} / ${sequences.length})` : ''}
   </div>

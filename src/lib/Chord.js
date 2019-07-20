@@ -37,6 +37,7 @@ export default class Chord {
     }
 
     this.name = chordStr;
+    this.type = 'Chord';
     this.root = new Note(root);
 
     const chordIntervals = chords[chord];
