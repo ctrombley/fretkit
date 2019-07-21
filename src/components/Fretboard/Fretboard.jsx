@@ -29,7 +29,7 @@ const Fretboard = ({
   function calcWidth(idx) {
     if (!idx) { return Fret.baseWidth; }
 
-    if (idx === 0) {
+    if (idx === 1) {
       return Fret.baseWidth;
     }
 
@@ -41,11 +41,24 @@ const Fretboard = ({
   }
 
   const frets = [];
+  const nut = <Fret
+        key={0}
+        idx={0}
+        fretNumber={0}
+        fretboardMargin={MARGIN}
+        tuning={tuning}
+        litNotes={litNotes}
+        current={current}
+        sequence={sequences[sequenceIdx]}
+        sequenceEnabled={sequenceEnabled}
+        startingFret={startingFret}
+      />;
+
   for (let i = 0; i < fretCount; i += 1) {
     const fret = (
       <Fret
-        key={i}
-        idx={i}
+        key={i+1}
+        idx={i+1}
         fretNumber={startingFret + i}
         fretboardMargin={MARGIN}
         tuning={tuning}
@@ -66,6 +79,7 @@ const Fretboard = ({
       width={getWidth()}
       height={getHeight()}
     >
+      {nut}
       {frets}
     </svg>
   )

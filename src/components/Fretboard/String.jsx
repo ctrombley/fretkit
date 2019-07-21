@@ -103,7 +103,7 @@ class String extends Component {
   }
 
   render() {
-    const { fretWidth, xOffset, yOffset } = this.props;
+    const { fretIdx, fretWidth, xOffset, yOffset } = this.props;
     const marker = this.state.isMarked ? (
       <StringMarker
         fretWidth={fretWidth}
@@ -117,6 +117,7 @@ class String extends Component {
       <StringMarker
         className={`string__marker-lit ${this.isRoot() ? 'string__marker-root' : ''}`}
         fretWidth={fretWidth}
+        isNut={fretIdx === 0}
         key="litMarker"
         xOffset={xOffset}
         yOffset={yOffset}

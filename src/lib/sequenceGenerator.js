@@ -1,6 +1,6 @@
 import StringNote from './StringNote';
 import Sequence from './Sequence';
-import { inspect } from 'util';
+// import { inspect } from 'util';
 
 function generate(baseNotes, strings, position) {
   if (!baseNotes) { return [] };
@@ -35,7 +35,7 @@ function generate(baseNotes, strings, position) {
   const startingStringNote = new StringNote(0, startingNote, position - 1);
 
   function traverse(stringNote) {
-    console.debug(`adding string note: ${inspect(stringNote)}`)
+    // console.debug(`adding string note: ${inspect(stringNote)}`)
 
     // Add the new note to the sequence.
     sequence.push(stringNote);

@@ -52,7 +52,7 @@ const ControlPanel = ({
 
   function onSearch(event) {
     const value = event.target.value;
-    console.log([settingsId, strings, value])
+    //console.log([settingsId, strings, value])
     search(settingsId, strings, value);
   }
 

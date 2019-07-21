@@ -63,10 +63,20 @@
 
 .string__marker-lit {
   fill: $magenta;
+
+  &.string__marker-nut {
+    fill: none;
+    stroke: $magenta;
+  }
 }
 
 .string__marker-root {
   fill: $green;
+
+  &.string__marker-nut {
+    fill: none;
+    stroke: $green;
+  }
 }
 
 @keyframes pulse {

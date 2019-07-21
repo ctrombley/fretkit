@@ -9,6 +9,10 @@ import Note from '../../lib/Note';
 class Fret extends Component {
   static calcWidth(idx) {
     if (idx === 0) {
+      return 0;
+    }
+
+    if (idx === 1) {
       return this.baseWidth;
     }
 
@@ -35,19 +39,39 @@ class Fret extends Component {
   }
 
   get width() {
-    return Fret.calcWidth(this.props.fretNumber - 1);
-  }
+    const fretNumber = this.props.fretNumber;
 
-  calcXOffset(idx) {
-    if (idx === this.props.startingFret - 1) {
+    if (fretNumber === 0) {
       return 0;
     }
 
-    return this.calcXOffset(idx - 1) + Fret.calcWidth(idx - 1);
+    if (fretNumber === 1) {
+      return Fret.baseWidth;
+    }
+
+    return Fret.calcWidth(fretNumber - 1);
+  }
+
+  xOffset() {
+    const {
+      fretboardMargin,
+      fretNumber
+    } = this.props;
+
+    return fretboardMargin + this.calcXOffset(fretNumber);
+  }
+
+  calcXOffset(fretNumber) {
+    if (fretNumber === 0 || fretNumber === this.props.startingFret) {
+      return 0;
+    }
+
+    const value = Fret.calcWidth(fretNumber - 1) + this.calcXOffset(fretNumber - 1);
+    return value;
   }
 
   isFirst() {
-    return this.props.idx === 0;
+    return this.props.idx === 1;
   }
 
   fretMarkerType() {
@@ -73,7 +97,6 @@ class Fret extends Component {
       sequenceEnabled,
       tuning,
     } = this.props;
-    const xOffset = fretboardMargin + this.calcXOffset(fretNumber - 1);
 
     const reversedTuning = tuning.slice().reverse();
     const strings = reversedTuning.map((t, i) => {
@@ -91,7 +114,7 @@ class Fret extends Component {
           sequence={sequence}
           sequenceEnabled={sequenceEnabled}
           stringCount={this.stringCount}
-          xOffset={xOffset}
+          xOffset={this.xOffset()}
           yOffset={yOffset}
         />
       );
@@ -100,7 +123,7 @@ class Fret extends Component {
     const fretNumberLabelPadding = 20;
     const fretNumberLabel = (
       <Label
-        xOffset={xOffset + fretNumberLabelPadding}
+        xOffset={this.xOffset() + fretNumberLabelPadding}
         yOffset={fretboardMargin - fretNumberLabelPadding}
       > {fretNumber}
       </Label>
@@ -109,7 +132,7 @@ class Fret extends Component {
     const fretMarkerType = this.fretMarkerType();
     const fretMarker = fretMarkerType && (
       <FretMarker
-        xOffset={xOffset}
+        xOffset={this.xOffset()}
         yOffset={fretboardMargin}
         fretWidth={this.width}
         fretHeight={this.getHeight()}
@@ -123,8 +146,8 @@ class Fret extends Component {
         {fretMarker}
         <line
           className="fret__wire"
-          x1={xOffset}
-          x2={xOffset}
+          x1={this.xOffset()}
+          x2={this.xOffset()}
           y1={fretboardMargin}
           y2={fretboardMargin + this.getHeight()}
         /> {strings}
