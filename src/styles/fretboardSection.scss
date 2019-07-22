@@ -1,0 +1,7 @@
+.fretboardSection {
+  overflow: hidden;
+
+  &.fretboardSection-selected {
+    border: 2px solid $blue;
+  }
+}

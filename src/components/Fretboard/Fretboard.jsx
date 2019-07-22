@@ -44,6 +44,7 @@ const Fretboard = ({
   const nut = <Fret
         key={0}
         idx={0}
+        fretCount={fretCount}
         fretNumber={0}
         fretboardMargin={MARGIN}
         tuning={tuning}
@@ -59,6 +60,7 @@ const Fretboard = ({
       <Fret
         key={i+1}
         idx={i+1}
+        fretCount={fretCount}
         fretNumber={startingFret + i}
         fretboardMargin={MARGIN}
         tuning={tuning}

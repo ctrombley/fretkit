@@ -2,7 +2,7 @@ import tunings from '../lib/tunings';
 
 const defaultFretboard = {
   current: null,
-  fretCount: 24,
+  fretCount: 12,
   litNotes: [],
   markedNotes: [],
   position: 1,

@@ -74,6 +74,10 @@ class Fret extends Component {
     return this.props.idx === 1;
   }
 
+  isLast() {
+    return this.props.idx === this.props.fretCount;
+  }
+
   fretMarkerType() {
     const { fretNumber } = this.props;
 
@@ -150,7 +154,17 @@ class Fret extends Component {
           x2={this.xOffset()}
           y1={fretboardMargin}
           y2={fretboardMargin + this.getHeight()}
+          stroke-width={this.isFirst() ? "5" : "1"}
         /> {strings}
+        {this.isLast() &&
+          <line
+            className="fret__wire"
+            x1={this.xOffset() + this.width}
+            x2={this.xOffset() + this.width}
+            y1={fretboardMargin}
+            y2={fretboardMargin + this.getHeight()}
+          />
+        }
       </g>
     );
   }
@@ -158,6 +172,7 @@ class Fret extends Component {
 
 Fret.propTypes = {
   current: PropTypes.shape({}),
+  fretCount: PropTypes.number.isRequired,
   fretNumber: PropTypes.number.isRequired,
   fretboardMargin: PropTypes.number.isRequired,
   idx: PropTypes.number.isRequired,
