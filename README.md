@@ -3,7 +3,7 @@
 A tool for helping drill scales and chords for string instruments.
 
 ## Live demo
-https://fretboard.trombs.com
+https://fretkit.trombs.com
 
 ## Deploying
 git push dokku master
