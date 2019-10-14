@@ -1,15 +1,15 @@
 require('newrelic');
+const handler = require('serve-handler');
+const http = require('http');
 
-const express = require('express');
+const PORT = 5000;
 
-const PORT = process.env.PORT || 3000;
+const server = http.createServer((request, response) => {
+  return handler(request, response, {
+    public: 'build'
+  });
+})
 
-const app = express();
-app.use(express.static('dist'));
-app.listen(PORT, (err) => {
-  if (err) {
-    console.log(err);
-  }
-
-  console.log(`Listening on port ${PORT}.`);
+server.listen(PORT, () => {
+  console.log(`Running at http://localhost:${PORT}`);
 });
