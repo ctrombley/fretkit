@@ -1,4 +1,7 @@
 FROM node:12-alpine
+RUN apk add --update \
+  python \
+  build-base
 
 WORKDIR /app
 COPY package*.json ./
