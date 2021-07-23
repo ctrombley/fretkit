@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { CSSTransitionGroup } from 'react-transition-group';
+import { TransitionGroup } from 'react-transition-group';
 
 import Note from '../../lib/Note';
 import musicbox from '../../lib/musicbox';
@@ -143,7 +143,7 @@ class String extends Component {
           y1={yOffset}
           y2={yOffset}
         />
-        <CSSTransitionGroup
+        <TransitionGroup
           component="g"
           transitionEnterTimeout={100}
           transitionLeaveTimeout={100}
@@ -151,7 +151,7 @@ class String extends Component {
         >
           { litMarker }
           { marker }
-        </CSSTransitionGroup>
+        </TransitionGroup>
         { previewMarker }
         <rect
           className="string__overlay"

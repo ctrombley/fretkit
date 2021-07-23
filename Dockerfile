@@ -1,6 +1,6 @@
-FROM node:12-alpine
+FROM node:16-alpine
 RUN apk add --update \
-  python \
+#  python \
   build-base
 
 WORKDIR /app
