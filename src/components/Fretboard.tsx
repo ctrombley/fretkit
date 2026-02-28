@@ -1,5 +1,4 @@
 import Fret from './Fret';
-import StringIndicators from './StringIndicators';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 import { STRING_HEIGHT, FRETBOARD_MARGIN, BASE_FRET_WIDTH } from '../lib/fretboardConstants';
@@ -25,6 +24,7 @@ interface FretboardProps {
   sequenceIdx: number | null;
   startingFret: number;
   tuning: string[];
+  onStrum?: () => void;
 }
 
 export default function Fretboard({
@@ -36,6 +36,7 @@ export default function Fretboard({
   sequenceIdx,
   startingFret,
   tuning,
+  onStrum,
 }: FretboardProps) {
   const stringCount = tuning.length;
   const width = calcTotalWidth(fretCount) + FRETBOARD_MARGIN * 2;
@@ -43,7 +44,7 @@ export default function Fretboard({
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
 
   return (
-    <FretboardProvider value={{ current, litNotes, sequence, sequenceEnabled }}>
+    <FretboardProvider value={{ current, litNotes, sequence, sequenceEnabled, onStrum }}>
       <svg
         className="fretboard"
         width={width}
@@ -51,12 +52,6 @@ export default function Fretboard({
         role="img"
         aria-label={`Fretboard with ${stringCount} strings and ${fretCount} frets`}
       >
-        {/* Muted/Open string indicators */}
-        <StringIndicators
-          sequence={sequence}
-          stringCount={stringCount}
-          sequenceEnabled={sequenceEnabled}
-        />
         {/* Nut */}
         <Fret
           idx={0}
