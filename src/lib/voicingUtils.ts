@@ -14,7 +14,8 @@ export const DIFFICULTY_COLORS = {
 
 export type DifficultyTier = 'easy' | 'medium' | 'hard';
 
-/** Build a tab-style shorthand string, e.g. "x32010". String 0 (lowest) is leftmost. */
+/** Build a tab-style shorthand string, e.g. "x32010". String 0 (lowest) is leftmost.
+ *  Double-digit frets use single-letter codes: t=10, e=11, w=12. */
 export function tabShorthand(sequence: Sequence, stringCount: number): string {
   const byString = new Map<number, number>();
   for (const sn of sequence.stringNotes) {
@@ -26,8 +27,12 @@ export function tabShorthand(sequence: Sequence, stringCount: number): string {
     const fret = byString.get(s);
     if (fret === undefined) {
       result += 'x';
-    } else if (fret >= 10) {
-      result += `(${fret})`;
+    } else if (fret === 10) {
+      result += 't';
+    } else if (fret === 11) {
+      result += 'e';
+    } else if (fret === 12) {
+      result += 'w';
     } else {
       result += String(fret);
     }
