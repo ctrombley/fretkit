@@ -3,48 +3,83 @@ import { useStore } from '../store';
 import { noteName, usesSharps } from '../lib/harmony';
 import { fundamentalFrequency } from '../lib/overtones';
 import { play } from '../lib/musicbox';
+import { getDerivation, GENERATOR_PRESETS, type GeneratorPreset } from '../lib/derivation';
 import OvertoneSpiral from './OvertoneSpiral';
+import DerivationRing from './DerivationRing';
 
 const PITCH_CLASSES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const OCTAVES = [1, 2, 3, 4, 5];
+const MODES = ['ji', 'et', 'derive'] as const;
+const MODE_LABELS: Record<typeof MODES[number], string> = { ji: 'JI', et: 'ET', derive: 'Derive' };
+const GENERATOR_LABELS: Record<GeneratorPreset, string> = { fifths: '5ths', thirds: '3rds', sevenths: '7ths' };
+const GENERATOR_KEYS: GeneratorPreset[] = ['fifths', 'thirds', 'sevenths'];
 
 export default function OvertoneView() {
   const overtoneRoot = useStore(s => s.overtoneRoot);
   const overtoneOctave = useStore(s => s.overtoneOctave);
   const overtoneCount = useStore(s => s.overtoneCount);
   const overtoneShowET = useStore(s => s.overtoneShowET);
-  const overtoneUseET = useStore(s => s.overtoneUseET);
+  const overtoneMode = useStore(s => s.overtoneMode);
   const setOvertoneRoot = useStore(s => s.setOvertoneRoot);
   const setOvertoneOctave = useStore(s => s.setOvertoneOctave);
   const setOvertoneCount = useStore(s => s.setOvertoneCount);
   const setOvertoneShowET = useStore(s => s.setOvertoneShowET);
-  const setOvertoneUseET = useStore(s => s.setOvertoneUseET);
+  const setOvertoneMode = useStore(s => s.setOvertoneMode);
+
+  const derivationGenerator = useStore(s => s.derivationGenerator);
+  const derivationSteps = useStore(s => s.derivationSteps);
+  const derivationActiveStep = useStore(s => s.derivationActiveStep);
+  const setDerivationGenerator = useStore(s => s.setDerivationGenerator);
+  const setDerivationSteps = useStore(s => s.setDerivationSteps);
+  const setDerivationActiveStep = useStore(s => s.setDerivationActiveStep);
 
   const playingRef = useRef(false);
 
   const fundHz = fundamentalFrequency(overtoneRoot, overtoneOctave);
   const preferSharps = usesSharps(overtoneRoot);
   const rootName = noteName(overtoneRoot, preferSharps);
+  const isDeriveMode = overtoneMode === 'derive';
 
   function playSeries() {
     if (playingRef.current) return;
     playingRef.current = true;
 
-    const handles: { stop: () => void }[] = [];
-    for (let n = 1; n <= overtoneCount; n++) {
-      const freq = overtoneUseET
-        ? fundHz * Math.pow(2, Math.round(1200 * Math.log2(n) / 100) / 12)
-        : n * fundHz;
-      setTimeout(() => {
-        const handle = play(freq);
-        handles.push(handle);
-      }, (n - 1) * 200);
-    }
+    if (isDeriveMode) {
+      const derivation = getDerivation(derivationGenerator, fundHz, overtoneRoot, derivationSteps);
+      const handles: { stop: () => void }[] = [];
+      const interval = 300;
 
-    setTimeout(() => {
-      handles.forEach(h => h.stop());
-      playingRef.current = false;
-    }, overtoneCount * 200 + 600);
+      derivation.steps.forEach((note, i) => {
+        setTimeout(() => {
+          setDerivationActiveStep(note.step);
+          const handle = play(note.frequency);
+          handles.push(handle);
+        }, i * interval);
+      });
+
+      setTimeout(() => {
+        handles.forEach(h => h.stop());
+        setDerivationActiveStep(null);
+        playingRef.current = false;
+      }, derivationSteps * interval + 600);
+    } else {
+      const useET = overtoneMode === 'et';
+      const handles: { stop: () => void }[] = [];
+      for (let n = 1; n <= overtoneCount; n++) {
+        const freq = useET
+          ? fundHz * Math.pow(2, Math.round(1200 * Math.log2(n) / 100) / 12)
+          : n * fundHz;
+        setTimeout(() => {
+          const handle = play(freq);
+          handles.push(handle);
+        }, (n - 1) * 200);
+      }
+
+      setTimeout(() => {
+        handles.forEach(h => h.stop());
+        playingRef.current = false;
+      }, overtoneCount * 200 + 600);
+    }
   }
 
   return (
@@ -52,7 +87,10 @@ export default function OvertoneView() {
       {/* Title */}
       <div className="mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">
-          Overtone Series: {rootName}{overtoneOctave}
+          {isDeriveMode
+            ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name})`
+            : `Overtone Series: ${rootName}${overtoneOctave}`
+          }
         </h2>
         <p className="text-sm text-gray-500 mt-0.5">
           Fundamental: {fundHz.toFixed(1)} Hz
@@ -101,71 +139,113 @@ export default function OvertoneView() {
           ))}
         </div>
 
-        {/* Harmonic count slider */}
-        <label className="flex items-center gap-2 text-xs text-gray-500">
-          Harmonics: {overtoneCount}
-          <input
-            type="range"
-            min={1}
-            max={32}
-            value={overtoneCount}
-            onChange={e => setOvertoneCount(Number(e.target.value))}
-            className="w-24 accent-fret-green"
-          />
-        </label>
+        {/* Harmonic count slider (spiral modes only) */}
+        {!isDeriveMode && (
+          <label className="flex items-center gap-2 text-xs text-gray-500">
+            Harmonics: {overtoneCount}
+            <input
+              type="range"
+              min={1}
+              max={32}
+              value={overtoneCount}
+              onChange={e => setOvertoneCount(Number(e.target.value))}
+              className="w-24 accent-fret-green"
+            />
+          </label>
+        )}
 
-        {/* Show ET toggle */}
-        <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={overtoneShowET}
-            onChange={e => setOvertoneShowET(e.target.checked)}
-            className="accent-fret-green"
-          />
-          Show ET
-        </label>
+        {/* Show ET toggle (spiral modes only) */}
+        {!isDeriveMode && (
+          <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={overtoneShowET}
+              onChange={e => setOvertoneShowET(e.target.checked)}
+              className="accent-fret-green"
+            />
+            Show ET
+          </label>
+        )}
 
-        {/* JI / ET mode toggle */}
+        {/* Generator selector (derive mode only) */}
+        {isDeriveMode && (
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+            {GENERATOR_KEYS.map(key => (
+              <button
+                key={key}
+                onClick={() => setDerivationGenerator(key)}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  derivationGenerator === key
+                    ? 'bg-white text-dark shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {GENERATOR_LABELS[key]}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step count slider (derive mode only) */}
+        {isDeriveMode && (
+          <label className="flex items-center gap-2 text-xs text-gray-500">
+            Steps: {derivationSteps}
+            <input
+              type="range"
+              min={1}
+              max={24}
+              value={derivationSteps}
+              onChange={e => setDerivationSteps(Number(e.target.value))}
+              className="w-24 accent-fret-green"
+            />
+          </label>
+        )}
+
+        {/* JI / ET / Derive mode toggle */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-          <button
-            onClick={() => setOvertoneUseET(false)}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-              !overtoneUseET
-                ? 'bg-white text-dark shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            JI
-          </button>
-          <button
-            onClick={() => setOvertoneUseET(true)}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-              overtoneUseET
-                ? 'bg-white text-dark shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            ET
-          </button>
+          {MODES.map(mode => (
+            <button
+              key={mode}
+              onClick={() => setOvertoneMode(mode)}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                overtoneMode === mode
+                  ? 'bg-white text-dark shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {MODE_LABELS[mode]}
+            </button>
+          ))}
         </div>
 
-        {/* Play Series */}
+        {/* Play */}
         <button
           onClick={playSeries}
           className="px-3 py-1.5 rounded-md text-sm font-medium bg-magenta text-white hover:bg-magenta/90 transition-colors"
         >
-          Play Series
+          {isDeriveMode ? 'Play Sequence' : 'Play Series'}
         </button>
       </div>
 
-      {/* Spiral */}
-      <OvertoneSpiral
-        fundamentalHz={fundHz}
-        pitchClass={overtoneRoot}
-        count={overtoneCount}
-        showET={overtoneShowET}
-        useET={overtoneUseET}
-      />
+      {/* Visualization */}
+      {isDeriveMode ? (
+        <DerivationRing
+          fundamentalHz={fundHz}
+          pitchClass={overtoneRoot}
+          generator={derivationGenerator}
+          steps={derivationSteps}
+          activeStep={derivationActiveStep}
+          onActiveStepChange={setDerivationActiveStep}
+        />
+      ) : (
+        <OvertoneSpiral
+          fundamentalHz={fundHz}
+          pitchClass={overtoneRoot}
+          count={overtoneCount}
+          showET={overtoneShowET}
+          useET={overtoneMode === 'et'}
+        />
+      )}
     </div>
   );
 }

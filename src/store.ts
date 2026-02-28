@@ -7,6 +7,7 @@ import termSearch from './lib/termSearch';
 import getStrings from './lib/getStrings';
 import type Sequence from './lib/Sequence';
 import type { View, Song, ChordConfig, SongExport } from './types';
+import type { GeneratorPreset } from './lib/derivation';
 
 export interface FretboardState {
   id: number;
@@ -54,14 +55,24 @@ interface AppState {
   overtoneOctave: number;
   overtoneCount: number;
   overtoneShowET: boolean;
-  overtoneUseET: boolean;
+  overtoneMode: 'ji' | 'et' | 'derive';
+
+  // Derivation
+  derivationGenerator: GeneratorPreset;
+  derivationSteps: number;
+  derivationActiveStep: number | null;
 
   // Overtone actions
   setOvertoneRoot: (root: number) => void;
   setOvertoneOctave: (octave: number) => void;
   setOvertoneCount: (count: number) => void;
   setOvertoneShowET: (show: boolean) => void;
-  setOvertoneUseET: (use: boolean) => void;
+  setOvertoneMode: (mode: 'ji' | 'et' | 'derive') => void;
+
+  // Derivation actions
+  setDerivationGenerator: (preset: GeneratorPreset) => void;
+  setDerivationSteps: (steps: number) => void;
+  setDerivationActiveStep: (step: number | null) => void;
 
   // Sandbox actions
   createFretboard: () => void;
@@ -132,7 +143,10 @@ export const useStore = create<AppState>()(
       overtoneOctave: 2,
       overtoneCount: 16,
       overtoneShowET: false,
-      overtoneUseET: false,
+      overtoneMode: 'ji' as const,
+      derivationGenerator: 'fifths' as GeneratorPreset,
+      derivationSteps: 12,
+      derivationActiveStep: null,
 
       setSpiralRoot: (root) => {
         set({ spiralRoot: root, spiralHighlightedChord: null });
@@ -150,7 +164,10 @@ export const useStore = create<AppState>()(
       setOvertoneOctave: (octave) => set({ overtoneOctave: octave }),
       setOvertoneCount: (count) => set({ overtoneCount: count }),
       setOvertoneShowET: (show) => set({ overtoneShowET: show }),
-      setOvertoneUseET: (use) => set({ overtoneUseET: use }),
+      setOvertoneMode: (mode) => set({ overtoneMode: mode }),
+      setDerivationGenerator: (preset) => set({ derivationGenerator: preset }),
+      setDerivationSteps: (steps) => set({ derivationSteps: steps }),
+      setDerivationActiveStep: (step) => set({ derivationActiveStep: step }),
 
       createFretboard: () => {
         const id = nextId++;
