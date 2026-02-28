@@ -318,13 +318,22 @@ export default function OvertoneView() {
           </p>
         </>
       ) : (
-        <OvertoneSpiral
-          fundamentalHz={fundHz}
-          pitchClass={overtoneRoot}
-          count={overtoneCount}
-          showET={overtoneShowET}
-          useET={overtoneMode === 'et'}
-        />
+        <>
+          <OvertoneSpiral
+            fundamentalHz={fundHz}
+            pitchClass={overtoneRoot}
+            count={overtoneCount}
+            showET={overtoneShowET}
+            useET={overtoneMode === 'et'}
+          />
+          <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
+            Spiral shows the overtone series of the selected fundamental.
+            Each node is a harmonic partial — hover for frequency and pitch info.
+            Inner nodes = lower partials, outer = higher.
+            Toggle "Show ET" to compare natural harmonics with the 12-TET grid.
+            Switch JI/ET to hear natural vs. equal-tempered tuning.
+          </p>
+        </>
       )}
     </div>
   );

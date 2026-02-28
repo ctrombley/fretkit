@@ -80,6 +80,13 @@ export default function SongDetailView({ songId }: SongDetailViewProps) {
           <span className="text-xs mt-1">Add Chord</span>
         </button>
       </div>
+      <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
+        Click + to add chords; pencil icon to edit search term, tuning, or fret window.
+        Arrow buttons browse voicings (V) and inversions (I) — toggle with the V/I button.
+        Drag chord cards to reorder the progression.
+        Colored dots between chords show voice leading distance (green = smooth, red = large jump).
+        "Smooth" button optimizes voicing choices across the whole progression.
+      </p>
     </main>
   );
 }

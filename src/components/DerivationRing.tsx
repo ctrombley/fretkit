@@ -40,9 +40,13 @@ export default function DerivationRing({
   const playRef = useRef<{ stop: () => void } | null>(null);
 
   const derivation = getDerivation(generator, fundamentalHz, pitchClass, steps, divisions);
-  const etPositions = getETRingPositions(CX, CY, ET_RING_R, pitchClass, divisions);
+  const etPositions = getETRingPositions(CX, CY, ET_RING_R, 0, divisions);
   const centsPerStep = 1200 / divisions;
   const color = HARMONIC_COLORS[derivation.generator.family];
+
+  // Offset inner ring positions so derived dots rotate while ET stays fixed
+  const rootOffsetCents = pitchClass * 100;
+  const offsetCents = (c: number) => ((c + rootOffsetCents) % 1200 + 1200) % 1200;
 
   const visibleStep = hoveredStep ?? activeStep;
   const hoveredInfo = visibleStep !== null
@@ -65,8 +69,8 @@ export default function DerivationRing({
 
   // Build arrow connections between consecutive derived notes
   function getConnectionPath(from: DerivedNote, to: DerivedNote): string {
-    const p1 = getRingPoint(from.centsInOctave, CX, CY, DERIVED_RING_R);
-    const p2 = getRingPoint(to.centsInOctave, CX, CY, DERIVED_RING_R);
+    const p1 = getRingPoint(offsetCents(from.centsInOctave), CX, CY, DERIVED_RING_R);
+    const p2 = getRingPoint(offsetCents(to.centsInOctave), CX, CY, DERIVED_RING_R);
     // Quadratic bezier curving inward toward center
     const mx = (p1.x + p2.x) / 2;
     const my = (p1.y + p2.y) / 2;
@@ -88,8 +92,8 @@ export default function DerivationRing({
   // Build deviation arc path from ET position to derived position
   function getDeviationArc(note: DerivedNote): string | null {
     if (Math.abs(note.centsDeviation) < 0.5) return null;
-    const etCents = note.nearestETStep * centsPerStep;
-    const jiCents = note.centsInOctave;
+    const etCents = offsetCents(note.nearestETStep * centsPerStep);
+    const jiCents = offsetCents(note.centsInOctave);
     const startAngle = (etCents / 1200) * 2 * Math.PI - Math.PI / 2;
     const endAngle = (jiCents / 1200) * 2 * Math.PI - Math.PI / 2;
     const arcR = (ET_RING_R + DERIVED_RING_R) / 2;
@@ -106,8 +110,8 @@ export default function DerivationRing({
     if (steps < 2 || Math.abs(derivation.commaCents) < 0.5) return null;
     // The "return" position: where the next stacked interval would land
     const returnCents = ((steps * derivation.generator.cents) % 1200 + 1200) % 1200;
-    const startAngle = (returnCents / 1200) * 2 * Math.PI - Math.PI / 2;
-    const endAngle = -Math.PI / 2; // back to root (0 cents = 12 o'clock)
+    const startAngle = (offsetCents(returnCents) / 1200) * 2 * Math.PI - Math.PI / 2;
+    const endAngle = (offsetCents(0) / 1200) * 2 * Math.PI - Math.PI / 2;
     const arcR = DERIVED_RING_R - 25;
     const x1 = CX + arcR * Math.cos(startAngle);
     const y1 = CY + arcR * Math.sin(startAngle);
@@ -123,7 +127,7 @@ export default function DerivationRing({
   const commaLabelPos = (() => {
     if (steps < 2 || Math.abs(derivation.commaCents) < 0.5) return null;
     const returnCents = ((steps * derivation.generator.cents) % 1200 + 1200) % 1200;
-    const midCents = returnCents / 2; // approximate midpoint
+    const midCents = offsetCents(returnCents / 2); // approximate midpoint
     const arcR = DERIVED_RING_R - 25;
     const midAngle = (midCents / 1200) * 2 * Math.PI - Math.PI / 2;
     return {
@@ -209,8 +213,8 @@ export default function DerivationRing({
 
       {/* Deviation arc label for hovered note */}
       {hoveredInfo && Math.abs(hoveredInfo.centsDeviation) >= 0.5 && (() => {
-        const etCents = hoveredInfo.nearestETStep * centsPerStep;
-        const midCents = (etCents + hoveredInfo.centsInOctave) / 2;
+        const etCents = offsetCents(hoveredInfo.nearestETStep * centsPerStep);
+        const midCents = (etCents + offsetCents(hoveredInfo.centsInOctave)) / 2;
         const arcR = (ET_RING_R + DERIVED_RING_R) / 2;
         const midAngle = (midCents / 1200) * 2 * Math.PI - Math.PI / 2;
         const labelR = arcR + (hoveredInfo.centsDeviation > 0 ? 14 : -14);
@@ -248,7 +252,7 @@ export default function DerivationRing({
 
       {/* Layer 4: Derived note nodes */}
       {derivation.steps.map(note => {
-        const pt = getRingPoint(note.centsInOctave, CX, CY, DERIVED_RING_R);
+        const pt = getRingPoint(offsetCents(note.centsInOctave), CX, CY, DERIVED_RING_R);
         const isActive = visibleStep === note.step;
         return (
           <g
