@@ -5,7 +5,8 @@ export type View =
   | { name: 'spiral' }
   | { name: 'overtones' }
   | { name: 'coltrane' }
-  | { name: 'synth' };
+  | { name: 'synth' }
+  | { name: 'monochord' };
 
 export interface ChordConfig {
   id: string;

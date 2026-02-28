@@ -1,4 +1,4 @@
-import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform, Triangle, Sliders } from 'lucide-react';
+import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform, Triangle, Sliders, Minus } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Header() {
@@ -77,6 +77,17 @@ export default function Header() {
         >
           <Sliders size={16} />
           Synth
+        </button>
+        <button
+          onClick={() => navigate({ name: 'monochord' })}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+            view.name === 'monochord'
+              ? 'bg-gray-100 text-dark'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <Minus size={16} />
+          Monochord
         </button>
       </nav>
     </header>

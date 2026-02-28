@@ -6,7 +6,6 @@ import {
 } from '../modalRelations';
 import Scale from '../Scale';
 import modes from '../modes';
-import scales from '../scales';
 
 describe('areModallyEquivalent', () => {
   it('C major and D dorian share the same pitch classes', () => {

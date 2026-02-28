@@ -152,11 +152,6 @@ describe('detectParallels', () => {
   it('parallel fifths detected on adjacent strings', () => {
     // String 0: E(4) → A(9)  +5 semitones
     // String 1: B(11) → E(4) +5 semitones (mod 12)  — same direction, same interval
-    const from = makeSequence([[0, 4, 0], [1, 11, 0]]);
-    const to   = makeSequence([[0, 9, 0], [1, 4, 0]]);
-    // Interval before: 11-4=7 (P5); interval after: 4-9 = -5 mod 12 = 7 (P5)
-    // Both move up (+5, -7 mod 12) — actually let me check: 9-4=5 up, 4-11=-7 = +5 mod 12 down
-    // Hmm, direction differs. Let me use clearer numbers.
     // String 0: 40→47 (+7), String 1: 47→54 (+7), same direction, P5 before and after
     const from2 = makeSequence([[0, 40, 0], [1, 47, 7]]);
     const to2   = makeSequence([[0, 47, 7], [1, 54, 14]]);

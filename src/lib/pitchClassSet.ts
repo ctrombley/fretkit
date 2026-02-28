@@ -29,7 +29,7 @@ export function intervalClassVector(pcs: number[]): IntervalClassVector {
     for (let j = i + 1; j < unique.length; j++) {
       const diff = Math.abs(unique[i]! - unique[j]!);
       const ic = diff > 6 ? 12 - diff : diff;
-      if (ic >= 1 && ic <= 6) icv[ic - 1]++;
+      if (ic >= 1 && ic <= 6) icv[ic - 1] = (icv[ic - 1] ?? 0) + 1;
     }
   }
   return icv;
