@@ -1,9 +1,11 @@
 import { useStore } from '../store';
+import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
 import HarmonicSpiral from './HarmonicSpiral';
 import DiatonicChordBar from './DiatonicChordBar';
 
 export default function SpiralView() {
+  const bottomPadding = useBottomPadding();
   const spiralRoot = useStore(s => s.spiralRoot);
   const spiralMode = useStore(s => s.spiralMode);
   const setSpiralMode = useStore(s => s.setSpiralMode);
@@ -12,7 +14,7 @@ export default function SpiralView() {
   const keyName = `${noteName(spiralRoot, preferSharps)} ${spiralMode}`;
 
   return (
-    <div className="pt-14 px-4 pb-16 max-w-2xl mx-auto">
+    <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       <div className="flex items-center justify-between mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">{keyName}</h2>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">

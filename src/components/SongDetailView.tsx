@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useStore } from '../store';
+import { useBottomPadding } from '../hooks/useBottomPadding';
 import SongHeader from './SongHeader';
 import SongChordCard from './SongChordCard';
 
@@ -8,6 +9,7 @@ interface SongDetailViewProps {
 }
 
 export default function SongDetailView({ songId }: SongDetailViewProps) {
+  const bottomPadding = useBottomPadding();
   const song = useStore(s => s.songs[songId]);
   const addChordToSong = useStore(s => s.addChordToSong);
   const navigate = useStore(s => s.navigate);
@@ -19,7 +21,7 @@ export default function SongDetailView({ songId }: SongDetailViewProps) {
   }
 
   return (
-    <main className="pt-14 pb-16 px-4 max-w-7xl mx-auto">
+    <main className="pt-14 px-4 max-w-7xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       <SongHeader songId={songId} title={song.title} />
 
       <div className="flex flex-wrap gap-4 items-start">

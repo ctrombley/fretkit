@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { useStore } from '../store';
+import { useBottomPadding } from '../hooks/useBottomPadding';
 import { parseSongImport } from '../lib/songExport';
 import SongCard from './SongCard';
 
 export default function SongListView() {
+  const bottomPadding = useBottomPadding();
   const songs = useStore(s => s.songs);
   const createSong = useStore(s => s.createSong);
   const importSongs = useStore(s => s.importSongs);
@@ -31,7 +33,7 @@ export default function SongListView() {
   };
 
   return (
-    <main className="pt-14 pb-16 px-4 max-w-4xl mx-auto">
+    <main className="pt-14 px-4 max-w-4xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       <div className="flex items-center justify-between mt-6 mb-4">
         <h2 className="text-xl font-semibold text-dark">Songs</h2>
         <div className="flex gap-2">

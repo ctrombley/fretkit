@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useStore } from '../store';
+import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
 import { play } from '../lib/musicbox';
 import {
@@ -14,6 +15,7 @@ const PITCH_CLASSES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const DIVISIONS: SymmetricDivision[] = [2, 3, 4, 6];
 
 export default function ColtraneView() {
+  const bottomPadding = useBottomPadding();
   const root = useStore(s => s.coltraneRoot);
   const division = useStore(s => s.coltraneDivision);
   const mode = useStore(s => s.coltraneMode);
@@ -67,7 +69,7 @@ export default function ColtraneView() {
   }
 
   return (
-    <div className="pt-14 px-4 pb-16 max-w-2xl mx-auto">
+    <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       {/* Title */}
       <div className="mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">

@@ -7,6 +7,7 @@ import SpiralView from './SpiralView';
 import OvertoneView from './OvertoneView';
 import ColtraneView from './ColtraneView';
 import SynthView from './SynthView';
+import KeyboardPanel from './KeyboardPanel';
 import TransportBar from './TransportBar';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
       {view.name === 'overtones' && <OvertoneView />}
       {view.name === 'coltrane' && <ColtraneView />}
       {view.name === 'synth' && <SynthView />}
+      <KeyboardPanel />
       <TransportBar />
     </div>
   );

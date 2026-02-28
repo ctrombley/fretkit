@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useStore } from '../store';
+import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
 import { fundamentalFrequency } from '../lib/overtones';
 import { play } from '../lib/musicbox';
@@ -15,6 +16,7 @@ const GENERATOR_LABELS: Record<GeneratorPreset, string> = { fifths: '5ths', thir
 const GENERATOR_KEYS: GeneratorPreset[] = ['fifths', 'thirds', 'sevenths'];
 
 export default function OvertoneView() {
+  const bottomPadding = useBottomPadding();
   const overtoneRoot = useStore(s => s.overtoneRoot);
   const overtoneOctave = useStore(s => s.overtoneOctave);
   const overtoneCount = useStore(s => s.overtoneCount);
@@ -85,7 +87,7 @@ export default function OvertoneView() {
   }
 
   return (
-    <div className="pt-14 px-4 pb-16 max-w-2xl mx-auto">
+    <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       {/* Title */}
       <div className="mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">

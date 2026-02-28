@@ -112,6 +112,7 @@ class SynthEngine {
   private lfo1State: LfoState = { phase: 0, baseValues: new Map() };
   private lfo2State: LfoState = { phase: 0, baseValues: new Map() };
   private lastLfoTime: number = 0;
+  private activeVoices: Set<{ stop: () => void }> = new Set();
 
   constructor() {
     this.ctx = new AudioContext();
@@ -280,10 +281,11 @@ class SynthEngine {
       modOsc.start(now);
 
       let released = false;
-      return {
+      const handle = {
         stop: () => {
           if (released) return;
           released = true;
+          this.activeVoices.delete(handle);
           const releaseStart = this.ctx.currentTime;
           envelope.gain.cancelScheduledValues(releaseStart);
           envelope.gain.setValueAtTime(envelope.gain.value, releaseStart);
@@ -298,6 +300,8 @@ class SynthEngine {
           };
         },
       };
+      this.activeVoices.add(handle);
+      return handle;
     } else {
       // Additive mode: mix osc1 and osc2
       const osc1Gain = this.ctx.createGain();
@@ -321,10 +325,11 @@ class SynthEngine {
         osc2.start(now);
 
         let released = false;
-        return {
+        const handle = {
           stop: () => {
             if (released) return;
             released = true;
+            this.activeVoices.delete(handle);
             const releaseStart = this.ctx.currentTime;
             envelope.gain.cancelScheduledValues(releaseStart);
             envelope.gain.setValueAtTime(envelope.gain.value, releaseStart);
@@ -340,15 +345,18 @@ class SynthEngine {
             };
           },
         };
+        this.activeVoices.add(handle);
+        return handle;
       } else {
         envelope.connect(this.filter);
         osc1.start(now);
 
         let released = false;
-        return {
+        const handle = {
           stop: () => {
             if (released) return;
             released = true;
+            this.activeVoices.delete(handle);
             const releaseStart = this.ctx.currentTime;
             envelope.gain.cancelScheduledValues(releaseStart);
             envelope.gain.setValueAtTime(envelope.gain.value, releaseStart);
@@ -361,8 +369,17 @@ class SynthEngine {
             };
           },
         };
+        this.activeVoices.add(handle);
+        return handle;
       }
     }
+  }
+
+  killAll(): void {
+    for (const voice of this.activeVoices) {
+      voice.stop();
+    }
+    this.activeVoices.clear();
   }
 
   updateParams(partial: Partial<SynthParams>): void {
