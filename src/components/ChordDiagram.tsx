@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
+import { stringStatuses, tabShorthand } from '../lib/voicingUtils';
 
 const STRING_SPACING = 20;
 const FRET_SPACING = 22;
@@ -11,6 +12,8 @@ const MARGIN_BOTTOM = 10;
 const NUT_WIDTH = 4;
 const MARKER_RADIUS = 7;
 const FRET_LABEL_SIZE = 10;
+const INDICATOR_Y = MARGIN_TOP - 12;
+const INDICATOR_SIZE = 4;
 
 import { SINGLE_MARKER_FRETS, DOUBLE_MARKER_FRETS } from '../lib/fretboardConstants';
 
@@ -39,7 +42,7 @@ export default function ChordDiagram({
 }: ChordDiagramProps) {
   const stringCount = tuning.length;
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
-  const isOpenPosition = startingFret === 1;
+  const statuses = sequenceEnabled && sequence ? stringStatuses(sequence, stringCount) : null;
 
   const dragState = useRef<{ startY: number; startFret: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -53,7 +56,8 @@ export default function ChordDiagram({
   const showNut = displayStart === 1;
 
   const width = MARGIN_LEFT + STRING_SPACING * (stringCount - 1) + MARGIN_RIGHT;
-  const height = MARGIN_TOP + FRET_SPACING * visibleFrets + MARGIN_BOTTOM;
+  const hasLabel = sequenceEnabled && sequence;
+  const height = MARGIN_TOP + FRET_SPACING * visibleFrets + MARGIN_BOTTOM + (hasLabel ? 12 : 0);
 
   const stringX = (stringIdx: number) => MARGIN_LEFT + stringIdx * STRING_SPACING;
   const fretY = (fretIdx: number) => MARGIN_TOP + fretIdx * FRET_SPACING;
@@ -92,9 +96,8 @@ export default function ChordDiagram({
     const note = openNote.add(fretNumber);
 
     if (sequenceEnabled && sequence) {
-      const seqStringIdx = stringCount - 1 - stringIdx;
       return sequence.stringNotes.some(
-        sn => sn.semitones === note.semitones && sn.string === seqStringIdx,
+        sn => sn.semitones === note.semitones && sn.string === stringIdx,
       );
     }
     return litNotes.some(n => n.baseSemitones === note.baseSemitones);
@@ -186,42 +189,80 @@ export default function ChordDiagram({
         return <circle key={`marker-${fretNum}`} cx={cx} cy={cy} r={3} fill="#ddd" />;
       })}
 
-      {/* Note markers */}
-      {Array.from({ length: stringCount }, (_, stringIdx) => {
-        const openLit = isOpenPosition && isNoteLit(stringIdx, 0);
-        const openRoot = isOpenPosition && isNoteRoot(stringIdx, 0);
+      {/* String status indicators (X = muted, O = open) above nut */}
+      {statuses && Array.from({ length: stringCount }, (_, stringIdx) => {
+        const status = statuses[stringIdx];
+        const cx = stringX(stringIdx);
 
-        return (
-          <g key={`notes-${stringIdx}`}>
-            {openLit && (
-              <circle
-                cx={stringX(stringIdx)}
-                cy={MARGIN_TOP - 12}
-                r={MARKER_RADIUS - 2}
-                fill="none"
-                stroke={openRoot ? '#99C432' : '#F73667'}
-                strokeWidth={2}
+        if (status === 'muted') {
+          return (
+            <g key={`status-${stringIdx}`}>
+              <line
+                x1={cx - INDICATOR_SIZE} y1={INDICATOR_Y - INDICATOR_SIZE}
+                x2={cx + INDICATOR_SIZE} y2={INDICATOR_Y + INDICATOR_SIZE}
+                stroke="#999" strokeWidth={1.5}
               />
-            )}
+              <line
+                x1={cx + INDICATOR_SIZE} y1={INDICATOR_Y - INDICATOR_SIZE}
+                x2={cx - INDICATOR_SIZE} y2={INDICATOR_Y + INDICATOR_SIZE}
+                stroke="#999" strokeWidth={1.5}
+              />
+            </g>
+          );
+        }
 
-            {Array.from({ length: visibleFrets }, (_, fretIdx) => {
-              const fretNumber = displayStart + fretIdx;
-              if (!isNoteLit(stringIdx, fretNumber)) return null;
-              const isRoot = isNoteRoot(stringIdx, fretNumber);
+        if (status === 'open') {
+          const openRoot = isNoteRoot(stringIdx, 0);
+          return (
+            <circle
+              key={`status-${stringIdx}`}
+              cx={cx}
+              cy={INDICATOR_Y}
+              r={MARKER_RADIUS - 2}
+              fill="none"
+              stroke={openRoot ? '#99C432' : '#F73667'}
+              strokeWidth={2}
+            />
+          );
+        }
 
-              return (
-                <circle
-                  key={`note-${stringIdx}-${fretIdx}`}
-                  cx={stringX(stringIdx)}
-                  cy={fretY(fretIdx) + FRET_SPACING / 2}
-                  r={MARKER_RADIUS}
-                  fill={isRoot ? '#99C432' : '#F73667'}
-                />
-              );
-            })}
-          </g>
-        );
+        return null;
       })}
+
+      {/* Note markers (fretted notes) */}
+      {Array.from({ length: stringCount }, (_, stringIdx) => (
+        <g key={`notes-${stringIdx}`}>
+          {Array.from({ length: visibleFrets }, (_, fretIdx) => {
+            const fretNumber = displayStart + fretIdx;
+            if (!isNoteLit(stringIdx, fretNumber)) return null;
+            const isRoot = isNoteRoot(stringIdx, fretNumber);
+
+            return (
+              <circle
+                key={`note-${stringIdx}-${fretIdx}`}
+                cx={stringX(stringIdx)}
+                cy={fretY(fretIdx) + FRET_SPACING / 2}
+                r={MARKER_RADIUS}
+                fill={isRoot ? '#99C432' : '#F73667'}
+              />
+            );
+          })}
+        </g>
+      ))}
+
+      {/* Tab shorthand label below diagram */}
+      {sequenceEnabled && sequence && (
+        <text
+          x={MARGIN_LEFT + STRING_SPACING * (stringCount - 1) / 2}
+          y={fretY(visibleFrets) + MARGIN_BOTTOM + 2}
+          fontSize={9}
+          textAnchor="middle"
+          fill="#666"
+          fontFamily="monospace"
+        >
+          {tabShorthand(sequence, stringCount)}
+        </text>
+      )}
     </svg>
   );
 }
