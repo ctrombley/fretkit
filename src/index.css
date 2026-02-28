@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SVG Fretboard Styles */
+
+.fretboard {
+  cursor: pointer;
+  display: block;
+  margin: 0 auto;
+}
+
+.fret__wire {
+  fill: none;
+  stroke: #000;
+}
+
+.fret__marker > circle {
+  r: 10;
+  fill: #ddd;
+}
+
+.label {
+  fill: #000;
+  stroke: #000;
+  stroke-width: 0;
+  text-anchor: middle;
+}
+
+.string__line {
+  fill: none;
+  stroke: #000;
+}
+
+.string__overlay {
+  fill-opacity: 0;
+}
+
+.string__marker {
+  transition: r 100ms;
+  r: 8;
+}
+
+.string__marker-preview {
+  fill: rgba(0, 196, 204, 0.5);
+  animation: pulse 1.2s infinite;
+}
+
+.string__marker-lit {
+  fill: #F73667;
+}
+
+.string__marker-lit.string__marker-nut {
+  fill: none;
+  stroke: #F73667;
+}
+
+.string__marker-root {
+  fill: #99C432;
+}
+
+.string__marker-root.string__marker-nut {
+  fill: none;
+  stroke: #99C432;
+}
+
+@keyframes pulse {
+  0% { r: 8; opacity: 1; }
+  50% { r: 12; opacity: 0.6; }
+  100% { r: 8; opacity: 1; }
+}

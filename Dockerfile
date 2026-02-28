@@ -1,12 +1,11 @@
-FROM node:16-alpine
-RUN apk add --update \
-#  python \
-  build-base
-
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npm run build
-EXPOSE 5000
-CMD [ "node", "src/server/index.js" ]
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
