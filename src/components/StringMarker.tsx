@@ -32,11 +32,21 @@ export default function StringMarker({
       : undefined;
 
   return (
-    <circle
-      cx={cx}
-      cy={yOffset}
-      className={`string__marker ${className} ${isNut ? 'string__marker-nut' : ''} ${isPlaying ? 'string__marker-playing' : ''}`}
-      style={playingStyle}
-    />
+    <g>
+      {isPlaying && note && (
+        <circle
+          cx={cx}
+          cy={yOffset}
+          className="string__marker-bloom"
+          style={{ fill: getPitchClassColor(note.baseSemitones) }}
+        />
+      )}
+      <circle
+        cx={cx}
+        cy={yOffset}
+        className={`string__marker ${className} ${isNut ? 'string__marker-nut' : ''} ${isPlaying ? 'string__marker-playing' : ''}`}
+        style={playingStyle}
+      />
+    </g>
   );
 }
