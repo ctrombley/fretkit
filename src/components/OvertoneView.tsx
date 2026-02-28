@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
@@ -7,6 +7,7 @@ import { play } from '../lib/musicbox';
 import { getDerivation, GENERATOR_PRESETS, type GeneratorPreset } from '../lib/derivation';
 import OvertoneSpiral from './OvertoneSpiral';
 import DerivationRing from './DerivationRing';
+import SynthPresetSelector from './SynthPresetSelector';
 
 const PITCH_CLASSES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const OCTAVES = [1, 2, 3, 4, 5];
@@ -36,66 +37,109 @@ export default function OvertoneView() {
   const setDerivationSteps = useStore(s => s.setDerivationSteps);
   const setDerivationActiveStep = useStore(s => s.setDerivationActiveStep);
   const setDerivationDivisions = useStore(s => s.setDerivationDivisions);
+  const transportBpm = useStore(s => s.transportBpm);
+  const seriesPlaying = useStore(s => s.seriesPlaying);
+  const setSeriesPlaying = useStore(s => s.setSeriesPlaying);
 
-  const playingRef = useRef(false);
+  const voicesRef = useRef<{ stop: () => void }[]>([]);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const fundHz = fundamentalFrequency(overtoneRoot, overtoneOctave);
   const preferSharps = usesSharps(overtoneRoot);
   const rootName = noteName(overtoneRoot, preferSharps);
   const isDeriveMode = overtoneMode === 'derive';
 
-  function playSeries() {
-    if (playingRef.current) return;
-    playingRef.current = true;
+  const stopPlayback = useCallback(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    voicesRef.current.forEach(h => h.stop());
+    voicesRef.current = [];
+    setDerivationActiveStep(null);
+  }, [setDerivationActiveStep]);
 
-    if (isDeriveMode) {
-      const derivation = getDerivation(derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions);
-      const handles: { stop: () => void }[] = [];
-      const interval = 300;
-
-      derivation.steps.forEach((note, i) => {
-        setTimeout(() => {
-          setDerivationActiveStep(note.step);
-          const handle = play(note.frequency);
-          handles.push(handle);
-        }, i * interval);
-      });
-
-      setTimeout(() => {
-        handles.forEach(h => h.stop());
-        setDerivationActiveStep(null);
-        playingRef.current = false;
-      }, derivationSteps * interval + 600);
-    } else {
-      const useET = overtoneMode === 'et';
-      const handles: { stop: () => void }[] = [];
-      for (let n = 1; n <= overtoneCount; n++) {
-        const freq = useET
-          ? fundHz * Math.pow(2, Math.round(1200 * Math.log2(n) / 100) / 12)
-          : n * fundHz;
-        setTimeout(() => {
-          const handle = play(freq);
-          handles.push(handle);
-        }, (n - 1) * 200);
-      }
-
-      setTimeout(() => {
-        handles.forEach(h => h.stop());
-        playingRef.current = false;
-      }, overtoneCount * 200 + 600);
+  // Main playback loop driven by seriesPlaying
+  useEffect(() => {
+    if (!seriesPlaying) {
+      stopPlayback();
+      return;
     }
-  }
+
+    const interval = 60000 / transportBpm;
+    let cancelled = false;
+
+    function scheduleLoop() {
+      if (cancelled) return;
+
+      if (isDeriveMode) {
+        const derivation = getDerivation(derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions);
+        derivation.steps.forEach((note, i) => {
+          const tid = setTimeout(() => {
+            if (cancelled) return;
+            setDerivationActiveStep(note.step);
+            const handle = play(note.frequency);
+            voicesRef.current.push(handle);
+          }, i * interval);
+          timeoutsRef.current.push(tid);
+        });
+        // Schedule next loop after all steps
+        const tid = setTimeout(() => {
+          voicesRef.current.forEach(h => h.stop());
+          voicesRef.current = [];
+          setDerivationActiveStep(null);
+          scheduleLoop();
+        }, derivationSteps * interval);
+        timeoutsRef.current.push(tid);
+      } else {
+        const useET = overtoneMode === 'et';
+        for (let n = 1; n <= overtoneCount; n++) {
+          const freq = useET
+            ? fundHz * Math.pow(2, Math.round(1200 * Math.log2(n) / 100) / 12)
+            : n * fundHz;
+          const tid = setTimeout(() => {
+            if (cancelled) return;
+            const handle = play(freq);
+            voicesRef.current.push(handle);
+          }, (n - 1) * interval);
+          timeoutsRef.current.push(tid);
+        }
+        // Schedule next loop after all overtones
+        const tid = setTimeout(() => {
+          voicesRef.current.forEach(h => h.stop());
+          voicesRef.current = [];
+          scheduleLoop();
+        }, overtoneCount * interval);
+        timeoutsRef.current.push(tid);
+      }
+    }
+
+    scheduleLoop();
+
+    return () => {
+      cancelled = true;
+      stopPlayback();
+    };
+  }, [seriesPlaying, transportBpm, isDeriveMode, derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions, overtoneMode, overtoneCount, setDerivationActiveStep, stopPlayback]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setSeriesPlaying(false);
+    };
+  }, [setSeriesPlaying]);
 
   return (
     <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       {/* Title */}
       <div className="mt-6 mb-4">
-        <h2 className="text-2xl font-bold text-dark">
-          {isDeriveMode
-            ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name}, ${derivationDivisions}-TET)`
-            : `Overtone Series: ${rootName}${overtoneOctave}`
-          }
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-dark">
+            {isDeriveMode
+              ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name}, ${derivationDivisions}-TET)`
+              : `Overtone Series: ${rootName}${overtoneOctave}`
+            }
+          </h2>
+          <SynthPresetSelector />
+        </div>
         <p className="text-sm text-gray-500 mt-0.5">
           Fundamental: {fundHz.toFixed(1)} Hz
         </p>
@@ -239,10 +283,14 @@ export default function OvertoneView() {
 
         {/* Play */}
         <button
-          onClick={playSeries}
-          className="px-3 py-1.5 rounded-md text-sm font-medium bg-magenta text-white hover:bg-magenta/90 transition-colors"
+          onClick={() => setSeriesPlaying(!seriesPlaying)}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            seriesPlaying
+              ? 'bg-magenta text-white ring-2 ring-magenta/50'
+              : 'bg-magenta text-white hover:bg-magenta/90'
+          }`}
         >
-          {isDeriveMode ? 'Play Sequence' : 'Play Series'}
+          {seriesPlaying ? 'Stop' : isDeriveMode ? 'Play Sequence' : 'Play Series'}
         </button>
       </div>
 

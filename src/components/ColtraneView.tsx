@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
@@ -10,6 +10,7 @@ import {
 } from '../lib/coltrane';
 import ColtraneCircle from './ColtraneCircle';
 import ColtraneMandala from './ColtraneMandala';
+import SynthPresetSelector from './SynthPresetSelector';
 
 const PITCH_CLASSES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const DIVISIONS: SymmetricDivision[] = [2, 3, 4, 6];
@@ -29,52 +30,94 @@ export default function ColtraneView() {
   const setOrdering = useStore(s => s.setColtraneOrdering);
   const setShowCadences = useStore(s => s.setColtraneShowCadences);
   const setHighlightedAxis = useStore(s => s.setColtraneHighlightedAxis);
+  const transportBpm = useStore(s => s.transportBpm);
+  const seriesPlaying = useStore(s => s.seriesPlaying);
+  const setSeriesPlaying = useStore(s => s.setSeriesPlaying);
 
-  const playingRef = useRef(false);
+  const voicesRef = useRef<{ stop: () => void }[]>([]);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
   const preferSharps = usesSharps(root);
   const rootName = noteName(root, preferSharps);
   const preset = DIVISION_PRESETS[division];
 
-  function playCycle() {
-    if (playingRef.current) return;
-    playingRef.current = true;
+  const stopPlayback = useCallback(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    voicesRef.current.forEach(h => h.stop());
+    voicesRef.current = [];
+  }, []);
 
-    const cadences = getCadences(root, division);
-    const handles: { stop: () => void }[] = [];
-    const interval = 500;
-    let step = 0;
-
-    for (const cadence of cadences) {
-      // Play axis tone
-      const fromFreq = 261.63 * Math.pow(2, ((cadence.from - 0) % 12) / 12);
-      setTimeout(() => {
-        const h = play(fromFreq);
-        handles.push(h);
-      }, step * interval);
-      step++;
-
-      // Play dominant
-      const domFreq = 261.63 * Math.pow(2, ((cadence.dominant - 0) % 12) / 12);
-      setTimeout(() => {
-        const h = play(domFreq);
-        handles.push(h);
-      }, step * interval);
-      step++;
+  // Main playback loop driven by seriesPlaying
+  useEffect(() => {
+    if (!seriesPlaying) {
+      stopPlayback();
+      return;
     }
 
-    setTimeout(() => {
-      handles.forEach(h => h.stop());
-      playingRef.current = false;
-    }, step * interval + 600);
-  }
+    const interval = 60000 / transportBpm;
+    let cancelled = false;
+
+    function scheduleLoop() {
+      if (cancelled) return;
+
+      const cadences = getCadences(root, division);
+      let step = 0;
+
+      for (const cadence of cadences) {
+        const fromFreq = 261.63 * Math.pow(2, ((cadence.from) % 12) / 12);
+        const tid1 = setTimeout(() => {
+          if (cancelled) return;
+          const h = play(fromFreq);
+          voicesRef.current.push(h);
+        }, step * interval);
+        timeoutsRef.current.push(tid1);
+        step++;
+
+        const domFreq = 261.63 * Math.pow(2, ((cadence.dominant) % 12) / 12);
+        const tid2 = setTimeout(() => {
+          if (cancelled) return;
+          const h = play(domFreq);
+          voicesRef.current.push(h);
+        }, step * interval);
+        timeoutsRef.current.push(tid2);
+        step++;
+      }
+
+      // Schedule next loop
+      const tid = setTimeout(() => {
+        voicesRef.current.forEach(h => h.stop());
+        voicesRef.current = [];
+        scheduleLoop();
+      }, step * interval);
+      timeoutsRef.current.push(tid);
+    }
+
+    scheduleLoop();
+
+    return () => {
+      cancelled = true;
+      stopPlayback();
+    };
+  }, [seriesPlaying, transportBpm, root, division, stopPlayback]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setSeriesPlaying(false);
+    };
+  }, [setSeriesPlaying]);
 
   return (
     <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       {/* Title */}
       <div className="mt-6 mb-4">
-        <h2 className="text-2xl font-bold text-dark">
-          Coltrane Changes: {rootName} — {preset.name}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-dark">
+            Coltrane Changes: {rootName} — {preset.name}
+          </h2>
+          <SynthPresetSelector />
+        </div>
         <p className="text-sm text-gray-500 mt-0.5">
           {preset.description}
         </p>
@@ -172,10 +215,14 @@ export default function ColtraneView() {
 
         {/* Play */}
         <button
-          onClick={playCycle}
-          className="px-3 py-1.5 rounded-md text-sm font-medium bg-magenta text-white hover:bg-magenta/90 transition-colors"
+          onClick={() => setSeriesPlaying(!seriesPlaying)}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            seriesPlaying
+              ? 'bg-magenta text-white ring-2 ring-magenta/50'
+              : 'bg-magenta text-white hover:bg-magenta/90'
+          }`}
         >
-          Play Cycle
+          {seriesPlaying ? 'Stop' : 'Play Cycle'}
         </button>
       </div>
 

@@ -6,6 +6,7 @@ import ControlPanel from './ControlPanel';
 import { Plus, Lock, Unlock, Zap, Link, Unlink } from 'lucide-react';
 import type { ArpPattern } from '../lib/arpeggiator';
 import SynthKnob from './SynthKnob';
+import SynthPresetSelector from './SynthPresetSelector';
 
 const ARP_SYNC_SPEEDS: { value: number; label: string }[] = [
   { value: 1, label: '1/4' },
@@ -61,6 +62,7 @@ export default function SandboxView() {
       <main className="pt-14 px-4 max-w-7xl mx-auto" style={{ paddingBottom: bottomPadding }}>
         {/* Toolbar */}
         <div className="flex items-center gap-2 py-2">
+          <SynthPresetSelector />
           {/* Latch toggle (hidden when arp is on) */}
           {!arpEnabled && (
             <button
