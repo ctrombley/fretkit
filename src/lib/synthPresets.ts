@@ -10,6 +10,8 @@ export const MAX_PRESETS = 255;
 
 const base: SynthParams = {
   waveform: 'sawtooth',
+  hpCutoff: 80,
+  hpResonance: 0.7,
   filterCutoff: 2000,
   filterResonance: 1,
   attack: 0.01,
@@ -158,6 +160,8 @@ export function randomizeParams(): SynthParams {
 
   return {
     waveform: pick(waveforms),
+    hpCutoff: logRand(20, 400),
+    hpResonance: Math.random() * 4,
     filterCutoff: logRand(100, 15000),
     filterResonance: Math.random() * 15,
     attack: logRand(0.001, 1),

@@ -7,6 +7,7 @@ interface FretboardContextValue {
   litNotes: Note[];
   sequence?: Sequence;
   sequenceEnabled: boolean;
+  onStrum?: () => void;
 }
 
 const FretboardContext = createContext<FretboardContextValue | null>(null);

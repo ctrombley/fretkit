@@ -15,7 +15,7 @@ export function formatPan(v: number): string {
 
 /** All keys in SynthParams, in a stable order. */
 export const SYNTH_PARAM_KEYS: (keyof SynthParams)[] = [
-  'waveform', 'filterCutoff', 'filterResonance',
+  'waveform', 'hpCutoff', 'hpResonance', 'filterCutoff', 'filterResonance',
   'attack', 'decay', 'sustain', 'release',
   'pan', 'reverbSend', 'delaySend', 'delayTime', 'delayFeedback', 'delayPingPong', 'masterVolume',
   'osc2Waveform', 'osc2Detune', 'osc2Mix',

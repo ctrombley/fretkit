@@ -42,25 +42,24 @@ export default function FretboardLabel({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(searchStr);
   const inputRef = useRef<HTMLInputElement>(null);
+  const originalSearchStr = useRef(searchStr);
 
   useEffect(() => {
     if (editing) {
+      originalSearchStr.current = searchStr;
       setDraft(searchStr);
-      // Focus after render
       requestAnimationFrame(() => inputRef.current?.select());
     }
-  }, [editing, searchStr]);
+  }, [editing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const commit = () => {
-    setEditing(false);
-    if (draft.trim() !== searchStr) {
-      search(id, draft.trim());
-    }
-  };
+  const commit = () => setEditing(false);
 
   const cancel = () => {
     setEditing(false);
-    setDraft(searchStr);
+    setDraft(originalSearchStr.current);
+    if (searchStr !== originalSearchStr.current) {
+      search(id, originalSearchStr.current);
+    }
   };
 
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
@@ -92,12 +91,12 @@ export default function FretboardLabel({
   // Edit mode: inline input
   if (editing) {
     return (
-      <div className="text-center h-8 flex items-center justify-center">
+      <div className="text-center h-8 flex items-center justify-center" onPointerDown={e => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
           value={draft}
-          onChange={e => setDraft(e.target.value)}
+          onChange={e => { setDraft(e.target.value); search(id, e.target.value); }}
           onKeyDown={e => {
             if (e.key === 'Enter') commit();
             if (e.key === 'Escape') cancel();
@@ -116,6 +115,7 @@ export default function FretboardLabel({
       <div
         className="h-8 flex items-center justify-center cursor-pointer"
         onClick={() => setEditing(true)}
+        onPointerDown={e => e.stopPropagation()}
       >
         <span className="text-gray-400 text-sm italic">
           Click to search chord or scale...
@@ -126,7 +126,7 @@ export default function FretboardLabel({
 
   // Display mode with click-to-edit and optional voicing arrows
   return (
-    <div className="text-center flex flex-col items-center gap-0.5">
+    <div className="text-center flex flex-col items-center gap-0.5" onPointerDown={e => e.stopPropagation()}>
       {/* Chord name row — always centered */}
       <div className="text-xl flex items-center justify-center gap-1">
         {hasMultipleVoicings ? (

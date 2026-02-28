@@ -40,6 +40,8 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 export default function SynthView() {
   const waveform = useStore(s => s.synthWaveform);
+  const hpCutoff = useStore(s => s.synthHpCutoff);
+  const hpResonance = useStore(s => s.synthHpResonance);
   const filterCutoff = useStore(s => s.synthFilterCutoff);
   const filterResonance = useStore(s => s.synthFilterResonance);
   const attack = useStore(s => s.synthAttack);
@@ -110,7 +112,31 @@ export default function SynthView() {
           <SectionHeader>Filter & Envelope</SectionHeader>
           <div className="flex flex-wrap justify-center gap-3">
             <SynthKnob
-              label="Cutoff"
+              label="HP"
+              value={hpCutoff}
+              min={20}
+              max={2000}
+              logarithmic
+              onChange={(v) => setSynthParam('hpCutoff', v)}
+              unit="Hz"
+              paramKey="hpCutoff"
+              lfoTargeting={lfoFor('hpCutoff', lfo1Target, lfo2Target)}
+              onDrop={(lfo) => handleLfoDrop('hpCutoff', lfo)}
+            />
+            <SynthKnob
+              label="HP Q"
+              value={hpResonance}
+              min={0}
+              max={30}
+              onChange={(v) => setSynthParam('hpResonance', v)}
+              formatValue={(v) => v.toFixed(1)}
+              unit="Q"
+              paramKey="hpResonance"
+              lfoTargeting={lfoFor('hpResonance', lfo1Target, lfo2Target)}
+              onDrop={(lfo) => handleLfoDrop('hpResonance', lfo)}
+            />
+            <SynthKnob
+              label="LP"
               value={filterCutoff}
               min={20}
               max={20000}
@@ -122,7 +148,7 @@ export default function SynthView() {
               onDrop={(lfo) => handleLfoDrop('filterCutoff', lfo)}
             />
             <SynthKnob
-              label="Resonance"
+              label="LP Q"
               value={filterResonance}
               min={0}
               max={30}

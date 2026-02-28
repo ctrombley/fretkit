@@ -80,6 +80,62 @@ export function createSongsSlice(set: StoreSet, get: StoreGet) {
       });
     },
 
+    addConfiguredChordToSong: (songId: string, config: Omit<ChordConfig, 'id'>) => {
+      const chordId = crypto.randomUUID();
+      set((state: AppState) => {
+        const song = state.songs[songId];
+        if (!song) return state;
+        const newChord: ChordConfig = { id: chordId, ...config };
+        return {
+          songs: {
+            ...state.songs,
+            [songId]: {
+              ...song,
+              savedChords: [...(song.savedChords ?? []), newChord],
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      });
+    },
+
+    removeSavedChord: (songId: string, chordId: string) => {
+      set((state: AppState) => {
+        const song = state.songs[songId];
+        if (!song) return state;
+        return {
+          songs: {
+            ...state.songs,
+            [songId]: {
+              ...song,
+              savedChords: (song.savedChords ?? []).filter(c => c.id !== chordId),
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      });
+    },
+
+    addSavedChordToProgression: (songId: string, savedChordId: string) => {
+      set((state: AppState) => {
+        const song = state.songs[songId];
+        if (!song) return state;
+        const source = (song.savedChords ?? []).find(c => c.id === savedChordId);
+        if (!source) return state;
+        const newChord: ChordConfig = { ...source, id: crypto.randomUUID() };
+        return {
+          songs: {
+            ...state.songs,
+            [songId]: {
+              ...song,
+              chords: [...song.chords, newChord],
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      });
+    },
+
     updateSongChord: (songId: string, chordId: string, data: Partial<ChordConfig>) => {
       set((state: AppState) => {
         const song = state.songs[songId];

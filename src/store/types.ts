@@ -107,6 +107,8 @@ export interface AppState {
 
   // Synth
   synthWaveform: OscWaveform;
+  synthHpCutoff: number;
+  synthHpResonance: number;
   synthFilterCutoff: number;
   synthFilterResonance: number;
   synthAttack: number;
@@ -198,6 +200,8 @@ export interface AppState {
   toggleSandboxNote: (semitones: number, frequency: number) => void;
   activateSandboxNote: (semitones: number, frequency: number) => void;
   deactivateSandboxNote: (semitones: number) => void;
+  strumVoicing: (notes: Array<{ semitones: number; frequency: number }>) => void;
+  strumActiveNotes: () => void;
 
   // Arpeggiator actions
   setArpEnabled: (enabled: boolean) => void;
@@ -237,6 +241,9 @@ export interface AppState {
 
   // Song actions
   createSong: (title: string) => void;
+  addConfiguredChordToSong: (songId: string, config: Omit<import('../types').ChordConfig, 'id'>) => void;
+  removeSavedChord: (songId: string, chordId: string) => void;
+  addSavedChordToProgression: (songId: string, savedChordId: string) => void;
   deleteSong: (id: string) => void;
   renameSong: (id: string, title: string) => void;
   addChordToSong: (songId: string) => void;

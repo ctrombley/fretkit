@@ -1,23 +1,30 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { X, GripVertical, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
 import type { ChordConfig } from '../types';
 import useChordDerived from '../hooks/useChordDerived';
 import ChordDiagram from './ChordDiagram';
 import ChordEditor from './ChordEditor';
+import Chord from '../lib/Chord';
+import termSearch from '../lib/termSearch';
+import { generateVoicings } from '../lib/voicingGenerator';
+import { computeVoiceLeading } from '../lib/voiceLeading';
+import type Sequence from '../lib/Sequence';
 
 interface SongChordCardProps {
   songId: string;
   chord: ChordConfig;
   index: number;
+  prevChord?: ChordConfig;
 }
 
-export default function SongChordCard({ songId, chord, index }: SongChordCardProps) {
+export default function SongChordCard({ songId, chord, index, prevChord }: SongChordCardProps) {
   const removeSongChord = useStore(s => s.removeSongChord);
   const reorderSongChords = useStore(s => s.reorderSongChords);
   const updateSongChord = useStore(s => s.updateSongChord);
   const activeSongChordId = useStore(s => s.activeSongChordId);
   const setActiveSongChordId = useStore(s => s.setActiveSongChordId);
+  const strumVoicing = useStore(s => s.strumVoicing);
   const { current, litNotes, sequences, maxInversions } = useChordDerived(chord);
 
   const [arrowMode, setArrowMode] = useState<'voicing' | 'inversion'>('voicing');
@@ -36,9 +43,7 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
     }
   }, [editingName]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const commitName = () => {
-    setEditingName(false);
-  };
+  const commitName = () => setEditingName(false);
 
   const cancelName = () => {
     setEditingName(false);
@@ -72,18 +77,88 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
     e.dataTransfer.dropEffect = 'move';
   };
 
-  // Arrow navigation logic
+  // ── Voice-leading-aware inversion sorting ──────────────────────────────────
+
+  // Resolve the previous chord's active sequence for VL comparison
+  const prevSeq = useMemo((): Sequence | null => {
+    if (!prevChord?.searchStr) return null;
+    const { current: pc, notes } = termSearch(prevChord.searchStr);
+    if (!pc || pc.type !== 'Chord') return null;
+    let effectiveNotes = notes;
+    if (prevChord.inversion > 0) {
+      try {
+        effectiveNotes = new Chord(prevChord.searchStr).invert(prevChord.inversion);
+      } catch { return null; }
+    }
+    const pitchClasses = effectiveNotes.map(n => n.baseSemitones);
+    const bassTarget = effectiveNotes[0]!.baseSemitones;
+    const seqs = generateVoicings(pitchClasses, bassTarget, prevChord.tuning, 15);
+    return seqs[prevChord.sequenceIdx ?? 0] ?? null;
+  }, [prevChord]);
+
+  // For each possible inversion, find the best voicing index and its min VL distance;
+  // then return inversions sorted ascending by that distance.
+  const inversionSortData = useMemo(() => {
+    if (!prevSeq || current?.type !== 'Chord' || maxInversions === 0 || !chord.searchStr) {
+      return null;
+    }
+    try {
+      const chordObj = new Chord(chord.searchStr);
+      const stringCount = chord.tuning.length;
+
+      const rows = Array.from({ length: maxInversions + 1 }, (_, inv) => {
+        const invertedNotes = chordObj.invert(inv);
+        const pitchClasses = invertedNotes.map(n => n.baseSemitones);
+        const bassTarget = invertedNotes[0]!.baseSemitones;
+        const seqs = generateVoicings(pitchClasses, bassTarget, chord.tuning, 15);
+
+        let minDist = Infinity;
+        let bestSeqIdx = 0;
+        seqs.forEach((seq, idx) => {
+          const { totalDistance } = computeVoiceLeading(prevSeq, seq, stringCount);
+          if (totalDistance < minDist) {
+            minDist = totalDistance;
+            bestSeqIdx = idx;
+          }
+        });
+        return { inv, minDist, bestSeqIdx };
+      });
+
+      rows.sort((a, b) => a.minDist - b.minDist);
+      return {
+        sortedOrder: rows.map(r => r.inv),
+        bestVoicing: Object.fromEntries(rows.map(r => [r.inv, r.bestSeqIdx])) as Record<number, number>,
+      };
+    } catch {
+      return null;
+    }
+  }, [prevSeq, chord.searchStr, chord.tuning, maxInversions, current?.type]);
+
+  // ── Arrow navigation ───────────────────────────────────────────────────────
+
   const isVoicing = arrowMode === 'voicing';
+
+  const invSortedPos = inversionSortData
+    ? inversionSortData.sortedOrder.indexOf(chord.inversion)
+    : chord.inversion;
+  const invSortedLen = inversionSortData
+    ? inversionSortData.sortedOrder.length
+    : maxInversions + 1;
+
   const prevDisabled = isVoicing
     ? !effectiveSequenceEnabled || !sequences.length || effectiveSequenceIdx === 0
-    : chord.inversion <= 0;
+    : invSortedPos <= 0;
+
   const nextDisabled = isVoicing
     ? !effectiveSequenceEnabled || !sequences.length || effectiveSequenceIdx === sequences.length - 1
-    : chord.inversion >= maxInversions;
+    : invSortedPos >= invSortedLen - 1;
 
   const handlePrev = () => {
     if (isVoicing) {
       update({ sequenceIdx: (effectiveSequenceIdx ?? 1) - 1 });
+    } else if (inversionSortData) {
+      const targetInv = inversionSortData.sortedOrder[Math.max(0, invSortedPos - 1)]!;
+      update({ inversion: targetInv, sequenceIdx: inversionSortData.bestVoicing[targetInv] ?? 0 });
     } else {
       update({ inversion: Math.max(0, chord.inversion - 1) });
     }
@@ -92,10 +167,26 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
   const handleNext = () => {
     if (isVoicing) {
       update({ sequenceIdx: (effectiveSequenceIdx ?? -1) + 1 });
+    } else if (inversionSortData) {
+      const targetInv = inversionSortData.sortedOrder[Math.min(invSortedLen - 1, invSortedPos + 1)]!;
+      update({ inversion: targetInv, sequenceIdx: inversionSortData.bestVoicing[targetInv] ?? 0 });
     } else {
       update({ inversion: Math.min(maxInversions, chord.inversion + 1) });
     }
   };
+
+  // ── Strum ──────────────────────────────────────────────────────────────────
+
+  const handleStrum = useCallback(() => {
+    const seq = sequences[effectiveSequenceIdx ?? 0];
+    if (!seq) return;
+    const sorted = [...seq.stringNotes].sort((a, b) => a.string - b.string);
+    strumVoicing(sorted.map(sn => ({ semitones: sn.semitones, frequency: sn.frequency })));
+  }, [sequences, effectiveSequenceIdx, strumVoicing]);
+
+  const canStrum = !!sequences[effectiveSequenceIdx ?? 0];
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   const displayName = current
     ? `${current.root ? '' : ''}${current.name}`
@@ -145,17 +236,23 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
               <ChevronLeft size={16} />
             </button>
           )}
-          <ChordDiagram
-            tuning={chord.tuning}
-            current={current}
-            litNotes={litNotes}
-            sequences={sequences}
-            sequenceEnabled={effectiveSequenceEnabled}
-            sequenceIdx={effectiveSequenceIdx}
-            startingFret={chord.startingFret}
-            visibleFrets={chord.fretCount <= 7 ? chord.fretCount : 5}
-            onStartingFretChange={fret => update({ startingFret: fret })}
-          />
+          <div
+            className={canStrum ? 'cursor-pointer' : undefined}
+            onClick={canStrum ? handleStrum : undefined}
+            title={canStrum ? 'Click to strum' : undefined}
+          >
+            <ChordDiagram
+              tuning={chord.tuning}
+              current={current}
+              litNotes={litNotes}
+              sequences={sequences}
+              sequenceEnabled={effectiveSequenceEnabled}
+              sequenceIdx={effectiveSequenceIdx}
+              startingFret={chord.startingFret}
+              visibleFrets={chord.fretCount <= 7 ? chord.fretCount : 5}
+              onStartingFretChange={fret => update({ startingFret: fret })}
+            />
+          </div>
           {hasArrows && (
             <button
               onClick={handleNext}

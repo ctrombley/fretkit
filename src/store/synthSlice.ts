@@ -3,7 +3,7 @@ import { getSynth } from '../lib/synth';
 import type { AppState, StoreSet, StoreGet } from './types';
 
 export const SYNTH_PERSISTED_KEYS: (keyof AppState)[] = [
-  'synthWaveform', 'synthFilterCutoff', 'synthFilterResonance',
+  'synthWaveform', 'synthHpCutoff', 'synthHpResonance', 'synthFilterCutoff', 'synthFilterResonance',
   'synthAttack', 'synthDecay', 'synthSustain', 'synthRelease',
   'synthPan', 'synthReverbSend', 'synthDelaySend', 'synthDelayTime', 'synthDelayFeedback', 'synthDelayPingPong',
   'synthMasterVolume', 'synthKeyboardMode',
@@ -16,6 +16,8 @@ export const SYNTH_PERSISTED_KEYS: (keyof AppState)[] = [
 export function createSynthSlice(set: StoreSet, get: StoreGet) {
   return {
     synthWaveform: 'sawtooth' as OscWaveform,
+    synthHpCutoff: 80,
+    synthHpResonance: 0.7,
     synthFilterCutoff: 2000,
     synthFilterResonance: 1,
     synthAttack: 0.01,

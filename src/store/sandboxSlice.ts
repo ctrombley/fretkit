@@ -8,6 +8,8 @@ import { getSynth } from '../lib/synth';
 import { getArpeggiator } from '../lib/arpeggiator';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { latchVoices } from './latchVoices';
+import { latchFrequencies } from './latchFrequencies';
+import { strumPreviewVoices } from './strumPreviewVoices';
 import type { AppState, FretboardState, Settings, StoreSet, StoreGet } from './types';
 
 const defaultFretboard: Omit<FretboardState, 'id'> = {
@@ -59,6 +61,9 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       getArpeggiator().clear();
       for (const voice of latchVoices.values()) voice.stop();
       latchVoices.clear();
+      latchFrequencies.clear();
+      for (const voice of strumPreviewVoices) voice.stop();
+      strumPreviewVoices.length = 0;
       set({ sandboxActiveNotes: [] });
     },
 
@@ -71,6 +76,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         } else {
           latchVoices.get(semitones)?.stop();
           latchVoices.delete(semitones);
+          latchFrequencies.delete(semitones);
         }
         set({ sandboxActiveNotes: state.sandboxActiveNotes.filter(s => s !== semitones) });
       } else {
@@ -78,6 +84,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           getArpeggiator().addNote(frequency, semitones);
         } else {
           latchVoices.set(semitones, getSynth().play(frequency));
+          latchFrequencies.set(semitones, frequency);
         }
         set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
       }
@@ -87,13 +94,58 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       const state = get();
       if (state.sandboxActiveNotes.includes(semitones)) return;
       latchVoices.set(semitones, getSynth().play(frequency));
+      latchFrequencies.set(semitones, frequency);
       set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
     },
 
     deactivateSandboxNote: (semitones: number) => {
       latchVoices.get(semitones)?.stop();
       latchVoices.delete(semitones);
+      latchFrequencies.delete(semitones);
       set((s: AppState) => ({ sandboxActiveNotes: s.sandboxActiveNotes.filter(st => st !== semitones) }));
+    },
+
+    strumVoicing: (notes: Array<{ semitones: number; frequency: number }>) => {
+      // Stop any previous strum preview voices without touching sandbox latch state
+      for (const voice of strumPreviewVoices) voice.stop();
+      strumPreviewVoices.length = 0;
+
+      // Let attack + decay complete, then trigger release so the ADSR envelope
+      // controls the fadeout naturally — no artificial fixed timer.
+      const synth = getSynth();
+      const noteOnMs = Math.round((synth.params.attack + synth.params.decay) * 1000);
+
+      // Play bass-to-treble with 28ms stagger; voices are tracked only in
+      // strumPreviewVoices — sandboxActiveNotes / latchVoices are untouched.
+      notes.forEach((n, i) => {
+        setTimeout(() => {
+          const voice = synth.play(n.frequency);
+          strumPreviewVoices.push(voice);
+          setTimeout(() => voice.stop(), noteOnMs);
+        }, i * 28);
+      });
+    },
+
+    strumActiveNotes: () => {
+      const state = get();
+      if (state.sandboxActiveNotes.length < 2) return;
+
+      // Collect notes with frequencies, sort bass-to-treble (ascending frequency)
+      const notes = state.sandboxActiveNotes
+        .map(semi => ({ semitones: semi, frequency: latchFrequencies.get(semi) ?? 0 }))
+        .filter(n => n.frequency > 0)
+        .sort((a, b) => a.frequency - b.frequency);
+
+      // Stop current voices and replay with stagger
+      for (const voice of latchVoices.values()) voice.stop();
+      latchVoices.clear();
+
+      notes.forEach((n, i) => {
+        setTimeout(() => {
+          const voice = getSynth().play(n.frequency);
+          latchVoices.set(n.semitones, voice);
+        }, i * 28);
+      });
     },
 
     createFretboard: () => {

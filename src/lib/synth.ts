@@ -4,6 +4,8 @@ export type LfoTargetParam = keyof SynthParams | 'bpm' | null;
 
 export interface SynthParams {
   waveform: OscWaveform;
+  hpCutoff: number;
+  hpResonance: number;
   filterCutoff: number;
   filterResonance: number;
   attack: number;
@@ -38,6 +40,8 @@ export interface SynthParams {
 
 const DEFAULT_PARAMS: SynthParams = {
   waveform: 'sawtooth',
+  hpCutoff: 80,
+  hpResonance: 0.7,
   filterCutoff: 2000,
   filterResonance: 1,
   attack: 0.01,
@@ -109,6 +113,7 @@ function rms(buf: Uint8Array): number {
 
 class SynthEngine {
   private ctx: AudioContext;
+  private hp: BiquadFilterNode;
   private filter: BiquadFilterNode;
   private panner: StereoPannerNode;
   private dryGain: GainNode;
@@ -136,10 +141,17 @@ class SynthEngine {
     this.ctx = new AudioContext();
     this.params = { ...DEFAULT_PARAMS };
 
+    this.hp = this.ctx.createBiquadFilter();
+    this.hp.type = 'highpass';
+    this.hp.frequency.value = this.params.hpCutoff;
+    this.hp.Q.value = this.params.hpResonance;
+
     this.filter = this.ctx.createBiquadFilter();
     this.filter.type = 'lowpass';
     this.filter.frequency.value = this.params.filterCutoff;
     this.filter.Q.value = this.params.filterResonance;
+
+    this.hp.connect(this.filter);
 
     this.panner = this.ctx.createStereoPanner();
     this.panner.pan.value = this.params.pan;
@@ -273,6 +285,12 @@ class SynthEngine {
   private applyModulation(target: string, value: number) {
     const t = this.ctx.currentTime;
     switch (target) {
+      case 'hpCutoff':
+        this.hp.frequency.setTargetAtTime(Math.max(20, Math.min(20000, value)), t, 0.01);
+        break;
+      case 'hpResonance':
+        this.hp.Q.setTargetAtTime(Math.max(0, Math.min(30, value)), t, 0.01);
+        break;
       case 'filterCutoff':
         this.filter.frequency.setTargetAtTime(Math.max(20, Math.min(20000, value)), t, 0.01);
         break;
@@ -344,7 +362,7 @@ class SynthEngine {
       fmGain.connect(osc1.frequency);
 
       osc1.connect(envelope);
-      envelope.connect(this.filter);
+      envelope.connect(this.hp);
 
       osc1.start(now);
       modOsc.start(now);
@@ -389,7 +407,7 @@ class SynthEngine {
         osc2.connect(osc2Gain);
         osc2Gain.connect(envelope);
 
-        envelope.connect(this.filter);
+        envelope.connect(this.hp);
         osc1.start(now);
         osc2.start(now);
 
@@ -417,7 +435,7 @@ class SynthEngine {
         this.activeVoices.add(handle);
         return handle;
       } else {
-        envelope.connect(this.filter);
+        envelope.connect(this.hp);
         osc1.start(now);
 
         let released = false;
@@ -464,6 +482,12 @@ class SynthEngine {
 
     Object.assign(this.params, partial);
 
+    if (partial.hpCutoff !== undefined) {
+      this.hp.frequency.setTargetAtTime(partial.hpCutoff, this.ctx.currentTime, 0.02);
+    }
+    if (partial.hpResonance !== undefined) {
+      this.hp.Q.setTargetAtTime(partial.hpResonance, this.ctx.currentTime, 0.02);
+    }
     if (partial.filterCutoff !== undefined) {
       this.filter.frequency.setTargetAtTime(partial.filterCutoff, this.ctx.currentTime, 0.02);
     }

@@ -44,6 +44,8 @@ describe('formatPan', () => {
 
 const sampleParams: SynthParams = {
   waveform: 'sawtooth',
+  hpCutoff: 80,
+  hpResonance: 0.7,
   filterCutoff: 2000,
   filterResonance: 1,
   attack: 0.01,

@@ -24,7 +24,7 @@ export default function FretString({
   xOffset,
   yOffset,
 }: FretStringProps) {
-  const { current, litNotes, sequence, sequenceEnabled } = useFretboardContext();
+  const { current, litNotes, sequence, sequenceEnabled, onStrum } = useFretboardContext();
   const [isPreview, setIsPreview] = useState(false);
   const sandboxLatch = useStore(s => s.sandboxLatch);
   const arpEnabled = useStore(s => s.arpEnabled);
@@ -42,6 +42,8 @@ export default function FretString({
   const deactivateNote = useStore(s => s.deactivateSandboxNote);
 
   const stringNumber = (stringCount - 1) - idx;
+  // Variable thickness: idx 0 = treble (thin), idx n-1 = bass (thick)
+  const stringThickness = 0.5 + (idx / Math.max(1, stringCount - 1)) * 2;
 
   const isLit = (() => {
     if (sequenceEnabled && sequence) {
@@ -59,25 +61,47 @@ export default function FretString({
 
   const useLatch = arpEnabled || sandboxLatch;
 
-  const handlePointerDown = useCallback(() => {
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // Stop propagation so FretboardSection doesn't call setPointerCapture,
+    // which would swallow our pointerup and leave notes stuck on.
+    e.stopPropagation();
+
+    // In chord voicing mode, clicking a lit note strums the whole voicing
+    if (sequenceEnabled && isLit && onStrum) {
+      onStrum();
+      return;
+    }
+    // In chord display mode, clicking a lit note plays momentarily — bypass latch
+    if (current && isLit) {
+      activateNote(note.semitones, note.frequency);
+      return;
+    }
     if (useLatch) {
       toggleNote(note.semitones, note.frequency);
     } else {
       activateNote(note.semitones, note.frequency);
     }
-  }, [useLatch, note.semitones, note.frequency, toggleNote, activateNote]);
+  }, [sequenceEnabled, isLit, onStrum, current, useLatch, note.semitones, note.frequency, toggleNote, activateNote]);
 
   const handlePointerUp = useCallback(() => {
+    if (current && isLit) {
+      deactivateNote(note.semitones);
+      return;
+    }
     if (!useLatch) {
       deactivateNote(note.semitones);
     }
-  }, [useLatch, note.semitones, deactivateNote]);
+  }, [current, isLit, useLatch, note.semitones, deactivateNote]);
 
   const handlePointerLeave = useCallback(() => {
+    if (current && isLit) {
+      deactivateNote(note.semitones);
+      return;
+    }
     if (!useLatch && isMarked) {
       deactivateNote(note.semitones);
     }
-  }, [useLatch, isMarked, note.semitones, deactivateNote]);
+  }, [current, isLit, useLatch, isMarked, note.semitones, deactivateNote]);
 
   return (
     <g className={`string string-${idx}`}>
@@ -87,22 +111,26 @@ export default function FretString({
         x2={xOffset + fretWidth}
         y1={yOffset}
         y2={yOffset}
+        strokeWidth={stringThickness}
       />
       {isLit && (
         <StringMarker
-          className={`string__marker-lit ${isRoot ? 'string__marker-root' : ''}`}
+          className="string__marker-lit"
           fretWidth={fretWidth}
           isNut={fretIdx === 0}
           xOffset={xOffset}
           yOffset={yOffset}
+          note={note}
+          isRoot={isRoot}
         />
       )}
-      {isMarked && (
+      {isMarked && !isLit && !sequenceEnabled && (
         <StringMarker
           fretWidth={fretWidth}
           xOffset={xOffset}
           yOffset={yOffset}
           note={note}
+          isRoot={isRoot}
           isPlaying={isMarked}
           bloomKey={arpEnabled ? arpStrike : undefined}
         />
