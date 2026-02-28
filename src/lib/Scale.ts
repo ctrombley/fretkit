@@ -15,6 +15,22 @@ export default class Scale {
     }
   }
 
+  /** Sorted unique pitch classes (0–11) for this scale. */
+  get pitchClasses(): number[] {
+    return [...new Set(this.notes.map(n => n.baseSemitones))].sort((a, b) => a - b);
+  }
+
+  /**
+   * True if this scale has the same pitch class content as `other`.
+   * Two scales are modally equivalent when one is a rotation of the other
+   * (e.g. C major and D dorian share the same seven pitch classes).
+   */
+  isModallyEquivalent(other: Scale): boolean {
+    const a = this.pitchClasses;
+    const b = other.pitchClasses;
+    return a.length === b.length && a.every((p, i) => p === b[i]);
+  }
+
   private parseString(scaleStr: string): void {
     const result = scaleStr.match(scaleRegex);
     if (!result) {

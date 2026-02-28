@@ -3,6 +3,9 @@ import {
   computeVoiceLeading,
   findSmoothestTransition,
   sortByVoiceLeading,
+  voiceDirections,
+  contraryMotionRatio,
+  detectParallels,
 } from '../voiceLeading';
 import Sequence from '../Sequence';
 import StringNote from '../StringNote';
@@ -95,5 +98,83 @@ describe('sortByVoiceLeading', () => {
     sortByVoiceLeading(from, candidates, 6);
     expect(candidates[0]).toBe(original[0]);
     expect(candidates[1]).toBe(original[1]);
+  });
+});
+
+describe('voiceDirections', () => {
+  it('returns "up" when voice moves to higher semitone', () => {
+    const from = makeSequence([[0, 40, 0]]);
+    const to   = makeSequence([[0, 42, 2]]);
+    expect(voiceDirections(from, to, 2)[0]).toBe('up');
+  });
+
+  it('returns "down" when voice moves to lower semitone', () => {
+    const from = makeSequence([[0, 42, 2]]);
+    const to   = makeSequence([[0, 40, 0]]);
+    expect(voiceDirections(from, to, 2)[0]).toBe('down');
+  });
+
+  it('returns "same" when voice does not move', () => {
+    const seq = makeSequence([[0, 40, 0]]);
+    expect(voiceDirections(seq, seq, 2)[0]).toBe('same');
+  });
+
+  it('returns null for strings absent in either voicing', () => {
+    const from = makeSequence([[0, 40, 0]]);
+    const to   = makeSequence([[1, 45, 0]]); // different string
+    const dirs = voiceDirections(from, to, 3);
+    expect(dirs[0]).toBeNull(); // string 0 absent in `to`
+    expect(dirs[1]).toBeNull(); // string 1 absent in `from`
+  });
+});
+
+describe('contraryMotionRatio', () => {
+  it('all voices moving same direction → ratio 0', () => {
+    const from = makeSequence([[0, 40, 0], [1, 45, 0]]);
+    const to   = makeSequence([[0, 42, 2], [1, 47, 2]]); // both up
+    expect(contraryMotionRatio(from, to, 3)).toBe(0);
+  });
+
+  it('two voices in opposite directions → ratio 1', () => {
+    const from = makeSequence([[0, 40, 0], [1, 45, 0]]);
+    const to   = makeSequence([[0, 42, 2], [1, 43, 0]]); // s0 up, s1 down
+    expect(contraryMotionRatio(from, to, 3)).toBe(1);
+  });
+
+  it('fewer than 2 moving voices → ratio 0', () => {
+    const from = makeSequence([[0, 40, 0]]);
+    const to   = makeSequence([[0, 40, 0]]);
+    expect(contraryMotionRatio(from, to, 2)).toBe(0);
+  });
+});
+
+describe('detectParallels', () => {
+  it('parallel fifths detected on adjacent strings', () => {
+    // String 0: E(4) → A(9)  +5 semitones
+    // String 1: B(11) → E(4) +5 semitones (mod 12)  — same direction, same interval
+    const from = makeSequence([[0, 4, 0], [1, 11, 0]]);
+    const to   = makeSequence([[0, 9, 0], [1, 4, 0]]);
+    // Interval before: 11-4=7 (P5); interval after: 4-9 = -5 mod 12 = 7 (P5)
+    // Both move up (+5, -7 mod 12) — actually let me check: 9-4=5 up, 4-11=-7 = +5 mod 12 down
+    // Hmm, direction differs. Let me use clearer numbers.
+    // String 0: 40→47 (+7), String 1: 47→54 (+7), same direction, P5 before and after
+    const from2 = makeSequence([[0, 40, 0], [1, 47, 7]]);
+    const to2   = makeSequence([[0, 47, 7], [1, 54, 14]]);
+    const parallels = detectParallels(from2, to2, 3);
+    expect(parallels.some(p => p.type === 'fifth')).toBe(true);
+  });
+
+  it('no parallels when voicings are static', () => {
+    const seq = makeSequence([[0, 40, 0], [1, 47, 7]]);
+    expect(detectParallels(seq, seq, 3)).toHaveLength(0);
+  });
+
+  it('contrary motion does not trigger parallel detection', () => {
+    // String 0 goes up, string 1 goes down: contrary motion, no parallels
+    const from = makeSequence([[0, 40, 0], [1, 47, 7]]);
+    const to   = makeSequence([[0, 47, 7], [1, 40, 0]]);
+    // Interval after: 40-47 = -7 mod 12 = 5 → not same as before (7)
+    // Different interval, no parallel
+    expect(detectParallels(from, to, 3)).toHaveLength(0);
   });
 });

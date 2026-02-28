@@ -8,6 +8,48 @@ Interactive fretboard visualizer for drilling scales, chords, and modes on guita
 
 -- ???
 
+## The Whole-Tone Scale Vanishes Under M6
+
+While building the harmonic spectrum analyser (`src/lib/harmonicSpectrum.ts`), a neat
+algebraic fact surfaced: multiply every note of the whole-tone scale by 6 in mod-12
+arithmetic and all six notes collapse to a single point — zero.
+
+```
+Whole-tone scale:  C  D  E  F#  G#  A#
+Pitch classes:     0  2  4  6   8   10
+× 6 (mod 12):      0  0  0  0   0   0
+```
+
+This isn't a coincidence. Every note in the whole-tone scale is an *even* pitch class,
+and any even number times 6 is a multiple of 12:
+
+> **2k × 6 = 12k ≡ 0 (mod 12)**
+
+The same symmetry shows up in every other maximally symmetric set, each collapsing
+completely under its own characteristic multiplier:
+
+| Set | Interval | Collapse multiplier | Why |
+|---|---|---|---|
+| Augmented triad `{0, 4, 8}` | Major third (×3) | M3 | 4k × 3 = 12k |
+| Diminished 7th `{0, 3, 6, 9}` | Minor third (×4) | M4 | 3k × 4 = 12k |
+| Whole-tone scale `{0, 2, 4, 6, 8, 10}` | Whole step (×6) | M6 | 2k × 6 = 12k |
+| Chromatic scale `{0…11}` | Semitone (×12) | M12 | trivially 0 |
+
+The M6 collapse is the most dramatic because six notes become one. It also explains
+why the whole-tone scale sounds "untethered" — the operation that should reveal its
+inner structure instead flattens it entirely, leaving no tonal hierarchy to stand on.
+
+These **M_n operations** (pitch class multiplication) are implemented in
+`src/lib/pitchClassSet.ts` as `multiplySet(pcs, n)` and `harmonicProjection(pcs, n)`,
+and the full harmonic spectrum — which multiplier makes each set cluster or collapse —
+is computed by `harmonicSpectrum(pcs)` in `src/lib/harmonicSpectrum.ts`.
+
+M7 and M5 are also useful: multiplying any diatonic scale by 7 reorders its notes
+into the circle-of-fifths sequence, and M5 gives the circle-of-fourths sequence — the
+same 7 pitch classes, just visited in a different order.
+
+---
+
 ## Quick Start
 
 ```bash
