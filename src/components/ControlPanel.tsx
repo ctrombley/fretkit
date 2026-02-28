@@ -5,8 +5,6 @@ import Chord from '../lib/Chord';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import tunings from '../lib/tunings';
 
-const FRET_WINDOW_SIZES = [5, 6, 7] as const;
-
 export default function ControlPanel() {
   const settings = useStore(s => s.settings);
   const fretboard = useStore(s => s.fretboards[s.settings.settingsId]);
@@ -83,36 +81,16 @@ export default function ControlPanel() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Starting Fret</label>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={fretboard.startingFret}
-            onChange={e => updateFretboard(id, { startingFret: parseInt(e.target.value, 10) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fret Window</label>
-          <div className="flex gap-1">
-            {FRET_WINDOW_SIZES.map(size => (
-              <button
-                key={size}
-                onClick={() => updateFretboard(id, { fretCount: size })}
-                className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-colors ${
-                  fretboard.fretCount === size
-                    ? 'bg-fret-blue text-white'
-                    : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Starting Fret</label>
+        <input
+          type="number"
+          min={1}
+          max={24}
+          value={fretboard.startingFret}
+          onChange={e => updateFretboard(id, { startingFret: parseInt(e.target.value, 10) })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue"
+        />
       </div>
 
       <div>
