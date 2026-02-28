@@ -17,19 +17,19 @@ interface Props {
   onBridgeChange: (t: number) => void;
   leftColor: string;
   rightColor: string;
-  /** Called when user directly interacts with the string (for parent to play audio). */
   onPluck: (side: 'left' | 'right' | 'both') => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
-const CANVAS_H      = 190;
-const STRING_Y      = 95;
-const BRIDGE_HIT_R  = 14;
-const PLUCK_MS      = 4300;
-const VISUAL_HZ     = 3.5;
-const MIN_POS       = 0.04;
-const MAX_POS       = 0.96;
+const CANVAS_H     = 190;
+const STRING_Y     = 95;
+const BRIDGE_HIT_R = 14;
+const PLUCK_MS     = 4300;
+const VISUAL_HZ    = 3.5;
+const MIN_POS      = 0.04;
+const MAX_POS      = 0.96;
+const THROTTLE_MS  = 32; // ~30fps for parent state; canvas always runs at full fps via ref
 
 // ── Drawing helpers ───────────────────────────────────────────────────────
 
@@ -39,19 +39,11 @@ function drawGlowLine(
   color: string,
 ) {
   ctx.save();
-  ctx.shadowBlur  = 12;
+  ctx.shadowBlur  = 10;
   ctx.shadowColor = color;
   ctx.strokeStyle = color;
-  ctx.lineWidth   = 1.8;
-  ctx.globalAlpha = 0.7;
-  ctx.beginPath();
-  ctx.moveTo(x0, y);
-  ctx.lineTo(x1, y);
-  ctx.stroke();
-  // Second pass — brighter core
-  ctx.shadowBlur  = 4;
-  ctx.globalAlpha = 1;
-  ctx.lineWidth   = 1;
+  ctx.lineWidth   = 2;
+  ctx.globalAlpha = 0.85;
   ctx.beginPath();
   ctx.moveTo(x0, y);
   ctx.lineTo(x1, y);
@@ -74,7 +66,7 @@ function drawWave(
   const steps  = Math.ceil(segLen);
 
   ctx.save();
-  ctx.shadowBlur  = 20;
+  ctx.shadowBlur  = 16;
   ctx.shadowColor = color;
   ctx.strokeStyle = color;
   ctx.lineWidth   = 2.5;
@@ -99,8 +91,8 @@ function drawBridge(
 ) {
   ctx.save();
 
-  // Dashed notch
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  // Dashed notch — dark on light background
+  ctx.strokeStyle = 'rgba(0,0,0,0.13)';
   ctx.lineWidth   = 1;
   ctx.setLineDash([4, 5]);
   ctx.beginPath();
@@ -110,18 +102,18 @@ function drawBridge(
   ctx.setLineDash([]);
 
   // Outer ring
-  ctx.shadowBlur  = dragging ? 30 : 20;
-  ctx.shadowColor = '#ffffff';
-  ctx.strokeStyle = dragging ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.38)';
+  ctx.shadowBlur  = dragging ? 12 : 7;
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.strokeStyle = dragging ? 'rgba(30,41,59,0.7)' : 'rgba(100,116,139,0.5)';
   ctx.lineWidth   = 1.5;
   ctx.beginPath();
   ctx.arc(bx, cy, dragging ? 13 : 11, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Inner jewel
-  ctx.shadowBlur  = dragging ? 24 : 16;
-  ctx.shadowColor = '#fffde7';
-  ctx.fillStyle   = dragging ? '#ffffff' : '#fffde7';
+  // Inner jewel — dark charcoal
+  ctx.shadowBlur  = dragging ? 10 : 6;
+  ctx.shadowColor = 'rgba(0,0,0,0.3)';
+  ctx.fillStyle   = dragging ? '#1e293b' : '#475569';
   ctx.beginPath();
   ctx.arc(bx, cy, dragging ? 7 : 5.5, 0, Math.PI * 2);
   ctx.fill();
@@ -152,7 +144,7 @@ function drawGhostMarkers(
 
   for (const { pos, label } of toShow) {
     const x = pos * w;
-    ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
     ctx.lineWidth   = 1;
     ctx.setLineDash([2, 5]);
     ctx.beginPath();
@@ -160,7 +152,7 @@ function drawGhostMarkers(
     ctx.lineTo(x, cy + 26);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
     ctx.fillText(label, x, cy - 30);
   }
   ctx.restore();
@@ -173,20 +165,22 @@ const MonochordString = forwardRef<MonochordStringHandle, Props>(
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const s = useRef({
-      bridgePos:  bridgePosition,
+      bridgePos:       bridgePosition,
       leftColor,
       rightColor,
-      isDragging: false,
-      leftPluck:  null as PluckState | null,
-      rightPluck: null as PluckState | null,
-      animId:     0,
-      w:          800,
+      isDragging:      false,
+      leftPluck:       null as PluckState | null,
+      rightPluck:      null as PluckState | null,
+      animId:          0,
+      w:               800,
+      lastChangeMs:    0,   // for throttle
     });
 
-    // Keep ref in sync with props without re-running effects
-    s.current.bridgePos  = bridgePosition;
+    // Sync props → ref each render (canvas reads from ref, not props directly)
     s.current.leftColor  = leftColor;
     s.current.rightColor = rightColor;
+    // Only sync bridgePos from props when NOT dragging (during drag we own it)
+    if (!s.current.isDragging) s.current.bridgePos = bridgePosition;
 
     // ── Internal pluck trigger ───────────────────────────────────────────
 
@@ -208,8 +202,8 @@ const MonochordString = forwardRef<MonochordStringHandle, Props>(
       if (!ctx) return;
 
       const { bridgePos, leftColor: lc, rightColor: rc, isDragging, w } = s.current;
-      const bx = bridgePos * w;
-      const cy = STRING_Y;
+      const bx  = bridgePos * w;
+      const cy  = STRING_Y;
       const now = performance.now();
 
       ctx.clearRect(0, 0, w, CANVAS_H);
@@ -259,9 +253,9 @@ const MonochordString = forwardRef<MonochordStringHandle, Props>(
       const target = canvas.parentElement ?? canvas;
       const ro = new ResizeObserver(entries => {
         const w = entries[0]?.contentRect.width ?? 800;
-        canvas.width      = w;
-        canvas.height     = CANVAS_H;
-        s.current.w       = w;
+        canvas.width  = w;
+        canvas.height = CANVAS_H;
+        s.current.w   = w;
       });
       ro.observe(target);
       return () => ro.disconnect();
@@ -299,13 +293,29 @@ const MonochordString = forwardRef<MonochordStringHandle, Props>(
 
     const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
       if (!s.current.isDragging) return;
-      onBridgeChange(getT(e.clientX));
+      const t = getT(e.clientX);
+
+      // Update the ref immediately — canvas always reads from here at 60fps
+      s.current.bridgePos = t;
+
+      // Throttle the parent state update that drives the info panel / Lissajous
+      const now = Date.now();
+      if (now - s.current.lastChangeMs >= THROTTLE_MS) {
+        s.current.lastChangeMs = now;
+        onBridgeChange(t);
+      }
     }, [getT, onBridgeChange]);
 
-    const stopDrag = useCallback(() => { s.current.isDragging = false; }, []);
+    const stopDrag = useCallback(() => {
+      if (s.current.isDragging) {
+        // Always flush the final position to parent on release
+        onBridgeChange(s.current.bridgePos);
+      }
+      s.current.isDragging = false;
+    }, [onBridgeChange]);
 
     return (
-      <div className="w-full relative select-none">
+      <div className="w-full relative select-none bg-gray-50">
         <canvas
           ref={canvasRef}
           width={800}
