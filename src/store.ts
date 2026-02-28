@@ -14,6 +14,8 @@ import { getSynth } from './lib/synth';
 import { FACTORY_PRESETS, randomizeParams } from './lib/synthPresets';
 import type { SynthPreset } from './lib/synthPresets';
 import type { MetronomeTimbre } from './lib/metronome';
+import type { ArpPattern } from './lib/arpeggiator';
+import { getArpeggiator } from './lib/arpeggiator';
 
 export interface FretboardState {
   id: number;
@@ -102,6 +104,8 @@ interface AppState {
   metronomeVolume: number;
   metronomeMuted: boolean;
   metronomeTimbre: MetronomeTimbre;
+  metronomeSubdivision: number;
+  metronomeSubdivisionAccent: boolean;
 
   // Synth
   synthWaveform: OscWaveform;
@@ -145,10 +149,44 @@ interface AppState {
   setTransportTimeSignature: (beats: number, unit: number) => void;
   setTransportBeat: (beat: number, measure: number) => void;
 
+  // Panels
+  keyboardPanelOpen: boolean;
+  transportBarOpen: boolean;
+
+  // Sandbox latch
+  sandboxLatch: boolean;
+  sandboxResetCounter: number;
+
+  // Arpeggiator
+  arpEnabled: boolean;
+  arpPattern: ArpPattern;
+  arpOctaveRange: number;
+  arpSync: boolean;
+  arpSyncSpeed: number;
+  arpFreeMs: number;
+
   // Metronome actions
   setMetronomeVolume: (volume: number) => void;
   setMetronomeMuted: (muted: boolean) => void;
   setMetronomeTimbre: (timbre: MetronomeTimbre) => void;
+  setMetronomeSubdivision: (subdivision: number) => void;
+  setMetronomeSubdivisionAccent: (accent: boolean) => void;
+
+  // Panel actions
+  setKeyboardPanelOpen: (open: boolean) => void;
+  setTransportBarOpen: (open: boolean) => void;
+
+  // Sandbox latch actions
+  setSandboxLatch: (latch: boolean) => void;
+  killAllNotes: () => void;
+
+  // Arpeggiator actions
+  setArpEnabled: (enabled: boolean) => void;
+  setArpPattern: (pattern: ArpPattern) => void;
+  setArpOctaveRange: (range: number) => void;
+  setArpSync: (sync: boolean) => void;
+  setArpSyncSpeed: (speed: number) => void;
+  setArpFreeMs: (ms: number) => void;
 
   // Synth actions
   setSynthParam: <K extends keyof SynthParams>(key: K, value: SynthParams[K]) => void;
@@ -313,6 +351,18 @@ export const useStore = create<AppState>()(
       metronomeVolume: 0.7,
       metronomeMuted: false,
       metronomeTimbre: 'click' as MetronomeTimbre,
+      metronomeSubdivision: 1,
+      metronomeSubdivisionAccent: true,
+      keyboardPanelOpen: false,
+      transportBarOpen: true,
+      sandboxLatch: true,
+      sandboxResetCounter: 0,
+      arpEnabled: false,
+      arpPattern: 'up' as ArpPattern,
+      arpOctaveRange: 1,
+      arpSync: true,
+      arpSyncSpeed: 2,
+      arpFreeMs: 200,
       synthWaveform: 'sawtooth' as OscWaveform,
       synthFilterCutoff: 2000,
       synthFilterResonance: 1,
@@ -350,6 +400,40 @@ export const useStore = create<AppState>()(
       setMetronomeVolume: (volume) => set({ metronomeVolume: volume }),
       setMetronomeMuted: (muted) => set({ metronomeMuted: muted }),
       setMetronomeTimbre: (timbre) => set({ metronomeTimbre: timbre }),
+      setMetronomeSubdivision: (subdivision) => set({ metronomeSubdivision: subdivision }),
+      setMetronomeSubdivisionAccent: (accent) => set({ metronomeSubdivisionAccent: accent }),
+      setKeyboardPanelOpen: (open) => set({ keyboardPanelOpen: open }),
+      setTransportBarOpen: (open) => set({ transportBarOpen: open }),
+      setSandboxLatch: (latch) => {
+        const prev = get().sandboxLatch;
+        set({ sandboxLatch: latch });
+        // Switching latch→momentary: kill all notes
+        if (prev && !latch) {
+          get().killAllNotes();
+        }
+      },
+      killAllNotes: () => {
+        getSynth().killAll();
+        getArpeggiator().clear();
+        set(s => ({ sandboxResetCounter: s.sandboxResetCounter + 1 }));
+      },
+      setArpEnabled: (enabled) => {
+        set({ arpEnabled: enabled });
+        const arp = getArpeggiator();
+        if (enabled) arp.enable();
+        else arp.disable();
+      },
+      setArpPattern: (pattern) => {
+        set({ arpPattern: pattern });
+        getArpeggiator().pattern = pattern;
+      },
+      setArpOctaveRange: (range) => {
+        set({ arpOctaveRange: range });
+        getArpeggiator().setOctaveRange(range);
+      },
+      setArpSync: (sync) => set({ arpSync: sync }),
+      setArpSyncSpeed: (speed) => set({ arpSyncSpeed: speed }),
+      setArpFreeMs: (ms) => set({ arpFreeMs: ms }),
       setSynthParam: (key, value) => {
         const storeKey = `synth${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof AppState;
         set({ [storeKey]: value, synthActivePresetIndex: null } as Partial<AppState>);
@@ -664,6 +748,17 @@ export const useStore = create<AppState>()(
         metronomeVolume: state.metronomeVolume,
         metronomeMuted: state.metronomeMuted,
         metronomeTimbre: state.metronomeTimbre,
+        metronomeSubdivision: state.metronomeSubdivision,
+        metronomeSubdivisionAccent: state.metronomeSubdivisionAccent,
+        keyboardPanelOpen: state.keyboardPanelOpen,
+        transportBarOpen: state.transportBarOpen,
+        sandboxLatch: state.sandboxLatch,
+        arpEnabled: state.arpEnabled,
+        arpPattern: state.arpPattern,
+        arpOctaveRange: state.arpOctaveRange,
+        arpSync: state.arpSync,
+        arpSyncSpeed: state.arpSyncSpeed,
+        arpFreeMs: state.arpFreeMs,
         synthWaveform: state.synthWaveform,
         synthFilterCutoff: state.synthFilterCutoff,
         synthFilterResonance: state.synthFilterResonance,

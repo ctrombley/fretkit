@@ -17,6 +17,7 @@ const TIMBRES: Record<MetronomeTimbre, TimbreConfig> = {
 };
 
 export type OnBeatCallback = (beat: number, measure: number) => void;
+export type OnSubTickCallback = (time: number, beat: number, sub: number) => void;
 
 export class MetronomeEngine {
   private schedulerTimer: number | null = null;
@@ -32,7 +33,12 @@ export class MetronomeEngine {
   volume = 0.7;
   muted = false;
   timbre: MetronomeTimbre = 'click';
+  subdivision = 1;
+  subdivisionAccent = true;
+  arpTicksPerBeat = 2;
   onBeat: OnBeatCallback | null = null;
+  onSubTick: OnSubTickCallback | null = null;
+  onArpTick: ((time: number) => void) | null = null;
 
   private getCtx(): AudioContext {
     return getSynth().getAudioContext();
@@ -69,7 +75,38 @@ export class MetronomeEngine {
     const scheduleInterval = 25; // ms between scheduler calls
 
     while (this.nextBeatTime < ctx.currentTime + lookAhead) {
-      this.scheduleBeat(this.nextBeatTime, this.currentBeat === 0);
+      const secondsPerBeat = 60.0 / this.bpm;
+      const subInterval = secondsPerBeat / this.subdivision;
+      const isAccent = this.currentBeat === 0;
+
+      for (let sub = 0; sub < this.subdivision; sub++) {
+        const subTime = this.nextBeatTime + sub * subInterval;
+        if (sub === 0) {
+          this.scheduleBeat(subTime, isAccent, 1);
+        } else if (this.subdivisionAccent) {
+          this.scheduleBeat(subTime, false, 0.4);
+        }
+
+        // Fire subtick for arpeggiator
+        if (this.onSubTick) {
+          const beat = this.currentBeat;
+          const subIdx = sub;
+          const cb = this.onSubTick;
+          const delay = Math.max(0, (subTime - ctx.currentTime) * 1000);
+          setTimeout(() => cb(subTime, beat, subIdx), delay);
+        }
+      }
+
+      // Schedule independent arp ticks
+      for (let arpSub = 0; arpSub < this.arpTicksPerBeat; arpSub++) {
+        const arpInterval = secondsPerBeat / this.arpTicksPerBeat;
+        const arpTime = this.nextBeatTime + arpSub * arpInterval;
+        if (this.onArpTick) {
+          const cb = this.onArpTick;
+          const arpDelay = Math.max(0, (arpTime - ctx.currentTime) * 1000);
+          setTimeout(() => cb(arpTime), arpDelay);
+        }
+      }
 
       // Notify UI
       const beat = this.currentBeat;
@@ -80,7 +117,6 @@ export class MetronomeEngine {
       }, delay);
 
       // Advance
-      const secondsPerBeat = 60.0 / this.bpm;
       this.nextBeatTime += secondsPerBeat;
       this.currentBeat++;
       if (this.currentBeat >= this.beatsPerMeasure) {
@@ -94,7 +130,7 @@ export class MetronomeEngine {
     }
   }
 
-  private scheduleBeat(time: number, isAccent: boolean): void {
+  private scheduleBeat(time: number, isAccent: boolean, volumeMultiplier = 1): void {
     if (this.muted) return;
     const ctx = this.getCtx();
     const config = TIMBRES[this.timbre];
@@ -104,7 +140,7 @@ export class MetronomeEngine {
     osc.frequency.value = isAccent ? config.accentFreq : config.normalFreq;
 
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(this.volume, time);
+    gain.gain.setValueAtTime(this.volume * volumeMultiplier, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + config.decay);
 
     osc.connect(gain);
