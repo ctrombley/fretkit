@@ -104,6 +104,7 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
       <FretboardLabel
         id={id}
         searchStr={fretboard.searchStr}
+        fretCount={fretboard.fretCount}
         current={fretboard.current}
         sequenceEnabled={fretboard.sequenceEnabled}
         sequences={fretboard.sequences}

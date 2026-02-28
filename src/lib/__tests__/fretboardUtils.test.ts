@@ -39,4 +39,30 @@ describe('optimalStartingFret', () => {
     // minFret=5, padding=0 → 5
     expect(optimalStartingFret(seq, 0)).toBe(5);
   });
+
+  describe('with fretCount (open-string breathing room)', () => {
+    it('starts at 1 when open strings present and voicing fits in window', () => {
+      // open + frets 3,4 → maxFret=4, fretCount=5 → fits from 1
+      const seq = makeSequence([0, 3, 4, 0, 0, 0]);
+      expect(optimalStartingFret(seq, 1, 5)).toBe(1);
+    });
+
+    it('falls back to minFret-padding when voicing does not fit from fret 1', () => {
+      // open + frets 5,7 → maxFret=7, fretCount=5 → does NOT fit from 1
+      const seq = makeSequence([0, 5, 7, 0, 0, 0]);
+      expect(optimalStartingFret(seq, 1, 5)).toBe(4);
+    });
+
+    it('does not apply open-string rule when there are no open strings', () => {
+      // all fretted at 2,3 → maxFret=3, fretCount=5 → fits, but no open strings
+      const seq = makeSequence([2, 3, 2, 3, 2, 3]);
+      expect(optimalStartingFret(seq, 1, 5)).toBe(1);
+    });
+
+    it('behaves like no-fretCount when fretCount is omitted', () => {
+      const seq = makeSequence([0, 3, 4, 0, 0, 0]);
+      // without fretCount → minFret(3) - padding(1) = 2
+      expect(optimalStartingFret(seq, 1)).toBe(2);
+    });
+  });
 });

@@ -42,7 +42,7 @@ export default function ControlPanel() {
       const seq = fretboard.sequences[newIdx];
       updateFretboard(id, {
         sequenceIdx: newIdx,
-        ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+        ...(seq ? { startingFret: optimalStartingFret(seq, 1, fretboard.fretCount) } : {}),
       });
     } else {
       const newInversion = Math.max(0, fretboard.inversion - 1);
@@ -58,7 +58,7 @@ export default function ControlPanel() {
       const seq = fretboard.sequences[newIdx];
       updateFretboard(id, {
         sequenceIdx: newIdx,
-        ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+        ...(seq ? { startingFret: optimalStartingFret(seq, 1, fretboard.fretCount) } : {}),
       });
     } else {
       const newInversion = Math.min(maxInversions, fretboard.inversion + 1);

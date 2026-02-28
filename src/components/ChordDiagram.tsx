@@ -52,7 +52,7 @@ export default function ChordDiagram({
   // they're shown as O indicators above the nut regardless of position.
   let displayStart = startingFret;
   if (sequenceEnabled && sequence && sequence.length > 0) {
-    displayStart = optimalStartingFret(sequence, 0);
+    displayStart = optimalStartingFret(sequence, 0, visibleFrets);
   }
   const showNut = displayStart === 1;
 

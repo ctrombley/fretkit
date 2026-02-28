@@ -16,6 +16,7 @@ import {
 interface FretboardLabelProps {
   id: string;
   searchStr: string;
+  fretCount: number;
   current: { name: string; type: string; root?: Note } | null;
   sequenceEnabled: boolean;
   sequences: Sequence[];
@@ -27,6 +28,7 @@ interface FretboardLabelProps {
 export default function FretboardLabel({
   id,
   searchStr,
+  fretCount,
   current,
   sequenceEnabled,
   sequences,
@@ -72,7 +74,7 @@ export default function FretboardLabel({
     const seq = sequences[newIdx];
     updateFretboard(id, {
       sequenceIdx: newIdx,
-      ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+      ...(seq ? { startingFret: optimalStartingFret(seq, 1, fretCount) } : {}),
     });
   };
 
@@ -83,7 +85,7 @@ export default function FretboardLabel({
     const seq = sequences[newIdx];
     updateFretboard(id, {
       sequenceIdx: newIdx,
-      ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+      ...(seq ? { startingFret: optimalStartingFret(seq, 1, fretCount) } : {}),
     });
   };
 

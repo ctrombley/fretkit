@@ -145,7 +145,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
 
       const autoStart =
         current?.type === 'Chord' && sequences.length > 0
-          ? optimalStartingFret(sequences[0]!)
+          ? optimalStartingFret(sequences[0]!, 1, fb.fretCount)
           : undefined;
 
       set((state: AppState) => ({
