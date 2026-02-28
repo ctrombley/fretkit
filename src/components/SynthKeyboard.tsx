@@ -204,10 +204,10 @@ function IsomorphicKeyboard() {
         <g key={i}>
           <polygon
             points={hexPoints(cx, cy, HEX_R - 1)}
-            fill="#1a1a1a"
-            stroke="#444"
+            fill="#f3f4f6"
+            stroke="#d1d5db"
             strokeWidth={1}
-            className="hover:fill-[#333] active:fill-fret-green cursor-pointer"
+            className="hover:fill-[#e5e7eb] active:fill-fret-green cursor-pointer"
             onPointerDown={(e) => {
               (e.target as SVGElement).setPointerCapture(e.pointerId);
               noteOn(midi, e.pointerId);
@@ -220,7 +220,7 @@ function IsomorphicKeyboard() {
             x={cx}
             y={cy + 3.5}
             textAnchor="middle"
-            fill="#aaa"
+            fill="#6b7280"
             fontSize={8}
             className="pointer-events-none"
           >

@@ -70,25 +70,25 @@
   100% { r: 8; opacity: 1; }
 }
 
-/* Dark scrollbar for synth panel */
+/* Light scrollbar for synth panel */
 .synth-panel::-webkit-scrollbar {
   width: 6px;
 }
 
 .synth-panel::-webkit-scrollbar-track {
-  background: #111;
+  background: transparent;
 }
 
 .synth-panel::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 .synth-panel::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #9ca3af;
 }
 
 .synth-panel {
   scrollbar-width: thin;
-  scrollbar-color: #333 #111;
+  scrollbar-color: #d1d5db transparent;
 }

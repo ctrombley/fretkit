@@ -9,8 +9,10 @@ import type Sequence from './lib/Sequence';
 import type { View, Song, ChordConfig, SongExport } from './types';
 import type { GeneratorPreset } from './lib/derivation';
 import type { SymmetricDivision } from './lib/coltrane';
-import type { OscWaveform, SynthParams } from './lib/synth';
+import type { OscWaveform, SynthParams, LfoWaveform, LfoTargetParam } from './lib/synth';
 import { getSynth } from './lib/synth';
+import { FACTORY_PRESETS, randomizeParams } from './lib/synthPresets';
+import type { SynthPreset } from './lib/synthPresets';
 
 export interface FretboardState {
   id: number;
@@ -103,11 +105,36 @@ interface AppState {
   synthDelayFeedback: number;
   synthMasterVolume: number;
   synthKeyboardMode: 'classic' | 'isomorphic';
+  // Osc2
+  synthOsc2Waveform: OscWaveform;
+  synthOsc2Detune: number;
+  synthOsc2Mix: number;
+  // FM
+  synthFmMode: boolean;
+  synthFmDepth: number;
+  // LFO1
+  synthLfo1Rate: number;
+  synthLfo1Depth: number;
+  synthLfo1Waveform: LfoWaveform;
+  synthLfo1Target: LfoTargetParam;
+  // LFO2
+  synthLfo2Rate: number;
+  synthLfo2Depth: number;
+  synthLfo2Waveform: LfoWaveform;
+  synthLfo2Target: LfoTargetParam;
+  // Presets
+  synthPresets: SynthPreset[];
+  synthActivePresetIndex: number | null;
 
   // Synth actions
   setSynthPanelOpen: (open: boolean) => void;
   setSynthParam: <K extends keyof SynthParams>(key: K, value: SynthParams[K]) => void;
   setSynthKeyboardMode: (mode: 'classic' | 'isomorphic') => void;
+  setSynthLfoTarget: (lfo: 1 | 2, target: LfoTargetParam) => void;
+  loadPreset: (index: number) => void;
+  savePreset: (index: number, name: string) => void;
+  deletePreset: (index: number) => void;
+  randomizeSynth: () => void;
 
   // Coltrane actions
   setColtraneRoot: (root: number) => void;
@@ -164,6 +191,69 @@ const defaultChordConfig: Omit<ChordConfig, 'id'> = {
   sequenceIdx: null,
 };
 
+// Helper to apply all synth params to store state
+function synthParamsToStoreState(params: SynthParams): Partial<AppState> {
+  return {
+    synthWaveform: params.waveform,
+    synthFilterCutoff: params.filterCutoff,
+    synthFilterResonance: params.filterResonance,
+    synthAttack: params.attack,
+    synthDecay: params.decay,
+    synthSustain: params.sustain,
+    synthRelease: params.release,
+    synthPan: params.pan,
+    synthReverbSend: params.reverbSend,
+    synthDelaySend: params.delaySend,
+    synthDelayTime: params.delayTime,
+    synthDelayFeedback: params.delayFeedback,
+    synthMasterVolume: params.masterVolume,
+    synthOsc2Waveform: params.osc2Waveform,
+    synthOsc2Detune: params.osc2Detune,
+    synthOsc2Mix: params.osc2Mix,
+    synthFmMode: params.fmMode,
+    synthFmDepth: params.fmDepth,
+    synthLfo1Rate: params.lfo1Rate,
+    synthLfo1Depth: params.lfo1Depth,
+    synthLfo1Waveform: params.lfo1Waveform,
+    synthLfo1Target: params.lfo1Target,
+    synthLfo2Rate: params.lfo2Rate,
+    synthLfo2Depth: params.lfo2Depth,
+    synthLfo2Waveform: params.lfo2Waveform,
+    synthLfo2Target: params.lfo2Target,
+  };
+}
+
+function gatherSynthParams(state: AppState): SynthParams {
+  return {
+    waveform: state.synthWaveform,
+    filterCutoff: state.synthFilterCutoff,
+    filterResonance: state.synthFilterResonance,
+    attack: state.synthAttack,
+    decay: state.synthDecay,
+    sustain: state.synthSustain,
+    release: state.synthRelease,
+    pan: state.synthPan,
+    reverbSend: state.synthReverbSend,
+    delaySend: state.synthDelaySend,
+    delayTime: state.synthDelayTime,
+    delayFeedback: state.synthDelayFeedback,
+    masterVolume: state.synthMasterVolume,
+    osc2Waveform: state.synthOsc2Waveform,
+    osc2Detune: state.synthOsc2Detune,
+    osc2Mix: state.synthOsc2Mix,
+    fmMode: state.synthFmMode,
+    fmDepth: state.synthFmDepth,
+    lfo1Rate: state.synthLfo1Rate,
+    lfo1Depth: state.synthLfo1Depth,
+    lfo1Waveform: state.synthLfo1Waveform,
+    lfo1Target: state.synthLfo1Target,
+    lfo2Rate: state.synthLfo2Rate,
+    lfo2Depth: state.synthLfo2Depth,
+    lfo2Waveform: state.synthLfo2Waveform,
+    lfo2Target: state.synthLfo2Target,
+  };
+}
+
 let nextId = 1;
 
 export const useStore = create<AppState>()(
@@ -206,14 +296,88 @@ export const useStore = create<AppState>()(
       synthDelayFeedback: 0.4,
       synthMasterVolume: 0.5,
       synthKeyboardMode: 'classic' as const,
+      synthOsc2Waveform: 'sine' as OscWaveform,
+      synthOsc2Detune: 0,
+      synthOsc2Mix: 0,
+      synthFmMode: false,
+      synthFmDepth: 200,
+      synthLfo1Rate: 2,
+      synthLfo1Depth: 0,
+      synthLfo1Waveform: 'sine' as LfoWaveform,
+      synthLfo1Target: null as LfoTargetParam,
+      synthLfo2Rate: 0.5,
+      synthLfo2Depth: 0,
+      synthLfo2Waveform: 'triangle' as LfoWaveform,
+      synthLfo2Target: null as LfoTargetParam,
+      synthPresets: [...FACTORY_PRESETS],
+      synthActivePresetIndex: null,
 
       setSynthPanelOpen: (open) => set({ synthPanelOpen: open }),
       setSynthParam: (key, value) => {
         const storeKey = `synth${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof AppState;
-        set({ [storeKey]: value } as Partial<AppState>);
+        set({ [storeKey]: value, synthActivePresetIndex: null } as Partial<AppState>);
         getSynth().updateParams({ [key]: value });
       },
       setSynthKeyboardMode: (mode) => set({ synthKeyboardMode: mode }),
+
+      setSynthLfoTarget: (lfo, target) => {
+        const synth = getSynth();
+        synth.resetLfoBase(lfo);
+        if (lfo === 1) {
+          set({ synthLfo1Target: target });
+          synth.updateParams({ lfo1Target: target });
+        } else {
+          set({ synthLfo2Target: target });
+          synth.updateParams({ lfo2Target: target });
+        }
+      },
+
+      loadPreset: (index) => {
+        const state = get();
+        const preset = state.synthPresets[index];
+        if (!preset) return;
+        const storeUpdate = synthParamsToStoreState(preset.params);
+        set({ ...storeUpdate, synthActivePresetIndex: index } as Partial<AppState>);
+        const synth = getSynth();
+        synth.resetLfoBase(1);
+        synth.resetLfoBase(2);
+        synth.updateParams(preset.params);
+      },
+
+      savePreset: (index, name) => {
+        const state = get();
+        const params = gatherSynthParams(state);
+        const newPreset: SynthPreset = { name, params, isFactory: false };
+        const presets = [...state.synthPresets];
+        if (index < presets.length) {
+          presets[index] = newPreset;
+        } else {
+          presets.push(newPreset);
+        }
+        set({ synthPresets: presets, synthActivePresetIndex: index });
+      },
+
+      deletePreset: (index) => {
+        const state = get();
+        const preset = state.synthPresets[index];
+        if (!preset || preset.isFactory) return;
+        const presets = state.synthPresets.filter((_, i) => i !== index);
+        const activeIdx = state.synthActivePresetIndex;
+        set({
+          synthPresets: presets,
+          synthActivePresetIndex: activeIdx === index ? null : activeIdx !== null && activeIdx > index ? activeIdx - 1 : activeIdx,
+        });
+      },
+
+      randomizeSynth: () => {
+        const params = randomizeParams();
+        const storeUpdate = synthParamsToStoreState(params);
+        set({ ...storeUpdate, synthActivePresetIndex: null } as Partial<AppState>);
+        const synth = getSynth();
+        synth.resetLfoBase(1);
+        synth.resetLfoBase(2);
+        synth.updateParams(params);
+      },
 
       coltraneRoot: 0,
       coltraneDivision: 3 as SymmetricDivision,
@@ -430,7 +594,6 @@ export const useStore = create<AppState>()(
         set(state => {
           const newSongs = { ...state.songs };
           for (const song of data.songs) {
-            // Generate new IDs to avoid collisions
             const newId = crypto.randomUUID();
             newSongs[newId] = {
               ...song,
@@ -472,6 +635,20 @@ export const useStore = create<AppState>()(
         synthDelayFeedback: state.synthDelayFeedback,
         synthMasterVolume: state.synthMasterVolume,
         synthKeyboardMode: state.synthKeyboardMode,
+        synthOsc2Waveform: state.synthOsc2Waveform,
+        synthOsc2Detune: state.synthOsc2Detune,
+        synthOsc2Mix: state.synthOsc2Mix,
+        synthFmMode: state.synthFmMode,
+        synthFmDepth: state.synthFmDepth,
+        synthLfo1Rate: state.synthLfo1Rate,
+        synthLfo1Depth: state.synthLfo1Depth,
+        synthLfo1Waveform: state.synthLfo1Waveform,
+        synthLfo1Target: state.synthLfo1Target,
+        synthLfo2Rate: state.synthLfo2Rate,
+        synthLfo2Depth: state.synthLfo2Depth,
+        synthLfo2Waveform: state.synthLfo2Waveform,
+        synthLfo2Target: state.synthLfo2Target,
+        synthPresets: state.synthPresets,
       }),
     },
   ),

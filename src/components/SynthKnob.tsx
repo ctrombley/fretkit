@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 interface SynthKnobProps {
   value: number;
@@ -11,6 +11,9 @@ interface SynthKnobProps {
   size?: number;
   color?: string;
   formatValue?: (value: number) => string;
+  paramKey?: string;
+  lfoTargeting?: 1 | 2 | null;
+  onDrop?: (lfoNum: 1 | 2) => void;
 }
 
 const START_ANGLE = 135; // 7 o'clock
@@ -45,6 +48,8 @@ function denormalize(norm: number, min: number, max: number, logarithmic: boolea
   return min + clamped * (max - min);
 }
 
+const LFO_COLORS = { 1: '#F73667', 2: '#00C4CC' } as const;
+
 export default function SynthKnob({
   value,
   min,
@@ -56,8 +61,11 @@ export default function SynthKnob({
   size = 64,
   color = '#99C432',
   formatValue,
+  lfoTargeting,
+  onDrop,
 }: SynthKnobProps) {
   const dragRef = useRef<{ startY: number; startNorm: number } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const norm = normalize(value, min, max, logarithmic);
   const valueAngle = START_ANGLE + norm * ARC_RANGE;
@@ -96,6 +104,24 @@ export default function SynthKnob({
     dragRef.current = null;
   }, []);
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const lfoNum = parseInt(e.dataTransfer.getData('lfo-num'), 10) as 1 | 2;
+    if ((lfoNum === 1 || lfoNum === 2) && onDrop) {
+      onDrop(lfoNum);
+    }
+  }, [onDrop]);
+
   const displayValue = formatValue
     ? formatValue(value)
     : value >= 1000
@@ -104,10 +130,8 @@ export default function SynthKnob({
         ? Math.round(value).toString()
         : value.toFixed(value < 1 ? 2 : 1);
 
-  // Pointer line
   const pointer = polarToXY(cx, cy, pointerR, valueAngle);
 
-  // Build ticks
   const ticks = [];
   for (let i = 0; i < TICK_COUNT; i++) {
     const tickAngle = START_ANGLE + (i / (TICK_COUNT - 1)) * ARC_RANGE;
@@ -120,7 +144,7 @@ export default function SynthKnob({
         y1={inner.y}
         x2={outer.x}
         y2={outer.y}
-        stroke="#555"
+        stroke="#d1d5db"
         strokeWidth={0.8}
       />,
     );
@@ -129,7 +153,12 @@ export default function SynthKnob({
   const scale = size / 64;
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div
+      className="flex flex-col items-center gap-0.5"
+      onDragOver={onDrop ? handleDragOver : undefined}
+      onDragLeave={onDrop ? handleDragLeave : undefined}
+      onDrop={onDrop ? handleDrop : undefined}
+    >
       <span className="text-[9px] uppercase tracking-[0.15em] text-gray-500">
         {label}
       </span>
@@ -143,14 +172,19 @@ export default function SynthKnob({
         onPointerUp={onPointerUp}
         style={{ touchAction: 'none' }}
       >
+        {/* Drop highlight ring */}
+        {dragOver && (
+          <circle cx={cx} cy={cy} r={arcR + 4} fill="none" stroke="#99C432" strokeWidth={2} opacity={0.6} />
+        )}
+
         {/* Knob body */}
-        <circle cx={cx} cy={cy} r={knobR} fill="#1a1a1a" stroke="#333" strokeWidth={1.5} />
+        <circle cx={cx} cy={cy} r={knobR} fill="#f3f4f6" stroke="#d1d5db" strokeWidth={1.5} />
 
         {/* Background arc */}
         <path
           d={describeArc(cx, cy, arcR, START_ANGLE, END_ANGLE)}
           fill="none"
-          stroke="#333"
+          stroke="#e5e7eb"
           strokeWidth={2.5}
           strokeLinecap="round"
         />
@@ -175,17 +209,27 @@ export default function SynthKnob({
           y1={cy}
           x2={pointer.x}
           y2={pointer.y}
-          stroke="#ccc"
+          stroke="#374151"
           strokeWidth={1.5}
           strokeLinecap="round"
         />
+
+        {/* LFO indicator dot */}
+        {lfoTargeting && (
+          <circle
+            cx={cx}
+            cy={cy + knobR + 6}
+            r={3}
+            fill={LFO_COLORS[lfoTargeting]}
+          />
+        )}
       </svg>
       <span
         className="text-[9px] text-gray-400 tabular-nums"
         style={{ fontSize: 9 * Math.min(scale, 1) }}
       >
         {displayValue}
-        {unit && <span className="text-gray-600 ml-0.5">{unit}</span>}
+        {unit && <span className="text-gray-500 ml-0.5">{unit}</span>}
       </span>
     </div>
   );

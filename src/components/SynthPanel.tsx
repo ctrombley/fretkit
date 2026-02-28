@@ -3,7 +3,10 @@ import { useStore } from '../store';
 import SynthKnob from './SynthKnob';
 import SynthKeyboard from './SynthKeyboard';
 import SynthMixer from './SynthMixer';
-import type { OscWaveform } from '../lib/synth';
+import SynthOsc2 from './SynthOsc2';
+import SynthLfo from './SynthLfo';
+import SynthPresetSelector from './SynthPresetSelector';
+import type { OscWaveform, LfoTargetParam } from '../lib/synth';
 
 const WAVEFORMS: { type: OscWaveform; label: string; path: string }[] = [
   {
@@ -36,6 +39,12 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
+function lfoFor(param: string, t1: LfoTargetParam, t2: LfoTargetParam): 1 | 2 | null {
+  if (t1 === param) return 1;
+  if (t2 === param) return 2;
+  return null;
+}
+
 export default function SynthPanel() {
   const open = useStore(s => s.synthPanelOpen);
   const setOpen = useStore(s => s.setSynthPanelOpen);
@@ -49,37 +58,47 @@ export default function SynthPanel() {
   const keyboardMode = useStore(s => s.synthKeyboardMode);
   const setSynthParam = useStore(s => s.setSynthParam);
   const setKeyboardMode = useStore(s => s.setSynthKeyboardMode);
+  const setLfoTarget = useStore(s => s.setSynthLfoTarget);
+  const lfo1Target = useStore(s => s.synthLfo1Target);
+  const lfo2Target = useStore(s => s.synthLfo2Target);
+
+  const handleLfoDrop = (param: LfoTargetParam, lfoNum: 1 | 2) => {
+    setLfoTarget(lfoNum, param);
+  };
 
   return (
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/20"
+          className="fixed inset-0 z-30 bg-black/10"
           onClick={() => setOpen(false)}
         />
       )}
       <aside
-        className={`synth-panel fixed top-14 right-0 z-40 h-[calc(100vh-3.5rem)] w-[440px] max-w-[100vw] bg-[#111] border-l border-[#333] shadow-2xl transform transition-transform duration-200 overflow-y-auto ${
+        className={`synth-panel fixed top-14 right-0 z-40 h-[calc(100vh-3.5rem)] w-[440px] max-w-[100vw] bg-white border-l border-gray-200 shadow-lg transform transition-transform duration-200 overflow-y-auto ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="p-5">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[13px] uppercase tracking-[0.3em] text-gray-300 font-semibold">
+            <h2 className="text-[13px] uppercase tracking-[0.3em] text-gray-400 font-semibold">
               Synth
             </h2>
             <button
               onClick={() => setOpen(false)}
-              className="p-1 rounded hover:bg-[#222] text-gray-500"
+              className="p-1 rounded hover:bg-gray-100 text-gray-400"
               aria-label="Close synth panel"
             >
               <X size={18} />
             </button>
           </div>
 
-          {/* Oscillator */}
-          <SectionHeader>Oscillator</SectionHeader>
+          {/* Preset Selector */}
+          <SynthPresetSelector />
+
+          {/* Oscillator 1 */}
+          <SectionHeader>Oscillator 1</SectionHeader>
           <div className="flex gap-1">
             {WAVEFORMS.map(({ type, label, path }) => (
               <button
@@ -87,8 +106,8 @@ export default function SynthPanel() {
                 onClick={() => setSynthParam('waveform', type)}
                 className={`flex-1 flex flex-col items-center gap-1 py-2 rounded transition-colors ${
                   waveform === type
-                    ? 'bg-[#222] text-fret-green'
-                    : 'text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300'
+                    ? 'bg-gray-100 text-fret-green'
+                    : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 }`}
               >
                 <svg width={20} height={20} viewBox="0 0 20 20">
@@ -106,6 +125,14 @@ export default function SynthPanel() {
             ))}
           </div>
 
+          {/* Oscillator 2 / FM */}
+          <SectionHeader>Oscillator 2 / FM</SectionHeader>
+          <SynthOsc2
+            onLfoDrop={handleLfoDrop}
+            lfo1Target={lfo1Target}
+            lfo2Target={lfo2Target}
+          />
+
           {/* Filter */}
           <SectionHeader>Filter</SectionHeader>
           <div className="flex justify-center gap-6">
@@ -117,6 +144,9 @@ export default function SynthPanel() {
               logarithmic
               onChange={(v) => setSynthParam('filterCutoff', v)}
               unit="Hz"
+              paramKey="filterCutoff"
+              lfoTargeting={lfoFor('filterCutoff', lfo1Target, lfo2Target)}
+              onDrop={(lfo) => handleLfoDrop('filterCutoff', lfo)}
             />
             <SynthKnob
               label="Resonance"
@@ -126,8 +156,18 @@ export default function SynthPanel() {
               onChange={(v) => setSynthParam('filterResonance', v)}
               formatValue={(v) => v.toFixed(1)}
               unit="Q"
+              paramKey="filterResonance"
+              lfoTargeting={lfoFor('filterResonance', lfo1Target, lfo2Target)}
+              onDrop={(lfo) => handleLfoDrop('filterResonance', lfo)}
             />
           </div>
+
+          {/* LFOs */}
+          <SectionHeader>LFO 1</SectionHeader>
+          <SynthLfo lfoNum={1} />
+
+          <SectionHeader>LFO 2</SectionHeader>
+          <SynthLfo lfoNum={2} />
 
           {/* Envelope */}
           <SectionHeader>Envelope</SectionHeader>
@@ -140,6 +180,7 @@ export default function SynthPanel() {
               logarithmic
               onChange={(v) => setSynthParam('attack', v)}
               formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`}
+              paramKey="attack"
             />
             <SynthKnob
               label="Decay"
@@ -149,6 +190,7 @@ export default function SynthPanel() {
               logarithmic
               onChange={(v) => setSynthParam('decay', v)}
               formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`}
+              paramKey="decay"
             />
             <SynthKnob
               label="Sustain"
@@ -157,6 +199,7 @@ export default function SynthPanel() {
               max={1}
               onChange={(v) => setSynthParam('sustain', v)}
               formatValue={(v) => `${Math.round(v * 100)}%`}
+              paramKey="sustain"
             />
             <SynthKnob
               label="Release"
@@ -166,6 +209,7 @@ export default function SynthPanel() {
               logarithmic
               onChange={(v) => setSynthParam('release', v)}
               formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`}
+              paramKey="release"
             />
           </div>
 
@@ -178,8 +222,8 @@ export default function SynthPanel() {
                 onClick={() => setKeyboardMode(mode)}
                 className={`flex-1 py-1.5 text-[10px] uppercase tracking-wider rounded transition-colors ${
                   keyboardMode === mode
-                    ? 'bg-[#222] text-fret-green'
-                    : 'text-gray-500 hover:bg-[#1a1a1a] hover:text-gray-300'
+                    ? 'bg-gray-100 text-fret-green'
+                    : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
                 }`}
               >
                 {mode}
@@ -190,7 +234,12 @@ export default function SynthPanel() {
 
           {/* Mixer */}
           <SectionHeader>Mixer</SectionHeader>
-          <SynthMixer visible={open} />
+          <SynthMixer
+            visible={open}
+            onLfoDrop={handleLfoDrop}
+            lfo1Target={lfo1Target}
+            lfo2Target={lfo2Target}
+          />
         </div>
       </aside>
     </>

@@ -75,7 +75,7 @@ export default function Header() {
           onClick={() => setSynthPanelOpen(!synthPanelOpen)}
           className={`p-2 rounded-md transition-colors ${
             synthPanelOpen
-              ? 'bg-gray-900 text-fret-green'
+              ? 'bg-gray-100 text-fret-green'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           aria-label="Toggle synth panel"

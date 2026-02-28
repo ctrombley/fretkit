@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { getSynth } from '../lib/synth';
 import SynthKnob from './SynthKnob';
+import type { LfoTargetParam } from '../lib/synth';
 
 const BAR_COUNT = 20;
 const BAR_HEIGHT = 8;
@@ -26,18 +27,16 @@ function VUMeter({ visible }: { visible: boolean }) {
 
     const tick = () => {
       const data = getSynth().getAnalyserData();
-      // RMS level
       let sum = 0;
       for (let i = 0; i < data.length; i++) {
         const norm = data[i]! / 255;
         sum += norm * norm;
       }
       const rms = Math.sqrt(sum / data.length);
-      const scaled = Math.min(1, rms * 2.5); // boost for visibility
+      const scaled = Math.min(1, rms * 2.5);
 
       setLevel(scaled);
 
-      // Peak hold with decay
       if (scaled >= peakDecayRef.current) {
         peakDecayRef.current = scaled;
       } else {
@@ -69,7 +68,7 @@ function VUMeter({ visible }: { visible: boolean }) {
             width={VU_WIDTH}
             height={BAR_HEIGHT}
             rx={1}
-            fill={lit || isPeak ? barColor(i) : '#222'}
+            fill={lit || isPeak ? barColor(i) : '#e5e7eb'}
             opacity={lit ? 1 : isPeak ? 0.8 : 0.3}
           />
         );
@@ -83,7 +82,20 @@ function formatPan(v: number): string {
   return v < 0 ? `L${Math.round(Math.abs(v) * 100)}` : `R${Math.round(v * 100)}`;
 }
 
-export default function SynthMixer({ visible }: { visible: boolean }) {
+interface SynthMixerProps {
+  visible: boolean;
+  onLfoDrop: (param: LfoTargetParam, lfoNum: 1 | 2) => void;
+  lfo1Target: LfoTargetParam;
+  lfo2Target: LfoTargetParam;
+}
+
+function lfoFor(param: string, t1: LfoTargetParam, t2: LfoTargetParam): 1 | 2 | null {
+  if (t1 === param) return 1;
+  if (t2 === param) return 2;
+  return null;
+}
+
+export default function SynthMixer({ visible, onLfoDrop, lfo1Target, lfo2Target }: SynthMixerProps) {
   const pan = useStore(s => s.synthPan);
   const reverbSend = useStore(s => s.synthReverbSend);
   const delaySend = useStore(s => s.synthDelaySend);
@@ -105,6 +117,9 @@ export default function SynthMixer({ visible }: { visible: boolean }) {
           onChange={(v) => setSynthParam('pan', v)}
           formatValue={formatPan}
           color="#00C4CC"
+          paramKey="pan"
+          lfoTargeting={lfoFor('pan', lfo1Target, lfo2Target)}
+          onDrop={(lfo) => onLfoDrop('pan', lfo)}
         />
         <SynthKnob
           label="Reverb"
@@ -114,6 +129,9 @@ export default function SynthMixer({ visible }: { visible: boolean }) {
           onChange={(v) => setSynthParam('reverbSend', v)}
           formatValue={(v) => `${Math.round(v * 100)}%`}
           color="#00C4CC"
+          paramKey="reverbSend"
+          lfoTargeting={lfoFor('reverbSend', lfo1Target, lfo2Target)}
+          onDrop={(lfo) => onLfoDrop('reverbSend', lfo)}
         />
         <SynthKnob
           label="Delay"
@@ -123,6 +141,9 @@ export default function SynthMixer({ visible }: { visible: boolean }) {
           onChange={(v) => setSynthParam('delaySend', v)}
           formatValue={(v) => `${Math.round(v * 100)}%`}
           color="#00C4CC"
+          paramKey="delaySend"
+          lfoTargeting={lfoFor('delaySend', lfo1Target, lfo2Target)}
+          onDrop={(lfo) => onLfoDrop('delaySend', lfo)}
         />
         <SynthKnob
           label="D.Time"
@@ -132,6 +153,7 @@ export default function SynthMixer({ visible }: { visible: boolean }) {
           onChange={(v) => setSynthParam('delayTime', v)}
           formatValue={(v) => `${Math.round(v * 1000)}ms`}
           color="#00C4CC"
+          paramKey="delayTime"
         />
         <SynthKnob
           label="D.Fdbk"
@@ -141,6 +163,7 @@ export default function SynthMixer({ visible }: { visible: boolean }) {
           onChange={(v) => setSynthParam('delayFeedback', v)}
           formatValue={(v) => `${Math.round(v * 100)}%`}
           color="#00C4CC"
+          paramKey="delayFeedback"
         />
       </div>
 
@@ -154,6 +177,9 @@ export default function SynthMixer({ visible }: { visible: boolean }) {
           formatValue={(v) => `${Math.round(v * 100)}%`}
           size={80}
           color="#F73667"
+          paramKey="masterVolume"
+          lfoTargeting={lfoFor('masterVolume', lfo1Target, lfo2Target)}
+          onDrop={(lfo) => onLfoDrop('masterVolume', lfo)}
         />
       </div>
     </div>
