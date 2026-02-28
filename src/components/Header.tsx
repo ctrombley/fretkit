@@ -1,9 +1,11 @@
-import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform, Triangle } from 'lucide-react';
+import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform, Triangle, Sliders } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Header() {
   const view = useStore(s => s.view);
   const navigate = useStore(s => s.navigate);
+  const synthPanelOpen = useStore(s => s.synthPanelOpen);
+  const setSynthPanelOpen = useStore(s => s.setSynthPanelOpen);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14 flex items-center px-4 shadow-sm">
@@ -68,6 +70,19 @@ export default function Header() {
           Coltrane
         </button>
       </nav>
+      <div className="ml-auto">
+        <button
+          onClick={() => setSynthPanelOpen(!synthPanelOpen)}
+          className={`p-2 rounded-md transition-colors ${
+            synthPanelOpen
+              ? 'bg-gray-900 text-fret-green'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+          aria-label="Toggle synth panel"
+        >
+          <Sliders size={18} />
+        </button>
+      </div>
     </header>
   );
 }

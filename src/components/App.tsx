@@ -6,6 +6,7 @@ import SongDetailView from './SongDetailView';
 import SpiralView from './SpiralView';
 import OvertoneView from './OvertoneView';
 import ColtraneView from './ColtraneView';
+import SynthPanel from './SynthPanel';
 
 export default function App() {
   const view = useStore(s => s.view);
@@ -19,6 +20,7 @@ export default function App() {
       {view.name === 'spiral' && <SpiralView />}
       {view.name === 'overtones' && <OvertoneView />}
       {view.name === 'coltrane' && <ColtraneView />}
+      <SynthPanel />
     </div>
   );
 }

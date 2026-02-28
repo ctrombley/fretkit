@@ -9,6 +9,8 @@ import type Sequence from './lib/Sequence';
 import type { View, Song, ChordConfig, SongExport } from './types';
 import type { GeneratorPreset } from './lib/derivation';
 import type { SymmetricDivision } from './lib/coltrane';
+import type { OscWaveform, SynthParams } from './lib/synth';
+import { getSynth } from './lib/synth';
 
 export interface FretboardState {
   id: number;
@@ -84,6 +86,28 @@ interface AppState {
   coltraneOrdering: 'fifths' | 'chromatic';
   coltraneShowCadences: boolean;
   coltraneHighlightedAxis: number | null;
+
+  // Synth
+  synthPanelOpen: boolean;
+  synthWaveform: OscWaveform;
+  synthFilterCutoff: number;
+  synthFilterResonance: number;
+  synthAttack: number;
+  synthDecay: number;
+  synthSustain: number;
+  synthRelease: number;
+  synthPan: number;
+  synthReverbSend: number;
+  synthDelaySend: number;
+  synthDelayTime: number;
+  synthDelayFeedback: number;
+  synthMasterVolume: number;
+  synthKeyboardMode: 'classic' | 'isomorphic';
+
+  // Synth actions
+  setSynthPanelOpen: (open: boolean) => void;
+  setSynthParam: <K extends keyof SynthParams>(key: K, value: SynthParams[K]) => void;
+  setSynthKeyboardMode: (mode: 'classic' | 'isomorphic') => void;
 
   // Coltrane actions
   setColtraneRoot: (root: number) => void;
@@ -167,6 +191,30 @@ export const useStore = create<AppState>()(
       derivationSteps: 12,
       derivationActiveStep: null,
       derivationDivisions: 12,
+      synthPanelOpen: false,
+      synthWaveform: 'sawtooth' as OscWaveform,
+      synthFilterCutoff: 2000,
+      synthFilterResonance: 1,
+      synthAttack: 0.01,
+      synthDecay: 0.2,
+      synthSustain: 0.6,
+      synthRelease: 0.3,
+      synthPan: 0,
+      synthReverbSend: 0.15,
+      synthDelaySend: 0,
+      synthDelayTime: 0.3,
+      synthDelayFeedback: 0.4,
+      synthMasterVolume: 0.5,
+      synthKeyboardMode: 'classic' as const,
+
+      setSynthPanelOpen: (open) => set({ synthPanelOpen: open }),
+      setSynthParam: (key, value) => {
+        const storeKey = `synth${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof AppState;
+        set({ [storeKey]: value } as Partial<AppState>);
+        getSynth().updateParams({ [key]: value });
+      },
+      setSynthKeyboardMode: (mode) => set({ synthKeyboardMode: mode }),
+
       coltraneRoot: 0,
       coltraneDivision: 3 as SymmetricDivision,
       coltraneMode: 'circle' as const,
@@ -408,7 +456,23 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'fretkit-storage',
-      partialize: (state) => ({ songs: state.songs }),
+      partialize: (state) => ({
+        songs: state.songs,
+        synthWaveform: state.synthWaveform,
+        synthFilterCutoff: state.synthFilterCutoff,
+        synthFilterResonance: state.synthFilterResonance,
+        synthAttack: state.synthAttack,
+        synthDecay: state.synthDecay,
+        synthSustain: state.synthSustain,
+        synthRelease: state.synthRelease,
+        synthPan: state.synthPan,
+        synthReverbSend: state.synthReverbSend,
+        synthDelaySend: state.synthDelaySend,
+        synthDelayTime: state.synthDelayTime,
+        synthDelayFeedback: state.synthDelayFeedback,
+        synthMasterVolume: state.synthMasterVolume,
+        synthKeyboardMode: state.synthKeyboardMode,
+      }),
     },
   ),
 );
