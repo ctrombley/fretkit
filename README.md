@@ -6,16 +6,7 @@ Interactive fretboard visualizer for drilling scales, chords, and modes on guita
 
 ## Features
 
-- **Multi-instrument support** -- Guitar, banjo, mandolin with multiple tunings
-- **Scale & chord search** -- Type any scale, mode, or chord and see it on the fretboard
-- **Sequence generator** -- Intelligent fingering patterns across positions
-- **Built-in synthesizer** -- Dual oscillator, filter, LFO, delay, reverb -- play notes directly on the fretboard
-- **Arpeggiator** -- Synced or free-running with multiple patterns
-- **Metronome** -- Click/wood/beep/cowbell timbres, subdivisions, tap tempo
-- **Harmonic spiral** -- Visualize diatonic harmony in a spiral layout
-- **Overtone series** -- Just intonation vs equal temperament explorer
-- **Coltrane circles** -- Symmetric divisions of the octave
-- **Song builder** -- Create chord progressions with import/export
+-- ???
 
 ## Quick Start
 
