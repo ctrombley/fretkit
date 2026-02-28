@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { getSynth } from '../lib/synth';
 import SynthKnob from './SynthKnob';
 import type { LfoTargetParam } from '../lib/synth';
+import { lfoFor, formatPan } from '../lib/synthUtils';
 
 const BAR_COUNT = 20;
 const BAR_HEIGHT = 8;
@@ -77,22 +78,11 @@ function VUMeter({ visible }: { visible: boolean }) {
   );
 }
 
-function formatPan(v: number): string {
-  if (Math.abs(v) < 0.05) return 'C';
-  return v < 0 ? `L${Math.round(Math.abs(v) * 100)}` : `R${Math.round(v * 100)}`;
-}
-
 interface SynthMixerProps {
   visible: boolean;
   onLfoDrop: (param: LfoTargetParam, lfoNum: 1 | 2) => void;
   lfo1Target: LfoTargetParam;
   lfo2Target: LfoTargetParam;
-}
-
-function lfoFor(param: string, t1: LfoTargetParam, t2: LfoTargetParam): 1 | 2 | null {
-  if (t1 === param) return 1;
-  if (t2 === param) return 2;
-  return null;
 }
 
 export default function SynthMixer({ visible, onLfoDrop, lfo1Target, lfo2Target }: SynthMixerProps) {

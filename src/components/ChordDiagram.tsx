@@ -11,8 +11,7 @@ const NUT_WIDTH = 4;
 const MARKER_RADIUS = 7;
 const FRET_LABEL_SIZE = 10;
 
-const SINGLE_MARKER_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
-const DOUBLE_MARKER_FRETS = [12, 24];
+import { SINGLE_MARKER_FRETS, DOUBLE_MARKER_FRETS } from '../lib/fretboardConstants';
 
 interface ChordDiagramProps {
   tuning: string[];

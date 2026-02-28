@@ -5,6 +5,7 @@ import SynthOsc2 from './SynthOsc2';
 import SynthLfo from './SynthLfo';
 import SynthPresetSelector from './SynthPresetSelector';
 import type { OscWaveform, LfoTargetParam } from '../lib/synth';
+import { lfoFor } from '../lib/synthUtils';
 
 const WAVEFORMS: { type: OscWaveform; label: string; path: string }[] = [
   {
@@ -35,12 +36,6 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
       {children}
     </h3>
   );
-}
-
-function lfoFor(param: string, t1: LfoTargetParam, t2: LfoTargetParam): 1 | 2 | null {
-  if (t1 === param) return 1;
-  if (t2 === param) return 2;
-  return null;
 }
 
 export default function SynthView() {

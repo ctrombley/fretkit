@@ -2,37 +2,29 @@ import { useState, useCallback } from 'react';
 import Note from '../lib/Note';
 import StringMarker from './StringMarker';
 import { useStore } from '../store';
-import type Sequence from '../lib/Sequence';
-
-const STRING_HEIGHT = 20;
+import { STRING_HEIGHT } from '../lib/fretboardConstants';
+import { useFretboardContext } from './FretboardContext';
 
 interface FretStringProps {
-  current: { name: string; type: string; root?: Note } | null;
   fretIdx: number;
   fretWidth: number;
   idx: number;
-  litNotes: Note[];
   note: Note;
-  sequence?: Sequence;
-  sequenceEnabled: boolean;
   stringCount: number;
   xOffset: number;
   yOffset: number;
 }
 
 export default function FretString({
-  current,
   fretIdx,
   fretWidth,
   idx,
-  litNotes,
   note,
-  sequence,
-  sequenceEnabled,
   stringCount,
   xOffset,
   yOffset,
 }: FretStringProps) {
+  const { current, litNotes, sequence, sequenceEnabled } = useFretboardContext();
   const [isPreview, setIsPreview] = useState(false);
   const sandboxLatch = useStore(s => s.sandboxLatch);
   const arpEnabled = useStore(s => s.arpEnabled);

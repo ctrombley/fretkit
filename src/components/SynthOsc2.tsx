@@ -1,6 +1,7 @@
 import { useStore } from '../store';
 import SynthKnob from './SynthKnob';
 import type { OscWaveform, LfoTargetParam } from '../lib/synth';
+import { lfoFor } from '../lib/synthUtils';
 
 const WAVEFORMS: { type: OscWaveform; label: string; path: string }[] = [
   { type: 'sine', label: 'Sin', path: 'M2 10 Q6 0 10 10 Q14 20 18 10' },
@@ -13,12 +14,6 @@ interface SynthOsc2Props {
   onLfoDrop: (param: LfoTargetParam, lfoNum: 1 | 2) => void;
   lfo1Target: LfoTargetParam;
   lfo2Target: LfoTargetParam;
-}
-
-function lfoFor(param: string, t1: LfoTargetParam, t2: LfoTargetParam): 1 | 2 | null {
-  if (t1 === param) return 1;
-  if (t2 === param) return 2;
-  return null;
 }
 
 export default function SynthOsc2({ onLfoDrop, lfo1Target, lfo2Target }: SynthOsc2Props) {

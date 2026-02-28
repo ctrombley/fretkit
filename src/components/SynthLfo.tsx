@@ -1,7 +1,8 @@
 import { useStore } from '../store';
 import SynthKnob from './SynthKnob';
-import { X } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import type { LfoWaveform, LfoTargetParam } from '../lib/synth';
+import { lfoStoreKeys } from '../lib/synthUtils';
 
 const LFO_WAVEFORMS: { type: LfoWaveform; path: string }[] = [
   { type: 'sine', path: 'M2 10 Q6 0 10 10 Q14 20 18 10' },
@@ -29,23 +30,20 @@ interface SynthLfoProps {
 }
 
 export default function SynthLfo({ lfoNum }: SynthLfoProps) {
-  const rateKey = lfoNum === 1 ? 'synthLfo1Rate' : 'synthLfo2Rate';
-  const depthKey = lfoNum === 1 ? 'synthLfo1Depth' : 'synthLfo2Depth';
-  const waveformKey = lfoNum === 1 ? 'synthLfo1Waveform' : 'synthLfo2Waveform';
-  const targetKey = lfoNum === 1 ? 'synthLfo1Target' : 'synthLfo2Target';
+  const { rateKey, depthKey, waveformKey, targetKey, bloomKey, paramRate, paramDepth, paramWaveform } = lfoStoreKeys(lfoNum);
 
   const rate = useStore(s => s[rateKey]) as number;
   const depth = useStore(s => s[depthKey]) as number;
   const waveform = useStore(s => s[waveformKey]) as LfoWaveform;
   const target = useStore(s => s[targetKey]) as LfoTargetParam;
+  const bloom = useStore(s => s[bloomKey]) as boolean;
   const setSynthParam = useStore(s => s.setSynthParam);
   const setLfoTarget = useStore(s => s.setSynthLfoTarget);
 
-  const paramRate = lfoNum === 1 ? 'lfo1Rate' : 'lfo2Rate';
-  const paramDepth = lfoNum === 1 ? 'lfo1Depth' : 'lfo2Depth';
-  const paramWaveform = lfoNum === 1 ? 'lfo1Waveform' : 'lfo2Waveform';
-
   const plugColor = PLUG_COLORS[lfoNum];
+  const lfoActive = !!target && depth > 0;
+  const showBloom = bloom && lfoActive;
+  const period = `${(1 / Math.max(rate, 0.05)).toFixed(3)}s`;
 
   return (
     <div className="flex items-center gap-3">
@@ -89,19 +87,43 @@ export default function SynthLfo({ lfoNum }: SynthLfoProps) {
         size={52}
       />
 
-      {/* Drag plug */}
-      <div
-        draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData('lfo-num', String(lfoNum));
-          e.dataTransfer.effectAllowed = 'link';
-        }}
-        className="w-6 h-6 rounded-full cursor-grab active:cursor-grabbing flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: plugColor }}
-        title={`Drag LFO ${lfoNum} to a knob`}
-      >
-        <span className="text-white text-[8px] font-bold">{lfoNum}</span>
+      {/* Drag plug with bloom ring */}
+      <div className="relative flex-shrink-0 w-6 h-6">
+        {showBloom && (
+          <div
+            className="lfo-bloom"
+            style={{
+              '--lfo-period': period,
+              '--lfo-color': plugColor,
+            } as React.CSSProperties}
+          />
+        )}
+        <div
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('lfo-num', String(lfoNum));
+            e.dataTransfer.effectAllowed = 'link';
+          }}
+          className="w-6 h-6 rounded-full cursor-grab active:cursor-grabbing flex items-center justify-center"
+          style={{ backgroundColor: plugColor }}
+          title={`Drag LFO ${lfoNum} to a knob`}
+        >
+          <span className="text-white text-[8px] font-bold">{lfoNum}</span>
+        </div>
       </div>
+
+      {/* Bloom toggle */}
+      <button
+        onClick={() => useStore.setState({ [bloomKey]: !bloom })}
+        className={`p-1 rounded transition-colors ${
+          bloom
+            ? 'text-fret-green hover:bg-gray-100'
+            : 'text-gray-300 hover:bg-gray-50 hover:text-gray-400'
+        }`}
+        title={bloom ? 'Bloom on' : 'Bloom off'}
+      >
+        <Sparkles size={12} />
+      </button>
 
       {/* Target display */}
       <div className="flex items-center gap-1 min-w-[60px]">

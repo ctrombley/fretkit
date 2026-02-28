@@ -3,12 +3,7 @@ import Label from './Label';
 import FretMarker from './FretMarker';
 import Note from '../lib/Note';
 import { calcFretWidth } from './Fretboard';
-import type Sequence from '../lib/Sequence';
-
-const STRING_HEIGHT = 20;
-
-const SINGLE_MARKER_FRETS = [3, 5, 7, 9, 15, 17, 19, 21];
-const DOUBLE_MARKER_FRETS = [12, 24];
+import { STRING_HEIGHT, SINGLE_MARKER_FRETS, DOUBLE_MARKER_FRETS } from '../lib/fretboardConstants';
 
 function getFretWidth(fretNumber: number): number {
   if (fretNumber <= 0) return 0;
@@ -28,27 +23,19 @@ function getFretMarkerType(fretNumber: number): 'single' | 'double' | null {
 }
 
 interface FretProps {
-  current: { name: string; type: string; root?: Note } | null;
   fretCount: number;
   fretNumber: number;
   fretboardMargin: number;
   idx: number;
-  litNotes: Note[];
-  sequence?: Sequence;
-  sequenceEnabled: boolean;
   startingFret: number;
   tuning: string[];
 }
 
 export default function Fret({
-  current,
   fretCount,
   fretNumber,
   fretboardMargin,
   idx,
-  litNotes,
-  sequence,
-  sequenceEnabled,
   startingFret,
   tuning,
 }: FretProps) {
@@ -95,14 +82,10 @@ export default function Fret({
         return (
           <FretString
             key={`${t}-${i}`}
-            current={current}
             fretIdx={idx}
             fretWidth={width}
             idx={i}
-            litNotes={litNotes}
             note={openNote.add(fretNumber)}
-            sequence={sequence}
-            sequenceEnabled={sequenceEnabled}
             stringCount={stringCount}
             xOffset={xOffset}
             yOffset={yOffset}
