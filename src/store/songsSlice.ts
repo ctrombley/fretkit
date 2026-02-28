@@ -75,7 +75,7 @@ export function createSongsSlice(set: StoreSet, get: StoreGet) {
               updatedAt: Date.now(),
             },
           },
-          activeSongChordId: chordId,
+          activeSongChordId: null,
         };
       });
     },

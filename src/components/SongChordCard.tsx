@@ -168,45 +168,47 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
           )}
         </div>
 
-        {/* Mode toggle + Label */}
+        {/* Name row: V/I toggle inline with chord name */}
         <div className="text-center mt-1">
-          {hasArrows && (
-            <button
-              onClick={() => setArrowMode(m => m === 'voicing' ? 'inversion' : 'voicing')}
-              className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-500 mb-0.5 transition-colors"
-              title={isVoicing ? 'Voicing mode — click to switch to inversions' : 'Inversion mode — click to switch to voicings'}
-            >
-              {isVoicing ? 'V' : 'I'}
-            </button>
-          )}
-          {editingName ? (
-            <input
-              ref={inputRef}
-              type="text"
-              value={draft}
-              onChange={e => {
-                setDraft(e.target.value);
-                update({ searchStr: e.target.value, sequenceIdx: 0, inversion: 0 });
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') commitName();
-                if (e.key === 'Escape') cancelName();
-              }}
-              onBlur={commitName}
-              placeholder="e.g. C major"
-              className="w-full px-1 py-0.5 text-sm text-center border border-fret-blue rounded focus:outline-none focus:ring-1 focus:ring-fret-blue"
-            />
-          ) : (
-            <p
-              className="text-sm font-medium text-dark truncate max-w-[130px] cursor-pointer hover:text-fret-blue transition-colors"
-              onClick={() => setEditingName(true)}
-              title="Click to edit chord"
-            >
-              {displayName}
-            </p>
-          )}
+          <div className="flex items-center justify-center gap-1">
+            {hasArrows && (
+              <button
+                onClick={() => setArrowMode(m => m === 'voicing' ? 'inversion' : 'voicing')}
+                className="text-[10px] font-mono px-1 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-500 leading-none transition-colors flex-shrink-0"
+                title={isVoicing ? 'Voicing mode — click for inversions' : 'Inversion mode — click for voicings'}
+              >
+                {isVoicing ? 'V' : 'I'}
+              </button>
+            )}
+            {editingName ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={draft}
+                onChange={e => {
+                  setDraft(e.target.value);
+                  update({ searchStr: e.target.value, sequenceIdx: 0, inversion: 0 });
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitName();
+                  if (e.key === 'Escape') cancelName();
+                }}
+                onBlur={commitName}
+                placeholder="e.g. C major"
+                className="min-w-0 px-1 py-0.5 text-sm text-center border border-fret-blue rounded focus:outline-none focus:ring-1 focus:ring-fret-blue"
+              />
+            ) : (
+              <p
+                className="text-sm font-medium text-dark truncate max-w-[120px] cursor-pointer hover:text-fret-blue transition-colors"
+                onClick={() => setEditingName(true)}
+                title="Click to edit chord"
+              >
+                {displayName}
+              </p>
+            )}
+          </div>
           {chord.label && (
-            <p className="text-xs text-gray-400">{chord.label}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{chord.label}</p>
           )}
         </div>
       </div>
