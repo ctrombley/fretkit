@@ -155,7 +155,7 @@ interface AppState {
 
   // Sandbox latch
   sandboxLatch: boolean;
-  sandboxResetCounter: number;
+  sandboxActiveNotes: number[];
 
   // Arpeggiator
   arpEnabled: boolean;
@@ -179,6 +179,9 @@ interface AppState {
   // Sandbox latch actions
   setSandboxLatch: (latch: boolean) => void;
   killAllNotes: () => void;
+  toggleSandboxNote: (semitones: number, frequency: number) => void;
+  activateSandboxNote: (semitones: number, frequency: number) => void;
+  deactivateSandboxNote: (semitones: number) => void;
 
   // Arpeggiator actions
   setArpEnabled: (enabled: boolean) => void;
@@ -315,6 +318,9 @@ function gatherSynthParams(state: AppState): SynthParams {
   };
 }
 
+// Voice handles for latch-mode notes (survives component unmount)
+const latchVoices = new Map<number, { stop: () => void }>();
+
 let nextId = 1;
 
 export const useStore = create<AppState>()(
@@ -356,7 +362,7 @@ export const useStore = create<AppState>()(
       keyboardPanelOpen: false,
       transportBarOpen: true,
       sandboxLatch: true,
-      sandboxResetCounter: 0,
+      sandboxActiveNotes: [] as number[],
       arpEnabled: false,
       arpPattern: 'up' as ArpPattern,
       arpOctaveRange: 1,
@@ -415,7 +421,40 @@ export const useStore = create<AppState>()(
       killAllNotes: () => {
         getSynth().killAll();
         getArpeggiator().clear();
-        set(s => ({ sandboxResetCounter: s.sandboxResetCounter + 1 }));
+        for (const voice of latchVoices.values()) voice.stop();
+        latchVoices.clear();
+        set({ sandboxActiveNotes: [] });
+      },
+      toggleSandboxNote: (semitones, frequency) => {
+        const state = get();
+        const isActive = state.sandboxActiveNotes.includes(semitones);
+        if (isActive) {
+          if (state.arpEnabled) {
+            getArpeggiator().removeNote(semitones);
+          } else {
+            latchVoices.get(semitones)?.stop();
+            latchVoices.delete(semitones);
+          }
+          set({ sandboxActiveNotes: state.sandboxActiveNotes.filter(s => s !== semitones) });
+        } else {
+          if (state.arpEnabled) {
+            getArpeggiator().addNote(frequency, semitones);
+          } else {
+            latchVoices.set(semitones, getSynth().play(frequency));
+          }
+          set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
+        }
+      },
+      activateSandboxNote: (semitones, frequency) => {
+        const state = get();
+        if (state.sandboxActiveNotes.includes(semitones)) return;
+        latchVoices.set(semitones, getSynth().play(frequency));
+        set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
+      },
+      deactivateSandboxNote: (semitones) => {
+        latchVoices.get(semitones)?.stop();
+        latchVoices.delete(semitones);
+        set(s => ({ sandboxActiveNotes: s.sandboxActiveNotes.filter(st => st !== semitones) }));
       },
       setArpEnabled: (enabled) => {
         set({ arpEnabled: enabled });

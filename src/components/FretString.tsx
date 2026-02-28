@@ -1,9 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import Note from '../lib/Note';
 import StringMarker from './StringMarker';
-import { play } from '../lib/musicbox';
 import { useStore } from '../store';
-import { getArpeggiator } from '../lib/arpeggiator';
 import type Sequence from '../lib/Sequence';
 
 const STRING_HEIGHT = 20;
@@ -35,19 +33,13 @@ export default function FretString({
   xOffset,
   yOffset,
 }: FretStringProps) {
-  const [isMarked, setIsMarked] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
-  const playingRef = useRef<{ stop: () => void } | null>(null);
   const sandboxLatch = useStore(s => s.sandboxLatch);
   const arpEnabled = useStore(s => s.arpEnabled);
-  const sandboxResetCounter = useStore(s => s.sandboxResetCounter);
-
-  useEffect(() => {
-    if (sandboxResetCounter === 0) return;
-    playingRef.current?.stop();
-    playingRef.current = null;
-    setIsMarked(false);
-  }, [sandboxResetCounter]);
+  const isMarked = useStore(s => s.sandboxActiveNotes.includes(note.semitones));
+  const toggleNote = useStore(s => s.toggleSandboxNote);
+  const activateNote = useStore(s => s.activateSandboxNote);
+  const deactivateNote = useStore(s => s.deactivateSandboxNote);
 
   const stringNumber = (stringCount - 1) - idx;
 
@@ -65,65 +57,27 @@ export default function FretString({
     ? current.root.semitones === note.baseSemitones
     : false;
 
-  // Arp mode: click toggles note in arpeggiator
-  const handleArpToggle = useCallback(() => {
-    const arp = getArpeggiator();
-    if (isMarked) {
-      arp.removeNote(note.semitones);
-      setIsMarked(false);
-    } else {
-      arp.addNote(note.frequency, note.semitones);
-      setIsMarked(true);
-    }
-  }, [isMarked, note.frequency, note.semitones]);
-
-  // Latch mode: click toggles note on/off
-  const handleLatchToggle = useCallback(() => {
-    if (isMarked) {
-      playingRef.current?.stop();
-      playingRef.current = null;
-    } else {
-      playingRef.current = play(note.frequency);
-    }
-    setIsMarked(m => !m);
-  }, [isMarked, note.frequency]);
-
-  // Momentary mode: pointer down starts, pointer up stops
-  const handleMomentaryDown = useCallback(() => {
-    playingRef.current = play(note.frequency);
-    setIsMarked(true);
-  }, [note.frequency]);
-
-  const handleMomentaryUp = useCallback(() => {
-    playingRef.current?.stop();
-    playingRef.current = null;
-    setIsMarked(false);
-  }, []);
-
-  // Determine which handler to use
   const useLatch = arpEnabled || sandboxLatch;
 
   const handlePointerDown = useCallback(() => {
-    if (arpEnabled) {
-      handleArpToggle();
-    } else if (useLatch) {
-      handleLatchToggle();
+    if (useLatch) {
+      toggleNote(note.semitones, note.frequency);
     } else {
-      handleMomentaryDown();
+      activateNote(note.semitones, note.frequency);
     }
-  }, [arpEnabled, useLatch, handleArpToggle, handleLatchToggle, handleMomentaryDown]);
+  }, [useLatch, note.semitones, note.frequency, toggleNote, activateNote]);
 
   const handlePointerUp = useCallback(() => {
     if (!useLatch) {
-      handleMomentaryUp();
+      deactivateNote(note.semitones);
     }
-  }, [useLatch, handleMomentaryUp]);
+  }, [useLatch, note.semitones, deactivateNote]);
 
   const handlePointerLeave = useCallback(() => {
     if (!useLatch && isMarked) {
-      handleMomentaryUp();
+      deactivateNote(note.semitones);
     }
-  }, [useLatch, isMarked, handleMomentaryUp]);
+  }, [useLatch, isMarked, note.semitones, deactivateNote]);
 
   return (
     <g className={`string string-${idx}`}>
