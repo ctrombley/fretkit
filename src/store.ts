@@ -13,6 +13,7 @@ import type { OscWaveform, SynthParams, LfoWaveform, LfoTargetParam } from './li
 import { getSynth } from './lib/synth';
 import { FACTORY_PRESETS, randomizeParams } from './lib/synthPresets';
 import type { SynthPreset } from './lib/synthPresets';
+import type { MetronomeTimbre } from './lib/metronome';
 
 export interface FretboardState {
   id: number;
@@ -89,8 +90,20 @@ interface AppState {
   coltraneShowCadences: boolean;
   coltraneHighlightedAxis: number | null;
 
+  // Transport
+  transportPlaying: boolean;
+  transportBpm: number;
+  transportBeatsPerMeasure: number;
+  transportBeatUnit: number;
+  transportCurrentBeat: number;
+  transportCurrentMeasure: number;
+
+  // Metronome
+  metronomeVolume: number;
+  metronomeMuted: boolean;
+  metronomeTimbre: MetronomeTimbre;
+
   // Synth
-  synthPanelOpen: boolean;
   synthWaveform: OscWaveform;
   synthFilterCutoff: number;
   synthFilterResonance: number;
@@ -126,8 +139,18 @@ interface AppState {
   synthPresets: SynthPreset[];
   synthActivePresetIndex: number | null;
 
+  // Transport actions
+  setTransportPlaying: (playing: boolean) => void;
+  setTransportBpm: (bpm: number) => void;
+  setTransportTimeSignature: (beats: number, unit: number) => void;
+  setTransportBeat: (beat: number, measure: number) => void;
+
+  // Metronome actions
+  setMetronomeVolume: (volume: number) => void;
+  setMetronomeMuted: (muted: boolean) => void;
+  setMetronomeTimbre: (timbre: MetronomeTimbre) => void;
+
   // Synth actions
-  setSynthPanelOpen: (open: boolean) => void;
   setSynthParam: <K extends keyof SynthParams>(key: K, value: SynthParams[K]) => void;
   setSynthKeyboardMode: (mode: 'classic' | 'isomorphic') => void;
   setSynthLfoTarget: (lfo: 1 | 2, target: LfoTargetParam) => void;
@@ -281,7 +304,15 @@ export const useStore = create<AppState>()(
       derivationSteps: 12,
       derivationActiveStep: null,
       derivationDivisions: 12,
-      synthPanelOpen: false,
+      transportPlaying: false,
+      transportBpm: 120,
+      transportBeatsPerMeasure: 4,
+      transportBeatUnit: 4,
+      transportCurrentBeat: 0,
+      transportCurrentMeasure: 0,
+      metronomeVolume: 0.7,
+      metronomeMuted: false,
+      metronomeTimbre: 'click' as MetronomeTimbre,
       synthWaveform: 'sawtooth' as OscWaveform,
       synthFilterCutoff: 2000,
       synthFilterResonance: 1,
@@ -312,7 +343,13 @@ export const useStore = create<AppState>()(
       synthPresets: [...FACTORY_PRESETS],
       synthActivePresetIndex: null,
 
-      setSynthPanelOpen: (open) => set({ synthPanelOpen: open }),
+      setTransportPlaying: (playing) => set({ transportPlaying: playing }),
+      setTransportBpm: (bpm) => set({ transportBpm: bpm }),
+      setTransportTimeSignature: (beats, unit) => set({ transportBeatsPerMeasure: beats, transportBeatUnit: unit }),
+      setTransportBeat: (beat, measure) => set({ transportCurrentBeat: beat, transportCurrentMeasure: measure }),
+      setMetronomeVolume: (volume) => set({ metronomeVolume: volume }),
+      setMetronomeMuted: (muted) => set({ metronomeMuted: muted }),
+      setMetronomeTimbre: (timbre) => set({ metronomeTimbre: timbre }),
       setSynthParam: (key, value) => {
         const storeKey = `synth${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof AppState;
         set({ [storeKey]: value, synthActivePresetIndex: null } as Partial<AppState>);
@@ -621,6 +658,12 @@ export const useStore = create<AppState>()(
       name: 'fretkit-storage',
       partialize: (state) => ({
         songs: state.songs,
+        transportBpm: state.transportBpm,
+        transportBeatsPerMeasure: state.transportBeatsPerMeasure,
+        transportBeatUnit: state.transportBeatUnit,
+        metronomeVolume: state.metronomeVolume,
+        metronomeMuted: state.metronomeMuted,
+        metronomeTimbre: state.metronomeTimbre,
         synthWaveform: state.synthWaveform,
         synthFilterCutoff: state.synthFilterCutoff,
         synthFilterResonance: state.synthFilterResonance,

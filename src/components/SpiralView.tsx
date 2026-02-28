@@ -12,7 +12,7 @@ export default function SpiralView() {
   const keyName = `${noteName(spiralRoot, preferSharps)} ${spiralMode}`;
 
   return (
-    <div className="pt-14 px-4 pb-8 max-w-2xl mx-auto">
+    <div className="pt-14 px-4 pb-16 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">{keyName}</h2>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">

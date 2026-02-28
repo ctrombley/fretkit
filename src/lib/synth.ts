@@ -410,6 +410,10 @@ class SynthEngine {
     this.analyser.getByteFrequencyData(data);
     return data;
   }
+
+  getAudioContext(): AudioContext {
+    return this.ctx;
+  }
 }
 
 let instance: SynthEngine | null = null;

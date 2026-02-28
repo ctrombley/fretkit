@@ -19,7 +19,7 @@ export default function SongDetailView({ songId }: SongDetailViewProps) {
   }
 
   return (
-    <main className="pt-14 px-4 max-w-7xl mx-auto">
+    <main className="pt-14 pb-16 px-4 max-w-7xl mx-auto">
       <SongHeader songId={songId} title={song.title} />
 
       <div className="flex flex-wrap gap-4 items-start">

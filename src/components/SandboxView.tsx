@@ -19,7 +19,7 @@ export default function SandboxView() {
       >
         {activeFretboard && <ControlPanel />}
       </Sidebar>
-      <main className="pt-14 px-4 max-w-7xl mx-auto">
+      <main className="pt-14 pb-16 px-4 max-w-7xl mx-auto">
         {Object.keys(fretboards).map(id => (
           <FretboardSection key={id} id={id} />
         ))}

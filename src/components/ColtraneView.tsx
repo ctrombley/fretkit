@@ -67,7 +67,7 @@ export default function ColtraneView() {
   }
 
   return (
-    <div className="pt-14 px-4 pb-8 max-w-2xl mx-auto">
+    <div className="pt-14 px-4 pb-16 max-w-2xl mx-auto">
       {/* Title */}
       <div className="mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">

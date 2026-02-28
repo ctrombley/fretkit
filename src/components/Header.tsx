@@ -4,8 +4,6 @@ import { useStore } from '../store';
 export default function Header() {
   const view = useStore(s => s.view);
   const navigate = useStore(s => s.navigate);
-  const synthPanelOpen = useStore(s => s.synthPanelOpen);
-  const setSynthPanelOpen = useStore(s => s.setSynthPanelOpen);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-14 flex items-center px-4 shadow-sm">
@@ -69,20 +67,18 @@ export default function Header() {
           <Triangle size={16} />
           Coltrane
         </button>
-      </nav>
-      <div className="ml-auto">
         <button
-          onClick={() => setSynthPanelOpen(!synthPanelOpen)}
-          className={`p-2 rounded-md transition-colors ${
-            synthPanelOpen
-              ? 'bg-gray-100 text-fret-green'
+          onClick={() => navigate({ name: 'synth' })}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+            view.name === 'synth'
+              ? 'bg-gray-100 text-dark'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
-          aria-label="Toggle synth panel"
         >
-          <Sliders size={18} />
+          <Sliders size={16} />
+          Synth
         </button>
-      </div>
+      </nav>
     </header>
   );
 }

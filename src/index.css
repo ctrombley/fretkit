@@ -70,6 +70,16 @@
   100% { r: 8; opacity: 1; }
 }
 
+/* Beat indicator pulse */
+.beat-pulse {
+  animation: beat-pulse 0.15s ease-out;
+}
+
+@keyframes beat-pulse {
+  0% { transform: scale(1.4); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* Light scrollbar for synth panel */
 .synth-panel::-webkit-scrollbar {
   width: 6px;
