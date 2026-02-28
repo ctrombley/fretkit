@@ -5,6 +5,7 @@ import type Sequence from '../lib/Sequence';
 import Chord from '../lib/Chord';
 import termSearch from '../lib/termSearch';
 import generate from '../lib/sequenceGenerator';
+import { generateVoicings } from '../lib/voicingGenerator';
 import getStrings from '../lib/getStrings';
 
 interface ChordDerived {
@@ -34,8 +35,15 @@ export default function useChordDerived(chord: ChordConfig): ChordDerived {
       maxInversions = chordObj.maxInversions;
     }
 
-    const strings = getStrings(chord.fretCount, chord.tuning);
-    const sequences = current ? generate(effectiveNotes, strings, chord.position) : [];
+    let sequences: Sequence[] = [];
+    if (current?.type === 'Chord') {
+      const pitchClasses = effectiveNotes.map(n => n.baseSemitones);
+      const bassTarget = effectiveNotes[0]!.baseSemitones;
+      sequences = generateVoicings(pitchClasses, bassTarget, chord.tuning, 15);
+    } else if (current) {
+      const strings = getStrings(chord.fretCount, chord.tuning);
+      sequences = generate(effectiveNotes, strings, chord.position);
+    }
 
     return {
       current: current ?? null,

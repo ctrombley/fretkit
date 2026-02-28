@@ -2,6 +2,7 @@ import { useRef, useCallback } from 'react';
 import { useStore } from '../store';
 import Fretboard, { calcFretWidth } from './Fretboard';
 import FretboardLabel from './FretboardLabel';
+import ChordDiagram from './ChordDiagram';
 import { X, Settings } from 'lucide-react';
 
 interface FretboardSectionProps {
@@ -53,6 +54,10 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
   if (!fretboard) return null;
 
   const isSelected = settings.settingsId === id && settings.sidebarOpen;
+  const showMiniDiagram =
+    fretboard.sequenceEnabled &&
+    fretboard.current?.type === 'Chord' &&
+    fretboard.sequences.length > 0;
 
   return (
     <div
@@ -80,11 +85,27 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
           <Settings size={16} />
         </button>
       </div>
+      {showMiniDiagram && (
+        <div className="absolute top-2 left-2 z-10 opacity-80 hover:opacity-100 transition-opacity pointer-events-none">
+          <ChordDiagram
+            tuning={fretboard.tuning}
+            current={fretboard.current}
+            litNotes={fretboard.litNotes}
+            sequences={fretboard.sequences}
+            sequenceEnabled={fretboard.sequenceEnabled}
+            sequenceIdx={fretboard.sequenceIdx}
+            startingFret={fretboard.startingFret}
+            visibleFrets={5}
+          />
+        </div>
+      )}
       <FretboardLabel
         current={fretboard.current}
         sequenceEnabled={fretboard.sequenceEnabled}
         sequences={fretboard.sequences}
         sequenceIdx={fretboard.sequenceIdx}
+        tuning={fretboard.tuning}
+        inversion={fretboard.inversion}
       />
       <Fretboard
         fretCount={fretboard.fretCount}

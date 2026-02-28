@@ -24,6 +24,12 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
 
   const isEditing = activeSongChordId === chord.id;
 
+  // Auto-enable voicing mode for chords with voicings
+  const effectiveSequenceEnabled =
+    current?.type === 'Chord' && sequences.length > 0;
+  const effectiveSequenceIdx =
+    effectiveSequenceEnabled ? (chord.sequenceIdx ?? 0) : chord.sequenceIdx;
+
   const update = (data: Partial<ChordConfig>) => updateSongChord(songId, chord.id, data);
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -47,15 +53,15 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
   // Arrow navigation logic
   const isVoicing = arrowMode === 'voicing';
   const prevDisabled = isVoicing
-    ? !chord.sequenceEnabled || !sequences.length || chord.sequenceIdx === 0
+    ? !effectiveSequenceEnabled || !sequences.length || effectiveSequenceIdx === 0
     : chord.inversion <= 0;
   const nextDisabled = isVoicing
-    ? !chord.sequenceEnabled || !sequences.length || chord.sequenceIdx === sequences.length - 1
+    ? !effectiveSequenceEnabled || !sequences.length || effectiveSequenceIdx === sequences.length - 1
     : chord.inversion >= maxInversions;
 
   const handlePrev = () => {
     if (isVoicing) {
-      update({ sequenceIdx: (chord.sequenceIdx ?? 1) - 1 });
+      update({ sequenceIdx: (effectiveSequenceIdx ?? 1) - 1 });
     } else {
       update({ inversion: Math.max(0, chord.inversion - 1) });
     }
@@ -63,7 +69,7 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
 
   const handleNext = () => {
     if (isVoicing) {
-      update({ sequenceIdx: (chord.sequenceIdx ?? -1) + 1 });
+      update({ sequenceIdx: (effectiveSequenceIdx ?? -1) + 1 });
     } else {
       update({ inversion: Math.min(maxInversions, chord.inversion + 1) });
     }
@@ -122,8 +128,8 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
             current={current}
             litNotes={litNotes}
             sequences={sequences}
-            sequenceEnabled={chord.sequenceEnabled}
-            sequenceIdx={chord.sequenceIdx}
+            sequenceEnabled={effectiveSequenceEnabled}
+            sequenceIdx={effectiveSequenceIdx}
             startingFret={chord.startingFret}
             visibleFrets={chord.fretCount <= 7 ? chord.fretCount : 5}
             onStartingFretChange={fret => update({ startingFret: fret })}

@@ -1,8 +1,11 @@
-import { Plus } from 'lucide-react';
+import { useState, Fragment } from 'react';
+import { Plus, Shuffle } from 'lucide-react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
+import useVoiceLeadingOptimizer from '../hooks/useVoiceLeadingOptimizer';
 import SongHeader from './SongHeader';
 import SongChordCard from './SongChordCard';
+import VoiceLeadingDot from './VoiceLeadingDot';
 
 interface SongDetailViewProps {
   songId: string;
@@ -13,6 +16,9 @@ export default function SongDetailView({ songId }: SongDetailViewProps) {
   const song = useStore(s => s.songs[songId]);
   const addChordToSong = useStore(s => s.addChordToSong);
   const navigate = useStore(s => s.navigate);
+  const optimizeVoiceLeading = useVoiceLeadingOptimizer(songId);
+
+  const [smoothEnabled, setSmoothEnabled] = useState(false);
 
   if (!song) {
     // Song was deleted or doesn't exist
@@ -20,18 +26,49 @@ export default function SongDetailView({ songId }: SongDetailViewProps) {
     return null;
   }
 
+  const handleSmooth = () => {
+    optimizeVoiceLeading();
+    setSmoothEnabled(true);
+  };
+
+  const hasChords = song.chords.length >= 2;
+
   return (
     <main className="pt-14 px-4 max-w-7xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       <SongHeader songId={songId} title={song.title} />
 
+      {hasChords && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={handleSmooth}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors ${
+              smoothEnabled
+                ? 'bg-fret-green/20 text-fret-green border border-fret-green/40'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+            }`}
+            title="Optimize voicing selection for smooth voice leading"
+          >
+            <Shuffle size={14} />
+            Smooth
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-4 items-start">
         {song.chords.map((chord, index) => (
-          <SongChordCard
-            key={chord.id}
-            songId={songId}
-            chord={chord}
-            index={index}
-          />
+          <Fragment key={chord.id}>
+            {index > 0 && (
+              <VoiceLeadingDot
+                chordA={song.chords[index - 1]!}
+                chordB={chord}
+              />
+            )}
+            <SongChordCard
+              songId={songId}
+              chord={chord}
+              index={index}
+            />
+          </Fragment>
         ))}
 
         <button

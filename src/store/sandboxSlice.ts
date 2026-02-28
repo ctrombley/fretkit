@@ -152,6 +152,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
             searchStr: searchTerm,
             sequences,
             sequenceIdx: sequences.length > 0 ? 0 : null,
+            sequenceEnabled: current?.type === 'Chord' && sequences.length > 0,
           },
         },
       }));

@@ -1,4 +1,5 @@
 import Fret from './Fret';
+import StringIndicators from './StringIndicators';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 import { STRING_HEIGHT, FRETBOARD_MARGIN, BASE_FRET_WIDTH } from '../lib/fretboardConstants';
@@ -50,6 +51,12 @@ export default function Fretboard({
         role="img"
         aria-label={`Fretboard with ${stringCount} strings and ${fretCount} frets`}
       >
+        {/* Muted/Open string indicators */}
+        <StringIndicators
+          sequence={sequence}
+          stringCount={stringCount}
+          sequenceEnabled={sequenceEnabled}
+        />
         {/* Nut */}
         <Fret
           idx={0}
