@@ -24,27 +24,26 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
   const [editingName, setEditingName] = useState(false);
   const [draft, setDraft] = useState(chord.searchStr);
   const inputRef = useRef<HTMLInputElement>(null);
+  const originalSearchStr = useRef(chord.searchStr);
 
   const isEditing = activeSongChordId === chord.id;
 
   useEffect(() => {
     if (editingName) {
       setDraft(chord.searchStr);
+      originalSearchStr.current = chord.searchStr;
       requestAnimationFrame(() => inputRef.current?.select());
     }
-  }, [editingName, chord.searchStr]);
+  }, [editingName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const commitName = () => {
     setEditingName(false);
-    const trimmed = draft.trim();
-    if (trimmed !== chord.searchStr) {
-      update({ searchStr: trimmed, sequenceIdx: 0, inversion: 0 });
-    }
   };
 
   const cancelName = () => {
     setEditingName(false);
-    setDraft(chord.searchStr);
+    update({ searchStr: originalSearchStr.current, sequenceIdx: 0, inversion: 0 });
+    setDraft(originalSearchStr.current);
   };
 
   // Auto-enable voicing mode for chords with voicings
@@ -185,7 +184,10 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
               ref={inputRef}
               type="text"
               value={draft}
-              onChange={e => setDraft(e.target.value)}
+              onChange={e => {
+                setDraft(e.target.value);
+                update({ searchStr: e.target.value, sequenceIdx: 0, inversion: 0 });
+              }}
               onKeyDown={e => {
                 if (e.key === 'Enter') commitName();
                 if (e.key === 'Escape') cancelName();
