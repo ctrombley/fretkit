@@ -8,6 +8,7 @@ import getStrings from './lib/getStrings';
 import type Sequence from './lib/Sequence';
 import type { View, Song, ChordConfig, SongExport } from './types';
 import type { GeneratorPreset } from './lib/derivation';
+import type { SymmetricDivision } from './lib/coltrane';
 
 export interface FretboardState {
   id: number;
@@ -75,6 +76,22 @@ interface AppState {
   setDerivationSteps: (steps: number) => void;
   setDerivationActiveStep: (step: number | null) => void;
   setDerivationDivisions: (n: number) => void;
+
+  // Coltrane
+  coltraneRoot: number;
+  coltraneDivision: SymmetricDivision;
+  coltraneMode: 'circle' | 'mandala';
+  coltraneOrdering: 'fifths' | 'chromatic';
+  coltraneShowCadences: boolean;
+  coltraneHighlightedAxis: number | null;
+
+  // Coltrane actions
+  setColtraneRoot: (root: number) => void;
+  setColtraneDivision: (division: SymmetricDivision) => void;
+  setColtraneMode: (mode: 'circle' | 'mandala') => void;
+  setColtraneOrdering: (ordering: 'fifths' | 'chromatic') => void;
+  setColtraneShowCadences: (show: boolean) => void;
+  setColtraneHighlightedAxis: (axis: number | null) => void;
 
   // Sandbox actions
   createFretboard: () => void;
@@ -150,6 +167,12 @@ export const useStore = create<AppState>()(
       derivationSteps: 12,
       derivationActiveStep: null,
       derivationDivisions: 12,
+      coltraneRoot: 0,
+      coltraneDivision: 3 as SymmetricDivision,
+      coltraneMode: 'circle' as const,
+      coltraneOrdering: 'fifths' as const,
+      coltraneShowCadences: false,
+      coltraneHighlightedAxis: null,
 
       setSpiralRoot: (root) => {
         set({ spiralRoot: root, spiralHighlightedChord: null });
@@ -172,6 +195,12 @@ export const useStore = create<AppState>()(
       setDerivationSteps: (steps) => set({ derivationSteps: steps }),
       setDerivationActiveStep: (step) => set({ derivationActiveStep: step }),
       setDerivationDivisions: (n) => set({ derivationDivisions: n }),
+      setColtraneRoot: (root) => set({ coltraneRoot: root, coltraneHighlightedAxis: null }),
+      setColtraneDivision: (division) => set({ coltraneDivision: division, coltraneHighlightedAxis: null }),
+      setColtraneMode: (mode) => set({ coltraneMode: mode }),
+      setColtraneOrdering: (ordering) => set({ coltraneOrdering: ordering }),
+      setColtraneShowCadences: (show) => set({ coltraneShowCadences: show }),
+      setColtraneHighlightedAxis: (axis) => set({ coltraneHighlightedAxis: axis }),
 
       createFretboard: () => {
         const id = nextId++;

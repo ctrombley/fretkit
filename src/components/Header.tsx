@@ -1,4 +1,4 @@
-import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform } from 'lucide-react';
+import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform, Triangle } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Header() {
@@ -55,6 +55,17 @@ export default function Header() {
         >
           <AudioWaveform size={16} />
           Overtones
+        </button>
+        <button
+          onClick={() => navigate({ name: 'coltrane' })}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+            view.name === 'coltrane'
+              ? 'bg-gray-100 text-dark'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <Triangle size={16} />
+          Coltrane
         </button>
       </nav>
     </header>

@@ -5,6 +5,7 @@ import SongListView from './SongListView';
 import SongDetailView from './SongDetailView';
 import SpiralView from './SpiralView';
 import OvertoneView from './OvertoneView';
+import ColtraneView from './ColtraneView';
 
 export default function App() {
   const view = useStore(s => s.view);
@@ -17,6 +18,7 @@ export default function App() {
       {view.name === 'songDetail' && <SongDetailView songId={view.songId} />}
       {view.name === 'spiral' && <SpiralView />}
       {view.name === 'overtones' && <OvertoneView />}
+      {view.name === 'coltrane' && <ColtraneView />}
     </div>
   );
 }

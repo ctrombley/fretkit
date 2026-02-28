@@ -3,7 +3,8 @@ export type View =
   | { name: 'songList' }
   | { name: 'songDetail'; songId: string }
   | { name: 'spiral' }
-  | { name: 'overtones' };
+  | { name: 'overtones' }
+  | { name: 'coltrane' };
 
 export interface ChordConfig {
   id: string;
