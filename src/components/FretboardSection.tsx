@@ -102,6 +102,8 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
         </div>
       )}
       <FretboardLabel
+        id={id}
+        searchStr={fretboard.searchStr}
         current={fretboard.current}
         sequenceEnabled={fretboard.sequenceEnabled}
         sequences={fretboard.sequences}

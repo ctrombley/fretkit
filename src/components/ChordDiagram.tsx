@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
+import { optimalStartingFret } from '../lib/fretboardUtils';
 import { stringStatuses, tabShorthand } from '../lib/voicingUtils';
 
 const STRING_SPACING = 20;
@@ -47,11 +48,11 @@ export default function ChordDiagram({
   const dragState = useRef<{ startY: number; startFret: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Determine visible fret range
+  // Determine visible fret range — ignore open strings (fret 0) since
+  // they're shown as O indicators above the nut regardless of position.
   let displayStart = startingFret;
   if (sequenceEnabled && sequence && sequence.length > 0) {
-    const minFret = sequence.minFret;
-    displayStart = minFret <= 0 ? 1 : Math.max(1, minFret);
+    displayStart = optimalStartingFret(sequence, 0);
   }
   const showNut = displayStart === 1;
 

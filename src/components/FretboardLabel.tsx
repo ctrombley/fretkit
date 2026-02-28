@@ -1,3 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useStore } from '../store';
+import { optimalStartingFret } from '../lib/fretboardUtils';
 import type Sequence from '../lib/Sequence';
 import type Note from '../lib/Note';
 import {
@@ -10,6 +14,8 @@ import {
 } from '../lib/voicingUtils';
 
 interface FretboardLabelProps {
+  id: string;
+  searchStr: string;
   current: { name: string; type: string; root?: Note } | null;
   sequenceEnabled: boolean;
   sequences: Sequence[];
@@ -19,6 +25,8 @@ interface FretboardLabelProps {
 }
 
 export default function FretboardLabel({
+  id,
+  searchStr,
   current,
   sequenceEnabled,
   sequences,
@@ -26,20 +34,128 @@ export default function FretboardLabel({
   tuning,
   inversion,
 }: FretboardLabelProps) {
-  if (!current) return <div className="h-8" />;
+  const search = useStore(s => s.search);
+  const updateFretboard = useStore(s => s.updateFretboard);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(searchStr);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      setDraft(searchStr);
+      // Focus after render
+      requestAnimationFrame(() => inputRef.current?.select());
+    }
+  }, [editing, searchStr]);
+
+  const commit = () => {
+    setEditing(false);
+    if (draft.trim() !== searchStr) {
+      search(id, draft.trim());
+    }
+  };
+
+  const cancel = () => {
+    setEditing(false);
+    setDraft(searchStr);
+  };
 
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
-  const isChordVoicing = sequenceEnabled && sequence && current.type === 'Chord';
+  const isChordVoicing = sequenceEnabled && sequence && current?.type === 'Chord';
+  const hasMultipleVoicings = sequenceEnabled && sequences.length > 1;
 
+  const handlePrevVoicing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (sequenceIdx === null || sequenceIdx <= 0) return;
+    const newIdx = sequenceIdx - 1;
+    const seq = sequences[newIdx];
+    updateFretboard(id, {
+      sequenceIdx: newIdx,
+      ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+    });
+  };
+
+  const handleNextVoicing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (sequenceIdx === null || sequenceIdx >= sequences.length - 1) return;
+    const newIdx = sequenceIdx + 1;
+    const seq = sequences[newIdx];
+    updateFretboard(id, {
+      sequenceIdx: newIdx,
+      ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+    });
+  };
+
+  // Edit mode: inline input
+  if (editing) {
+    return (
+      <div className="text-center h-8 flex items-center justify-center">
+        <input
+          ref={inputRef}
+          type="text"
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') cancel();
+          }}
+          onBlur={commit}
+          placeholder="Chord or scale (e.g. C major)"
+          className="w-64 px-2 py-1 text-center text-lg border border-fret-blue rounded-md focus:outline-none focus:ring-2 focus:ring-fret-blue"
+        />
+      </div>
+    );
+  }
+
+  // Empty state: no search yet
+  if (!current) {
+    return (
+      <div
+        className="h-8 flex items-center justify-center cursor-pointer"
+        onClick={() => setEditing(true)}
+      >
+        <span className="text-gray-400 text-sm italic">
+          Click to search chord or scale...
+        </span>
+      </div>
+    );
+  }
+
+  // Display mode with click-to-edit and optional voicing arrows
   return (
     <div className="text-center text-xl h-8 flex items-center justify-center gap-2 flex-wrap">
-      <span>
+      {hasMultipleVoicings && (
+        <button
+          onClick={handlePrevVoicing}
+          disabled={sequenceIdx === 0}
+          className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Previous voicing"
+        >
+          <ChevronLeft size={18} />
+        </button>
+      )}
+      <span
+        className="cursor-pointer hover:text-fret-blue transition-colors"
+        onClick={() => setEditing(true)}
+        title="Click to edit search"
+      >
         {current.name} ({current.type})
       </span>
       {sequenceEnabled && sequenceIdx !== null && sequences[sequenceIdx] && (
-        <span className="text-gray-500">
-          ({sequenceIdx + 1} / {sequences.length})
+        <span className="text-gray-500 text-base">
+          {sequenceIdx + 1}/{sequences.length}
         </span>
+      )}
+      {hasMultipleVoicings && (
+        <button
+          onClick={handleNextVoicing}
+          disabled={sequenceIdx === sequences.length - 1}
+          className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next voicing"
+        >
+          <ChevronRight size={18} />
+        </button>
       )}
       {isChordVoicing && (
         <VoicingInfo

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
 import Chord from '../lib/Chord';
+import { optimalStartingFret } from '../lib/fretboardUtils';
 import tunings from '../lib/tunings';
 
 const FRET_WINDOW_SIZES = [5, 6, 7] as const;
@@ -37,7 +38,12 @@ export default function ControlPanel() {
 
   const handlePrev = () => {
     if (isVoicing) {
-      updateFretboard(id, { sequenceIdx: (fretboard.sequenceIdx ?? 1) - 1 });
+      const newIdx = (fretboard.sequenceIdx ?? 1) - 1;
+      const seq = fretboard.sequences[newIdx];
+      updateFretboard(id, {
+        sequenceIdx: newIdx,
+        ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+      });
     } else {
       const newInversion = Math.max(0, fretboard.inversion - 1);
       updateFretboard(id, { inversion: newInversion });
@@ -48,7 +54,12 @@ export default function ControlPanel() {
 
   const handleNext = () => {
     if (isVoicing) {
-      updateFretboard(id, { sequenceIdx: (fretboard.sequenceIdx ?? -1) + 1 });
+      const newIdx = (fretboard.sequenceIdx ?? -1) + 1;
+      const seq = fretboard.sequences[newIdx];
+      updateFretboard(id, {
+        sequenceIdx: newIdx,
+        ...(seq ? { startingFret: optimalStartingFret(seq) } : {}),
+      });
     } else {
       const newInversion = Math.min(maxInversions, fretboard.inversion + 1);
       updateFretboard(id, { inversion: newInversion });

@@ -185,7 +185,7 @@ export default function SandboxView() {
         <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
           Search for scales or chords by name (e.g. "C major", "C M").
           Chords show ranked voicings with tab notation, shape type, and difficulty.
-          Use the gear icon to open settings; arrow keys in the sidebar navigate voicings.
+          Click the label to search; use arrows to navigate voicings.
           X/O markers show muted/open strings; the mini diagram shows the chord shape.
           Click notes to play; toggle Latch/Momentary for sustain behavior.
         </p>

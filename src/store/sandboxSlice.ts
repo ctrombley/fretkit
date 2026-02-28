@@ -6,6 +6,7 @@ import Chord from '../lib/Chord';
 import getStrings from '../lib/getStrings';
 import { getSynth } from '../lib/synth';
 import { getArpeggiator } from '../lib/arpeggiator';
+import { optimalStartingFret } from '../lib/fretboardUtils';
 import { latchVoices } from './latchVoices';
 import type { AppState, FretboardState, Settings, StoreSet, StoreGet } from './types';
 
@@ -142,6 +143,11 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         sequences = generate(effectiveNotes, strings, fb.position);
       }
 
+      const autoStart =
+        current?.type === 'Chord' && sequences.length > 0
+          ? optimalStartingFret(sequences[0]!)
+          : undefined;
+
       set((state: AppState) => ({
         fretboards: {
           ...state.fretboards,
@@ -153,6 +159,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
             sequences,
             sequenceIdx: sequences.length > 0 ? 0 : null,
             sequenceEnabled: current?.type === 'Chord' && sequences.length > 0,
+            ...(autoStart !== undefined && { startingFret: autoStart }),
           },
         },
       }));
