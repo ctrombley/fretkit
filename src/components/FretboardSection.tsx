@@ -21,6 +21,8 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!fretboard) return;
+    // Don't start drag on interactive elements (buttons, links, etc.)
+    if ((e.target as HTMLElement).closest('button, a, input, select')) return;
     dragState.current = { startX: e.clientX, startFret: fretboard.startingFret };
     containerRef.current?.setPointerCapture(e.pointerId);
     if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
