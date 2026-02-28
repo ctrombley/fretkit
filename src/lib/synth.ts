@@ -1,6 +1,6 @@
 export type OscWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
 export type LfoWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
-export type LfoTargetParam = keyof SynthParams | null;
+export type LfoTargetParam = keyof SynthParams | 'bpm' | null;
 
 export interface SynthParams {
   waveform: OscWaveform;
@@ -15,6 +15,7 @@ export interface SynthParams {
   delaySend: number;
   delayTime: number;
   delayFeedback: number;
+  delayPingPong: boolean;
   masterVolume: number;
   // Osc2
   osc2Waveform: OscWaveform;
@@ -48,6 +49,7 @@ const DEFAULT_PARAMS: SynthParams = {
   delaySend: 0,
   delayTime: 0.3,
   delayFeedback: 0.4,
+  delayPingPong: false,
   masterVolume: 0.5,
   osc2Waveform: 'sine',
   osc2Detune: 0,
@@ -96,6 +98,15 @@ interface LfoState {
   baseValues: Map<string, number>;
 }
 
+function rms(buf: Uint8Array): number {
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) {
+    const norm = buf[i]! / 255;
+    sum += norm * norm;
+  }
+  return Math.min(1, Math.sqrt(sum / buf.length) * 2.5);
+}
+
 class SynthEngine {
   private ctx: AudioContext;
   private filter: BiquadFilterNode;
@@ -106,9 +117,16 @@ class SynthEngine {
   private delaySend: GainNode;
   private delayNode: DelayNode;
   private delayFeedback: GainNode;
+  private delayNodeR: DelayNode;
+  private delayPanL: StereoPannerNode;
+  private delayPanR: StereoPannerNode;
   private masterGain: GainNode;
   private analyser: AnalyserNode;
+  private splitter: ChannelSplitterNode;
+  private analyserL: AnalyserNode;
+  private analyserR: AnalyserNode;
   params: SynthParams;
+  onBpmModulation: ((bpm: number) => void) | null = null;
   private lfo1State: LfoState = { phase: 0, baseValues: new Map() };
   private lfo2State: LfoState = { phase: 0, baseValues: new Map() };
   private lastLfoTime: number = 0;
@@ -140,6 +158,12 @@ class SynthEngine {
     this.delayNode.delayTime.value = this.params.delayTime;
     this.delayFeedback = this.ctx.createGain();
     this.delayFeedback.gain.value = this.params.delayFeedback;
+    this.delayNodeR = this.ctx.createDelay(2);
+    this.delayNodeR.delayTime.value = this.params.delayTime;
+    this.delayPanL = this.ctx.createStereoPanner();
+    this.delayPanL.pan.value = -1;
+    this.delayPanR = this.ctx.createStereoPanner();
+    this.delayPanR.pan.value = 1;
 
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.params.masterVolume;
@@ -156,15 +180,49 @@ class SynthEngine {
     this.reverbNode.connect(this.masterGain);
 
     this.panner.connect(this.delaySend);
-    this.delaySend.connect(this.delayNode);
-    this.delayNode.connect(this.masterGain);
-    this.delayNode.connect(this.delayFeedback);
-    this.delayFeedback.connect(this.delayNode);
+    this.wireDelay(this.params.delayPingPong);
 
     this.masterGain.connect(this.analyser);
     this.analyser.connect(this.ctx.destination);
 
+    this.splitter = this.ctx.createChannelSplitter(2);
+    this.analyserL = this.ctx.createAnalyser();
+    this.analyserL.fftSize = 256;
+    this.analyserR = this.ctx.createAnalyser();
+    this.analyserR.fftSize = 256;
+    this.masterGain.connect(this.splitter);
+    this.splitter.connect(this.analyserL, 0);
+    this.splitter.connect(this.analyserR, 1);
+
     this.startLfoLoop();
+  }
+
+  private wireDelay(pingPong: boolean) {
+    // Disconnect all delay routing
+    this.delaySend.disconnect();
+    this.delayNode.disconnect();
+    this.delayFeedback.disconnect();
+    this.delayNodeR.disconnect();
+    this.delayPanL.disconnect();
+    this.delayPanR.disconnect();
+
+    if (pingPong) {
+      // Ping pong: L → panL → master, L → R → panR → master, R → feedback → L
+      this.delaySend.connect(this.delayNode);
+      this.delayNode.connect(this.delayPanL);
+      this.delayPanL.connect(this.masterGain);
+      this.delayNode.connect(this.delayNodeR);
+      this.delayNodeR.connect(this.delayPanR);
+      this.delayPanR.connect(this.masterGain);
+      this.delayNodeR.connect(this.delayFeedback);
+      this.delayFeedback.connect(this.delayNode);
+    } else {
+      // Normal mono delay
+      this.delaySend.connect(this.delayNode);
+      this.delayNode.connect(this.masterGain);
+      this.delayNode.connect(this.delayFeedback);
+      this.delayFeedback.connect(this.delayNode);
+    }
   }
 
   private startLfoLoop() {
@@ -197,7 +255,8 @@ class SynthEngine {
     const waveVal = lfoWaveValue(waveform, state.phase);
 
     if (!state.baseValues.has(target)) {
-      state.baseValues.set(target, this.params[target] as number);
+      if (target === 'bpm') return; // base must be set externally via setBpmBase
+      state.baseValues.set(target, this.params[target as keyof SynthParams] as number);
     }
     const baseValue = state.baseValues.get(target)!;
 
@@ -232,6 +291,11 @@ class SynthEngine {
       case 'masterVolume':
         this.masterGain.gain.setTargetAtTime(Math.max(0, Math.min(1, value)), t, 0.01);
         break;
+      case 'bpm':
+        if (this.onBpmModulation) {
+          this.onBpmModulation(Math.round(Math.max(30, Math.min(300, value))));
+        }
+        break;
       default:
         // Per-voice params (osc2Detune, fmDepth, etc.) stored for next voice
         (this.params as unknown as Record<string, unknown>)[target] = value;
@@ -243,6 +307,11 @@ class SynthEngine {
     const state = lfoNum === 1 ? this.lfo1State : this.lfo2State;
     state.baseValues.clear();
     state.phase = 0;
+  }
+
+  setBpmBase(bpm: number) {
+    if (this.params.lfo1Target === 'bpm') this.lfo1State.baseValues.set('bpm', bpm);
+    if (this.params.lfo2Target === 'bpm') this.lfo2State.baseValues.set('bpm', bpm);
   }
 
   play(frequency: number): { stop: () => void } {
@@ -412,14 +481,32 @@ class SynthEngine {
     }
     if (partial.delayTime !== undefined) {
       this.delayNode.delayTime.setTargetAtTime(partial.delayTime, this.ctx.currentTime, 0.02);
+      this.delayNodeR.delayTime.setTargetAtTime(partial.delayTime, this.ctx.currentTime, 0.02);
     }
     if (partial.delayFeedback !== undefined) {
       const fb = Math.min(partial.delayFeedback, 0.9);
       this.delayFeedback.gain.setTargetAtTime(fb, this.ctx.currentTime, 0.02);
     }
+    if (partial.delayPingPong !== undefined) {
+      this.wireDelay(partial.delayPingPong);
+    }
     if (partial.masterVolume !== undefined) {
       this.masterGain.gain.setTargetAtTime(partial.masterVolume, this.ctx.currentTime, 0.02);
     }
+  }
+
+  getStereoLevels(): { left: number; right: number } {
+    const bufL = new Uint8Array(this.analyserL.frequencyBinCount);
+    const bufR = new Uint8Array(this.analyserR.frequencyBinCount);
+    this.analyserL.getByteFrequencyData(bufL);
+    this.analyserR.getByteFrequencyData(bufR);
+    return { left: rms(bufL), right: rms(bufR) };
+  }
+
+  getRmsLevel(): number {
+    const buf = new Uint8Array(this.analyser.frequencyBinCount);
+    this.analyser.getByteFrequencyData(buf);
+    return rms(buf);
   }
 
   getAnalyserData(): Uint8Array {

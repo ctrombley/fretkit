@@ -120,6 +120,7 @@ interface AppState {
   synthDelaySend: number;
   synthDelayTime: number;
   synthDelayFeedback: number;
+  synthDelayPingPong: boolean;
   synthMasterVolume: number;
   synthKeyboardMode: 'classic' | 'isomorphic';
   // Osc2
@@ -153,6 +154,9 @@ interface AppState {
   keyboardPanelOpen: boolean;
   transportBarOpen: boolean;
 
+  // Bloom
+  bloomAllOctaves: boolean;
+
   // Sandbox latch
   sandboxLatch: boolean;
   sandboxActiveNotes: number[];
@@ -164,6 +168,12 @@ interface AppState {
   arpSync: boolean;
   arpSyncSpeed: number;
   arpFreeMs: number;
+  arpStrikeNote: number | null;
+  arpStrikeCount: number;
+
+  // Series/cycle playback
+  seriesPlaying: boolean;
+  setSeriesPlaying: (playing: boolean) => void;
 
   // Metronome actions
   setMetronomeVolume: (volume: number) => void;
@@ -175,6 +185,9 @@ interface AppState {
   // Panel actions
   setKeyboardPanelOpen: (open: boolean) => void;
   setTransportBarOpen: (open: boolean) => void;
+
+  // Bloom actions
+  setBloomAllOctaves: (v: boolean) => void;
 
   // Sandbox latch actions
   setSandboxLatch: (latch: boolean) => void;
@@ -270,6 +283,7 @@ function synthParamsToStoreState(params: SynthParams): Partial<AppState> {
     synthDelaySend: params.delaySend,
     synthDelayTime: params.delayTime,
     synthDelayFeedback: params.delayFeedback,
+    synthDelayPingPong: params.delayPingPong,
     synthMasterVolume: params.masterVolume,
     synthOsc2Waveform: params.osc2Waveform,
     synthOsc2Detune: params.osc2Detune,
@@ -301,6 +315,7 @@ function gatherSynthParams(state: AppState): SynthParams {
     delaySend: state.synthDelaySend,
     delayTime: state.synthDelayTime,
     delayFeedback: state.synthDelayFeedback,
+    delayPingPong: state.synthDelayPingPong,
     masterVolume: state.synthMasterVolume,
     osc2Waveform: state.synthOsc2Waveform,
     osc2Detune: state.synthOsc2Detune,
@@ -361,6 +376,7 @@ export const useStore = create<AppState>()(
       metronomeSubdivisionAccent: true,
       keyboardPanelOpen: false,
       transportBarOpen: true,
+      bloomAllOctaves: true,
       sandboxLatch: true,
       sandboxActiveNotes: [] as number[],
       arpEnabled: false,
@@ -369,6 +385,9 @@ export const useStore = create<AppState>()(
       arpSync: true,
       arpSyncSpeed: 2,
       arpFreeMs: 200,
+      arpStrikeNote: null as number | null,
+      arpStrikeCount: 0,
+      seriesPlaying: false,
       synthWaveform: 'sawtooth' as OscWaveform,
       synthFilterCutoff: 2000,
       synthFilterResonance: 1,
@@ -381,6 +400,7 @@ export const useStore = create<AppState>()(
       synthDelaySend: 0,
       synthDelayTime: 0.3,
       synthDelayFeedback: 0.4,
+      synthDelayPingPong: false,
       synthMasterVolume: 0.5,
       synthKeyboardMode: 'classic' as const,
       synthOsc2Waveform: 'sine' as OscWaveform,
@@ -399,8 +419,12 @@ export const useStore = create<AppState>()(
       synthPresets: [...FACTORY_PRESETS],
       synthActivePresetIndex: null,
 
+      setBloomAllOctaves: (v) => set({ bloomAllOctaves: v }),
       setTransportPlaying: (playing) => set({ transportPlaying: playing }),
-      setTransportBpm: (bpm) => set({ transportBpm: bpm }),
+      setTransportBpm: (bpm) => {
+        set({ transportBpm: bpm });
+        getSynth().setBpmBase(bpm);
+      },
       setTransportTimeSignature: (beats, unit) => set({ transportBeatsPerMeasure: beats, transportBeatUnit: unit }),
       setTransportBeat: (beat, measure) => set({ transportCurrentBeat: beat, transportCurrentMeasure: measure }),
       setMetronomeVolume: (volume) => set({ metronomeVolume: volume }),
@@ -457,10 +481,27 @@ export const useStore = create<AppState>()(
         set(s => ({ sandboxActiveNotes: s.sandboxActiveNotes.filter(st => st !== semitones) }));
       },
       setArpEnabled: (enabled) => {
-        set({ arpEnabled: enabled });
+        const state = get();
         const arp = getArpeggiator();
-        if (enabled) arp.enable();
-        else arp.disable();
+        if (enabled) {
+          // Latch → Arp: stop latch voices, add notes to arp
+          for (const v of latchVoices.values()) v.stop();
+          latchVoices.clear();
+          arp.enable();
+          for (const semi of state.sandboxActiveNotes) {
+            const freq = 440 * Math.pow(2, (semi - 69) / 12);
+            arp.addNote(freq, semi);
+          }
+        } else {
+          // Arp → Latch: disable arp, start latch voices
+          arp.disable();
+          arp.clear();
+          for (const semi of state.sandboxActiveNotes) {
+            const freq = 440 * Math.pow(2, (semi - 69) / 12);
+            latchVoices.set(semi, getSynth().play(freq));
+          }
+        }
+        set({ arpEnabled: enabled });
       },
       setArpPattern: (pattern) => {
         set({ arpPattern: pattern });
@@ -470,6 +511,7 @@ export const useStore = create<AppState>()(
         set({ arpOctaveRange: range });
         getArpeggiator().setOctaveRange(range);
       },
+      setSeriesPlaying: (playing) => set({ seriesPlaying: playing }),
       setArpSync: (sync) => set({ arpSync: sync }),
       setArpSyncSpeed: (speed) => set({ arpSyncSpeed: speed }),
       setArpFreeMs: (ms) => set({ arpFreeMs: ms }),
@@ -489,6 +531,9 @@ export const useStore = create<AppState>()(
         } else {
           set({ synthLfo2Target: target });
           synth.updateParams({ lfo2Target: target });
+        }
+        if (target === 'bpm') {
+          synth.setBpmBase(get().transportBpm);
         }
       },
 
@@ -791,6 +836,7 @@ export const useStore = create<AppState>()(
         metronomeSubdivisionAccent: state.metronomeSubdivisionAccent,
         keyboardPanelOpen: state.keyboardPanelOpen,
         transportBarOpen: state.transportBarOpen,
+        bloomAllOctaves: state.bloomAllOctaves,
         sandboxLatch: state.sandboxLatch,
         arpEnabled: state.arpEnabled,
         arpPattern: state.arpPattern,
@@ -810,6 +856,7 @@ export const useStore = create<AppState>()(
         synthDelaySend: state.synthDelaySend,
         synthDelayTime: state.synthDelayTime,
         synthDelayFeedback: state.synthDelayFeedback,
+        synthDelayPingPong: state.synthDelayPingPong,
         synthMasterVolume: state.synthMasterVolume,
         synthKeyboardMode: state.synthKeyboardMode,
         synthOsc2Waveform: state.synthOsc2Waveform,

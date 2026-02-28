@@ -36,7 +36,15 @@ export default function FretString({
   const [isPreview, setIsPreview] = useState(false);
   const sandboxLatch = useStore(s => s.sandboxLatch);
   const arpEnabled = useStore(s => s.arpEnabled);
-  const isMarked = useStore(s => s.sandboxActiveNotes.includes(note.semitones));
+  const bloomAllOctaves = useStore(s => s.bloomAllOctaves);
+  const isMarked = useStore(s =>
+    bloomAllOctaves
+      ? s.sandboxActiveNotes.some(semi => semi % 12 === note.baseSemitones)
+      : s.sandboxActiveNotes.includes(note.semitones)
+  );
+  const arpStrike = useStore(s =>
+    s.arpStrikeNote === note.semitones ? s.arpStrikeCount : 0
+  );
   const toggleNote = useStore(s => s.toggleSandboxNote);
   const activateNote = useStore(s => s.activateSandboxNote);
   const deactivateNote = useStore(s => s.deactivateSandboxNote);
@@ -104,6 +112,7 @@ export default function FretString({
           yOffset={yOffset}
           note={note}
           isPlaying={isMarked}
+          bloomKey={arpEnabled ? arpStrike : undefined}
         />
       )}
       {isPreview && (

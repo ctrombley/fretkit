@@ -3,7 +3,7 @@ import { useBottomPadding } from '../hooks/useBottomPadding';
 import FretboardSection from './FretboardSection';
 import Sidebar from './Sidebar';
 import ControlPanel from './ControlPanel';
-import { Plus, Lock, Unlock, Zap, OctagonX, Link, Unlink } from 'lucide-react';
+import { Plus, Lock, Unlock, Zap, Link, Unlink } from 'lucide-react';
 import type { ArpPattern } from '../lib/arpeggiator';
 import SynthKnob from './SynthKnob';
 
@@ -44,7 +44,8 @@ export default function SandboxView() {
   const setArpSyncSpeed = useStore(s => s.setArpSyncSpeed);
   const arpFreeMs = useStore(s => s.arpFreeMs);
   const setArpFreeMs = useStore(s => s.setArpFreeMs);
-  const killAllNotes = useStore(s => s.killAllNotes);
+  const bloomAllOctaves = useStore(s => s.bloomAllOctaves);
+  const setBloomAllOctaves = useStore(s => s.setBloomAllOctaves);
   const bottomPadding = useBottomPadding();
 
   const activeFretboard = fretboards[settings.settingsId];
@@ -75,6 +76,17 @@ export default function SandboxView() {
               {sandboxLatch ? 'Latch' : 'Momentary'}
             </button>
           )}
+
+          {/* Bloom octave toggle */}
+          <button
+            onClick={() => setBloomAllOctaves(!bloomAllOctaves)}
+            className={`flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+              bloomAllOctaves ? 'bg-gray-200 text-fret-green' : 'bg-gray-100 text-gray-500'
+            }`}
+            title={bloomAllOctaves ? 'Bloom: all octaves' : 'Bloom: played octave only'}
+          >
+            {bloomAllOctaves ? 'All Oct' : '1 Oct'}
+          </button>
 
           {/* Arp toggle */}
           <button
@@ -163,15 +175,6 @@ export default function SandboxView() {
             </>
           )}
 
-          {/* Kill switch */}
-          <button
-            onClick={killAllNotes}
-            className="flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wider rounded bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-500 transition-colors"
-            title="Kill all notes"
-          >
-            <OctagonX size={12} />
-            Kill
-          </button>
         </div>
 
         {Object.keys(fretboards).map(id => (

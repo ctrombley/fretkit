@@ -1,11 +1,54 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Play, Square, Volume2, VolumeX, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
+import { Play, Square, Volume2, VolumeX, ChevronDown, ChevronUp, OctagonX } from 'lucide-react';
 import { useStore } from '../store';
 import { getMetronome } from '../lib/metronome';
 import { getArpeggiator } from '../lib/arpeggiator';
+import { getSynth } from '../lib/synth';
 import type { MetronomeTimbre } from '../lib/metronome';
 import type { LfoTargetParam } from '../lib/synth';
 import SynthKnob from './SynthKnob';
+
+function StereoVU() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const barW = 6;
+    const gap = 2;
+    const bars = 5;
+    const barH = Math.floor((H - (bars - 1)) / bars);
+
+    const draw = () => {
+      const { left, right } = getSynth().getStereoLevels();
+      ctx.clearRect(0, 0, W, H);
+
+      for (const [ch, level] of [[0, left], [1, right]] as [number, number][]) {
+        const x = ch * (barW + gap);
+        for (let i = 0; i < bars; i++) {
+          const threshold = (i + 1) / bars;
+          const y = H - (i + 1) * (barH + 1);
+          const lit = level >= threshold - 0.1;
+          if (i >= 4) ctx.fillStyle = lit ? '#EF4444' : '#4B1113';
+          else if (i >= 3) ctx.fillStyle = lit ? '#EAB308' : '#3D3510';
+          else ctx.fillStyle = lit ? '#22C55E' : '#0D3320';
+          ctx.fillRect(x, y, barW, barH);
+        }
+      }
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  return <canvas ref={canvasRef} width={14} height={19} className="flex-shrink-0" />;
+}
 
 const TIME_SIGS: [number, number][] = [
   [4, 4],
@@ -65,8 +108,10 @@ export default function TransportBar() {
   const delaySend = useStore(s => s.synthDelaySend);
   const delayTime = useStore(s => s.synthDelayTime);
   const delayFeedback = useStore(s => s.synthDelayFeedback);
+  const delayPingPong = useStore(s => s.synthDelayPingPong);
   const lfo1Target = useStore(s => s.synthLfo1Target);
   const lfo2Target = useStore(s => s.synthLfo2Target);
+  const killAllNotes = useStore(s => s.killAllNotes);
   const setSynthParam = useStore(s => s.setSynthParam);
   const setLfoTarget = useStore(s => s.setSynthLfoTarget);
 
@@ -109,9 +154,14 @@ export default function TransportBar() {
     if (!arpEnabled) {
       m.onArpTick = null;
       m.onSubTick = null;
+      arp.onNotePlayed = null;
       arp.stopFreeRunning();
       return;
     }
+
+    arp.onNotePlayed = (semitones) => {
+      useStore.setState(s => ({ arpStrikeNote: semitones, arpStrikeCount: s.arpStrikeCount + 1 }));
+    };
 
     if (arpSync) {
       arp.stopFreeRunning();
@@ -127,6 +177,7 @@ export default function TransportBar() {
     return () => {
       m.onArpTick = null;
       m.onSubTick = null;
+      arp.onNotePlayed = null;
       arp.stopFreeRunning();
     };
   }, [arpEnabled, arpSync, arpSyncSpeed, arpFreeMs]);
@@ -183,29 +234,11 @@ export default function TransportBar() {
     }
   }, [setBpm]);
 
-  const [bpmInput, setBpmInput] = useState(String(bpm));
+  // Wire up LFO → BPM modulation callback
   useEffect(() => {
-    setBpmInput(String(bpm));
-  }, [bpm]);
-
-  const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBpmInput(e.target.value);
-  };
-
-  const handleBpmBlur = () => {
-    const val = parseInt(bpmInput, 10);
-    if (!isNaN(val) && val >= 30 && val <= 300) {
-      setBpm(val);
-    } else {
-      setBpmInput(String(bpm));
-    }
-  };
-
-  const handleBpmKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      (e.target as HTMLInputElement).blur();
-    }
-  };
+    getSynth().onBpmModulation = (modBpm) => setBpm(modBpm);
+    return () => { getSynth().onBpmModulation = null; };
+  }, [setBpm]);
 
   const handleTimeSigChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const [beats, unit] = e.target.value.split('/').map(Number);
@@ -266,15 +299,19 @@ export default function TransportBar() {
 
       {/* BPM */}
       <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={bpmInput}
-          onChange={handleBpmChange}
-          onBlur={handleBpmBlur}
-          onKeyDown={handleBpmKeyDown}
-          className="w-12 text-center text-sm font-mono bg-white border border-gray-200 rounded px-1 py-0.5"
+        <SynthKnob
+          label="BPM"
+          value={bpm}
+          min={30}
+          max={300}
+          onChange={(v) => setBpm(Math.round(v))}
+          formatValue={(v) => String(Math.round(v))}
+          size={36}
+          color="#F73667"
+          paramKey="bpm"
+          lfoTargeting={lfoFor('bpm', lfo1Target, lfo2Target)}
+          onDrop={(lfo) => handleLfoDrop('bpm' as LfoTargetParam, lfo)}
         />
-        <span className="text-[9px] uppercase tracking-wider text-gray-400">BPM</span>
         <button
           onClick={handleTap}
           className="px-2 py-1 text-[10px] uppercase tracking-wider rounded bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
@@ -388,6 +425,14 @@ export default function TransportBar() {
 
       {/* Compact Mixer */}
       <div className="flex items-center gap-1">
+        <button
+          onClick={killAllNotes}
+          className="p-1.5 rounded text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors"
+          title="Kill all notes"
+        >
+          <OctagonX size={16} />
+        </button>
+        <StereoVU />
         <SynthKnob
           label="Master"
           value={masterVolume}
@@ -462,6 +507,17 @@ export default function TransportBar() {
           color="#00C4CC"
           paramKey="delayFeedback"
         />
+        <button
+          onClick={() => setSynthParam('delayPingPong', !delayPingPong)}
+          className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider rounded transition-colors ${
+            delayPingPong
+              ? 'bg-gray-200 text-fret-green'
+              : 'text-gray-400 hover:bg-gray-100'
+          }`}
+          title="Ping pong delay"
+        >
+          PP
+        </button>
       </div>
 
       {/* Collapse toggle */}
