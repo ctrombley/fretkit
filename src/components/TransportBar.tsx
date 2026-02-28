@@ -90,86 +90,93 @@ export default function TransportBar() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 h-20 bg-gray-50 border-t border-gray-200 flex items-center px-4 gap-4 shadow-sm">
-      {/* Play/Stop */}
-      <button
-        onClick={togglePlay}
-        className={`p-2 rounded-md transition-colors ${
-          playing
-            ? 'bg-magenta text-white'
-            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-        }`}
-        aria-label={playing ? 'Stop' : 'Play'}
-      >
-        {playing ? <Square size={16} /> : <Play size={16} />}
-      </button>
+    <div className="fixed bottom-0 left-0 right-0 z-40 sm:h-20 bg-gray-50 border-t border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center px-3 sm:px-4 py-2 sm:py-0 gap-1.5 sm:gap-4">
 
-      <div className="w-px h-8 bg-gray-200" />
-
-      {/* BPM */}
-      <div className="flex items-center gap-2">
-        <SynthKnob
-          label="BPM"
-          value={bpm}
-          min={30}
-          max={300}
-          onChange={(v) => setBpm(Math.round(v))}
-          formatValue={(v) => String(Math.round(v))}
-          size={36}
-          color="#F73667"
-          paramKey="bpm"
-          lfoTargeting={lfoFor('bpm', lfo1Target, lfo2Target)}
-          onDrop={(lfo) => handleLfoDrop('bpm' as LfoTargetParam, lfo)}
-        />
+      {/* Row 1: core playback — dissolves into main row on sm+ */}
+      <div className="flex items-center gap-2 sm:contents">
+        {/* Play/Stop */}
         <button
-          onClick={handleTap}
-          className="px-2 py-1 text-[10px] uppercase tracking-wider rounded bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+          onClick={togglePlay}
+          className={`flex-shrink-0 p-2 rounded-md transition-colors ${
+            playing
+              ? 'bg-magenta text-white'
+              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+          }`}
+          aria-label={playing ? 'Stop' : 'Play'}
         >
-          Tap
+          {playing ? <Square size={16} /> : <Play size={16} />}
         </button>
+
+        <div className="w-px h-8 bg-gray-200 hidden sm:block" />
+
+        {/* BPM */}
+        <div className="flex items-center gap-2">
+          <SynthKnob
+            label="BPM"
+            value={bpm}
+            min={30}
+            max={300}
+            onChange={(v) => setBpm(Math.round(v))}
+            formatValue={(v) => String(Math.round(v))}
+            size={36}
+            color="#F73667"
+            paramKey="bpm"
+            lfoTargeting={lfoFor('bpm', lfo1Target, lfo2Target)}
+            onDrop={(lfo) => handleLfoDrop('bpm' as LfoTargetParam, lfo)}
+          />
+          <button
+            onClick={handleTap}
+            className="px-2 py-1 text-[10px] uppercase tracking-wider rounded bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+          >
+            Tap
+          </button>
+        </div>
+
+        <div className="w-px h-8 bg-gray-200 hidden sm:block" />
+
+        {/* Time Sig */}
+        <select
+          value={`${beatsPerMeasure}/${beatUnit}`}
+          onChange={handleTimeSigChange}
+          className="text-sm bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-600"
+        >
+          {TIME_SIGS.map(([b, u]) => (
+            <option key={`${b}/${u}`} value={`${b}/${u}`}>
+              {b}/{u}
+            </option>
+          ))}
+        </select>
+
+        <div className="w-px h-8 bg-gray-200 hidden sm:block" />
+
+        <BeatIndicator beatsPerMeasure={beatsPerMeasure} currentBeat={currentBeat} playing={playing} />
       </div>
 
-      <div className="w-px h-8 bg-gray-200" />
+      {/* Row 2: secondary controls — dissolves into main row on sm+ */}
+      <div className="flex items-center gap-2 sm:contents">
+        <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
-      {/* Time Sig */}
-      <select
-        value={`${beatsPerMeasure}/${beatUnit}`}
-        onChange={handleTimeSigChange}
-        className="text-sm bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-600"
-      >
-        {TIME_SIGS.map(([b, u]) => (
-          <option key={`${b}/${u}`} value={`${b}/${u}`}>
-            {b}/{u}
-          </option>
-        ))}
-      </select>
+        <SubdivisionSelector />
 
-      <div className="w-px h-8 bg-gray-200" />
+        <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
-      <BeatIndicator beatsPerMeasure={beatsPerMeasure} currentBeat={currentBeat} playing={playing} />
+        <MetronomeControls />
 
-      <div className="w-px h-8 bg-gray-200" />
+        <div className="flex-1" />
 
-      <SubdivisionSelector />
+        <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
-      <div className="w-px h-8 bg-gray-200" />
+        <TransportMixer />
 
-      <MetronomeControls />
-
-      <div className="flex-1" />
-
-      <div className="w-px h-8 bg-gray-200" />
-
-      <TransportMixer />
-
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setTransportBarOpen(false)}
-        className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
-        aria-label="Collapse transport"
-      >
-        <ChevronDown size={14} />
-      </button>
+        {/* Collapse toggle */}
+        <button
+          onClick={() => setTransportBarOpen(false)}
+          className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Collapse transport"
+        >
+          <ChevronDown size={14} />
+        </button>
+      </div>
     </div>
   );
 }
