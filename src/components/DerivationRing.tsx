@@ -14,6 +14,7 @@ interface DerivationRingProps {
   pitchClass: number;
   generator: GeneratorPreset;
   steps: number;
+  divisions: number;
   activeStep: number | null;
   onActiveStepChange: (step: number | null) => void;
 }
@@ -31,14 +32,16 @@ export default function DerivationRing({
   pitchClass,
   generator,
   steps,
+  divisions,
   activeStep,
   onActiveStepChange,
 }: DerivationRingProps) {
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
   const playRef = useRef<{ stop: () => void } | null>(null);
 
-  const derivation = getDerivation(generator, fundamentalHz, pitchClass, steps);
-  const etPositions = getETRingPositions(CX, CY, ET_RING_R, pitchClass);
+  const derivation = getDerivation(generator, fundamentalHz, pitchClass, steps, divisions);
+  const etPositions = getETRingPositions(CX, CY, ET_RING_R, pitchClass, divisions);
+  const centsPerStep = 1200 / divisions;
   const color = HARMONIC_COLORS[derivation.generator.family];
 
   const visibleStep = hoveredStep ?? activeStep;
@@ -85,7 +88,7 @@ export default function DerivationRing({
   // Build deviation arc path from ET position to derived position
   function getDeviationArc(note: DerivedNote): string | null {
     if (Math.abs(note.centsDeviation) < 0.5) return null;
-    const etCents = note.nearestSemitone * 100;
+    const etCents = note.nearestETStep * centsPerStep;
     const jiCents = note.centsInOctave;
     const startAngle = (etCents / 1200) * 2 * Math.PI - Math.PI / 2;
     const endAngle = (jiCents / 1200) * 2 * Math.PI - Math.PI / 2;
@@ -155,11 +158,11 @@ export default function DerivationRing({
         strokeDasharray="4 4"
       />
       {etPositions.map(pos => {
-        const tickAngle = (pos.semitone * 100 / 1200) * 2 * Math.PI - Math.PI / 2;
+        const tickAngle = (pos.cents / 1200) * 2 * Math.PI - Math.PI / 2;
         const innerR = ET_RING_R - 6;
         const outerR = ET_RING_R + 6;
         return (
-          <g key={pos.semitone}>
+          <g key={pos.step}>
             {/* Tick mark */}
             <line
               x1={CX + innerR * Math.cos(tickAngle)}
@@ -175,9 +178,9 @@ export default function DerivationRing({
               y={CY + LABEL_R * Math.sin(tickAngle)}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={11}
+              fontSize={divisions > 24 ? 8 : 11}
               fill="#6b7280"
-              fontWeight={pos.semitone === 0 ? 'bold' : 'normal'}
+              fontWeight={pos.step === 0 ? 'bold' : 'normal'}
             >
               {pos.noteName}
             </text>
@@ -292,7 +295,7 @@ export default function DerivationRing({
             <div className="text-gray-600">
               <div>Ratio: {derivation.generator.ratio[0]}/{derivation.generator.ratio[1]} x{hoveredInfo.step}</div>
               <div>JI: {hoveredInfo.centsInOctave.toFixed(1)}&#162;</div>
-              <div>ET: {hoveredInfo.nearestSemitone * 100}&#162;</div>
+              <div>ET: {(hoveredInfo.nearestETStep * centsPerStep).toFixed(1)}&#162;</div>
               <div>Deviation: {hoveredInfo.centsDeviation >= 0 ? '+' : ''}{hoveredInfo.centsDeviation.toFixed(1)}&#162;</div>
               <div>Note: <strong>{hoveredInfo.nearestNoteName}</strong></div>
               <div>{hoveredInfo.frequency.toFixed(1)} Hz</div>

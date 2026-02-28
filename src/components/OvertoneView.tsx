@@ -29,9 +29,11 @@ export default function OvertoneView() {
   const derivationGenerator = useStore(s => s.derivationGenerator);
   const derivationSteps = useStore(s => s.derivationSteps);
   const derivationActiveStep = useStore(s => s.derivationActiveStep);
+  const derivationDivisions = useStore(s => s.derivationDivisions);
   const setDerivationGenerator = useStore(s => s.setDerivationGenerator);
   const setDerivationSteps = useStore(s => s.setDerivationSteps);
   const setDerivationActiveStep = useStore(s => s.setDerivationActiveStep);
+  const setDerivationDivisions = useStore(s => s.setDerivationDivisions);
 
   const playingRef = useRef(false);
 
@@ -45,7 +47,7 @@ export default function OvertoneView() {
     playingRef.current = true;
 
     if (isDeriveMode) {
-      const derivation = getDerivation(derivationGenerator, fundHz, overtoneRoot, derivationSteps);
+      const derivation = getDerivation(derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions);
       const handles: { stop: () => void }[] = [];
       const interval = 300;
 
@@ -88,7 +90,7 @@ export default function OvertoneView() {
       <div className="mt-6 mb-4">
         <h2 className="text-2xl font-bold text-dark">
           {isDeriveMode
-            ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name})`
+            ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name}, ${derivationDivisions}-TET)`
             : `Overtone Series: ${rootName}${overtoneOctave}`
           }
         </h2>
@@ -201,6 +203,21 @@ export default function OvertoneView() {
           </label>
         )}
 
+        {/* ET divisions slider (derive mode only) */}
+        {isDeriveMode && (
+          <label className="flex items-center gap-2 text-xs text-gray-500">
+            ET: {derivationDivisions}
+            <input
+              type="range"
+              min={2}
+              max={53}
+              value={derivationDivisions}
+              onChange={e => setDerivationDivisions(Number(e.target.value))}
+              className="w-24 accent-fret-green"
+            />
+          </label>
+        )}
+
         {/* JI / ET / Derive mode toggle */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
           {MODES.map(mode => (
@@ -234,6 +251,7 @@ export default function OvertoneView() {
           pitchClass={overtoneRoot}
           generator={derivationGenerator}
           steps={derivationSteps}
+          divisions={derivationDivisions}
           activeStep={derivationActiveStep}
           onActiveStepChange={setDerivationActiveStep}
         />

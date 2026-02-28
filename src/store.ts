@@ -61,6 +61,7 @@ interface AppState {
   derivationGenerator: GeneratorPreset;
   derivationSteps: number;
   derivationActiveStep: number | null;
+  derivationDivisions: number;
 
   // Overtone actions
   setOvertoneRoot: (root: number) => void;
@@ -73,6 +74,7 @@ interface AppState {
   setDerivationGenerator: (preset: GeneratorPreset) => void;
   setDerivationSteps: (steps: number) => void;
   setDerivationActiveStep: (step: number | null) => void;
+  setDerivationDivisions: (n: number) => void;
 
   // Sandbox actions
   createFretboard: () => void;
@@ -147,6 +149,7 @@ export const useStore = create<AppState>()(
       derivationGenerator: 'fifths' as GeneratorPreset,
       derivationSteps: 12,
       derivationActiveStep: null,
+      derivationDivisions: 12,
 
       setSpiralRoot: (root) => {
         set({ spiralRoot: root, spiralHighlightedChord: null });
@@ -168,6 +171,7 @@ export const useStore = create<AppState>()(
       setDerivationGenerator: (preset) => set({ derivationGenerator: preset }),
       setDerivationSteps: (steps) => set({ derivationSteps: steps }),
       setDerivationActiveStep: (step) => set({ derivationActiveStep: step }),
+      setDerivationDivisions: (n) => set({ derivationDivisions: n }),
 
       createFretboard: () => {
         const id = nextId++;

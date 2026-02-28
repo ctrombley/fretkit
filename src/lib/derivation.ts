@@ -16,7 +16,7 @@ export interface DerivedNote {
   step: number;
   totalCents: number;
   centsInOctave: number;
-  nearestSemitone: number;
+  nearestETStep: number;
   nearestNoteName: string;
   centsDeviation: number;
   frequency: number;
@@ -61,15 +61,22 @@ export function getDerivedNote(
   generatorCents: number,
   fundamentalHz: number,
   fundamentalPitchClass: number,
+  divisions: number = 12,
 ): DerivedNote {
   const totalCents = step * generatorCents;
   const centsInOctave = ((totalCents % 1200) + 1200) % 1200;
-  const nearestSemitone = Math.round(centsInOctave / 100) % 12;
-  const centsDeviation = centsInOctave - nearestSemitone * 100;
+  const centsPerStep = 1200 / divisions;
+  const nearestETStep = Math.round(centsInOctave / centsPerStep) % divisions;
+  const centsDeviation = centsInOctave - nearestETStep * centsPerStep;
 
-  const absolutePc = (fundamentalPitchClass + nearestSemitone) % 12;
-  const preferSharps = usesSharps(absolutePc);
-  const nearestNoteName = noteName(absolutePc, preferSharps);
+  let nearestNoteName: string;
+  if (divisions === 12) {
+    const absolutePc = (fundamentalPitchClass + nearestETStep) % 12;
+    const preferSharps = usesSharps(absolutePc);
+    nearestNoteName = noteName(absolutePc, preferSharps);
+  } else {
+    nearestNoteName = `Step ${nearestETStep}`;
+  }
 
   // Frequency: octave-reduce to one octave above fundamental
   const frequency = fundamentalHz * Math.pow(2, centsInOctave / 1200);
@@ -81,7 +88,7 @@ export function getDerivedNote(
     step,
     totalCents,
     centsInOctave,
-    nearestSemitone,
+    nearestETStep,
     nearestNoteName,
     centsDeviation,
     frequency,
@@ -94,12 +101,13 @@ export function getDerivation(
   fundamentalHz: number,
   pitchClass: number,
   steps: number,
+  divisions: number = 12,
 ): DerivationResult {
   const generator = GENERATOR_PRESETS[preset];
   const derivedSteps: DerivedNote[] = [];
 
   for (let i = 0; i < steps; i++) {
-    derivedSteps.push(getDerivedNote(i, generator.cents, fundamentalHz, pitchClass));
+    derivedSteps.push(getDerivedNote(i, generator.cents, fundamentalHz, pitchClass, divisions));
   }
 
   // Comma: where the chain "should" return to 0 after `steps` stacked intervals
@@ -131,11 +139,12 @@ export function getRingPoint(
 }
 
 export interface ETRingPosition {
-  semitone: number;
+  step: number;
   noteName: string;
   x: number;
   y: number;
   angleDeg: number;
+  cents: number;
 }
 
 export function getETRingPositions(
@@ -143,21 +152,31 @@ export function getETRingPositions(
   cy: number,
   radius: number,
   fundamentalPitchClass: number,
+  divisions: number = 12,
 ): ETRingPosition[] {
   const positions: ETRingPosition[] = [];
+  const centsPerStep = 1200 / divisions;
 
-  for (let i = 0; i < 12; i++) {
-    const cents = i * 100;
+  for (let i = 0; i < divisions; i++) {
+    const cents = i * centsPerStep;
     const pt = getRingPoint(cents, cx, cy, radius);
-    const pc = (fundamentalPitchClass + i) % 12;
-    const preferSharps = usesSharps(pc);
+
+    let label: string;
+    if (divisions === 12) {
+      const pc = (fundamentalPitchClass + i) % 12;
+      const preferSharps = usesSharps(pc);
+      label = noteName(pc, preferSharps);
+    } else {
+      label = `${i}`;
+    }
 
     positions.push({
-      semitone: i,
-      noteName: noteName(pc, preferSharps),
+      step: i,
+      noteName: label,
       x: pt.x,
       y: pt.y,
       angleDeg: (cents / 1200) * 360,
+      cents,
     });
   }
 
