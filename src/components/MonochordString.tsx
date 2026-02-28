@@ -18,6 +18,7 @@ interface Props {
   leftColor: string;
   rightColor: string;
   onPluck: (side: 'left' | 'right' | 'both') => void;
+  onMarkerSnap: (position: number) => void;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -127,33 +128,44 @@ function drawGhostMarkers(
   bridgePos: number,
 ) {
   ctx.save();
-  ctx.font      = '9px monospace';
+  ctx.font      = '10px monospace';
   ctx.textAlign = 'center';
 
-  const toShow: { pos: number; label: string }[] = [];
+  // All canonical markers + golden ratio, always shown
+  const markers: { pos: number; label: string }[] = [];
   for (const cr of CANONICAL_RATIOS.slice(0, 9)) {
-    for (const pos of [cr.position, 1 - cr.position]) {
-      if (Math.abs(pos - bridgePos) > 0.022) {
-        toShow.push({ pos, label: cr.symbol });
-      }
-    }
+    markers.push({ pos: cr.position, label: cr.symbol });
+    markers.push({ pos: 1 - cr.position, label: cr.symbol });
   }
-  if (Math.abs(GOLDEN_POSITION - bridgePos) > 0.022) {
-    toShow.push({ pos: GOLDEN_POSITION, label: 'φ' });
-  }
+  markers.push({ pos: GOLDEN_POSITION, label: 'φ' });
 
-  for (const { pos, label } of toShow) {
+  for (const { pos, label } of markers) {
     const x = pos * w;
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    ctx.lineWidth   = 1;
-    ctx.setLineDash([2, 5]);
-    ctx.beginPath();
-    ctx.moveTo(x, cy - 26);
-    ctx.lineTo(x, cy + 26);
-    ctx.stroke();
+    const nearBridge = Math.abs(pos - bridgePos) < 0.016;
+    const alpha = nearBridge ? 0.55 : 0.28;
+
+    // Solid tick lines (more prominent)
+    ctx.strokeStyle = `rgba(0,0,0,${alpha})`;
+    ctx.lineWidth   = nearBridge ? 1.5 : 1;
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(0,0,0,0.15)';
-    ctx.fillText(label, x, cy - 30);
+    ctx.beginPath();
+    ctx.moveTo(x, cy - 38);
+    ctx.lineTo(x, cy + 38);
+    ctx.stroke();
+
+    // Tick caps at top and bottom
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - 3, cy - 38);
+    ctx.lineTo(x + 3, cy - 38);
+    ctx.moveTo(x - 3, cy + 38);
+    ctx.lineTo(x + 3, cy + 38);
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = `rgba(0,0,0,${nearBridge ? 0.75 : 0.42})`;
+    ctx.font      = nearBridge ? 'bold 10px monospace' : '10px monospace';
+    ctx.fillText(label, x, cy - 44);
   }
   ctx.restore();
 }
@@ -161,7 +173,7 @@ function drawGhostMarkers(
 // ── Component ─────────────────────────────────────────────────────────────
 
 const MonochordString = forwardRef<MonochordStringHandle, Props>(
-  function MonochordString({ bridgePosition, onBridgeChange, leftColor, rightColor, onPluck }, ref) {
+  function MonochordString({ bridgePosition, onBridgeChange, leftColor, rightColor, onPluck, onMarkerSnap }, ref) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const s = useRef({
@@ -282,14 +294,28 @@ const MonochordString = forwardRef<MonochordStringHandle, Props>(
       const px = t * s.current.w;
 
       if (Math.abs(px - bx) <= BRIDGE_HIT_R) {
+        // Drag the bridge
         s.current.isDragging = true;
         (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
       } else {
-        const side = t < s.current.bridgePos ? 'left' : 'right';
-        triggerPluck(side);
-        onPluck(side);
+        // Check if click is near a canonical marker — if so, snap to it
+        const MARKER_HIT_PX = 12;
+        const allMarkers: number[] = [];
+        for (const cr of CANONICAL_RATIOS.slice(0, 9)) {
+          allMarkers.push(cr.position, 1 - cr.position);
+        }
+        allMarkers.push(GOLDEN_POSITION);
+
+        const snapped = allMarkers.find(pos => Math.abs(pos * s.current.w - px) <= MARKER_HIT_PX);
+        if (snapped !== undefined) {
+          onMarkerSnap(snapped);
+        } else {
+          const side = t < s.current.bridgePos ? 'left' : 'right';
+          triggerPluck(side);
+          onPluck(side);
+        }
       }
-    }, [getT, triggerPluck, onPluck]);
+    }, [getT, triggerPluck, onPluck, onMarkerSnap]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
       if (!s.current.isDragging) return;

@@ -1,5 +1,6 @@
 import type Note from '../lib/Note';
 import { pitchToRadius, getPitchClassColor } from '../lib/noteColors';
+import { getSynth } from '../lib/synth';
 
 interface StringMarkerProps {
   className?: string;
@@ -9,6 +10,7 @@ interface StringMarkerProps {
   yOffset: number;
   note?: Note;
   isPlaying?: boolean;
+  bloomKey?: number;
 }
 
 export default function StringMarker({
@@ -19,6 +21,7 @@ export default function StringMarker({
   yOffset,
   note,
   isPlaying = false,
+  bloomKey,
 }: StringMarkerProps) {
   let cx = xOffset + fretWidth / 2;
   if (isNut) cx -= 15;
@@ -31,12 +34,19 @@ export default function StringMarker({
         }
       : undefined;
 
+  // Bloom base radius: use note's pitch radius (octave-aware) + small RMS boost
+  const bloomR = isPlaying && note
+    ? pitchToRadius(note.semitones) + getSynth().getRmsLevel() * 4
+    : 6;
+
   return (
     <g>
-      {isPlaying && note && (
+      {isPlaying && note && (bloomKey === undefined || bloomKey > 0) && (
         <circle
+          key={bloomKey ?? 'mount'}
           cx={cx}
           cy={yOffset}
+          r={bloomR}
           className="string__marker-bloom"
           style={{ fill: getPitchClassColor(note.baseSemitones) }}
         />

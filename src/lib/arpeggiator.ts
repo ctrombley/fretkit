@@ -19,6 +19,7 @@ export class ArpeggiatorEngine {
 
   pattern: ArpPattern = 'up';
   octaveRange = 1;
+  onNotePlayed: ((semitones: number) => void) | null = null;
 
   setOctaveRange(range: number): void {
     this.octaveRange = range;
@@ -26,6 +27,7 @@ export class ArpeggiatorEngine {
   }
 
   enable(): void {
+    if (this.enabled) return;
     this.enabled = true;
     this.stepIndex = 0;
     this.direction = 1;
@@ -119,6 +121,7 @@ export class ArpeggiatorEngine {
     const note = this.getNextNote();
     if (note) {
       this.currentVoice = getSynth().play(note.frequency);
+      this.onNotePlayed?.(note.semitones);
     }
   }
 

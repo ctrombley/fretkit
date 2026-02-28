@@ -1,0 +1,26 @@
+# Kamal 2 deploy config — https://kamal-deploy.org
+service: fretkit
+image: registry.digitalocean.com/fretkit/fretkit
+
+servers:
+  web:
+    - 143.198.51.23
+
+proxy:
+  ssl: true
+  host: fretkit.trombs.com
+  healthcheck:
+    path: /
+    interval: 3
+
+registry:
+  server: registry.digitalocean.com
+  username:
+    - KAMAL_REGISTRY_USERNAME
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+  cache:
+    type: gha   # GitHub Actions layer cache — free, fast

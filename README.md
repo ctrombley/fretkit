@@ -4,11 +4,109 @@ Interactive fretboard visualizer for drilling scales, chords, and modes on guita
 
 ---
 
-## Features
+## Quick Start
 
--- ???
+```bash
+npm install
+npm run dev
+```
 
-## The Whole-Tone Scale Vanishes Under M6
+Open [http://localhost:5173](http://localhost:5173)
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview production build locally |
+| `npm test` | Run tests |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run lint` | Lint source files |
+
+## Deploy
+
+Fretkit deploys via [Kamal 2](https://kamal-deploy.org) to a Digital Ocean Droplet with automatic SSL via Let's Encrypt.
+
+### Prerequisites
+
+- Ruby ≥ 3.1: `gem install kamal`
+- A DO Droplet (Ubuntu 24.04) with your SSH key
+- A DO Container Registry named `fretkit`
+- A DO API token with read/write scope
+
+Set credentials in your environment (the project uses `envchain`):
+
+```bash
+envchain --set local KAMAL_REGISTRY_USERNAME  # your DO API token
+envchain --set local KAMAL_REGISTRY_PASSWORD  # same token
+```
+
+Update `config/deploy.yml` with your Droplet's IP, then:
+
+```bash
+# First time — installs Docker and kamal-proxy on the server
+envchain local kamal setup
+
+# Deploy
+envchain local kamal deploy
+```
+
+Subsequent pushes to `master` deploy automatically via GitHub Actions. Add `KAMAL_REGISTRY_USERNAME`, `KAMAL_REGISTRY_PASSWORD`, and `DEPLOY_SSH_KEY` as repository secrets.
+
+### Useful Kamal commands
+
+```bash
+envchain local kamal logs        # tail production logs
+envchain local kamal rollback    # revert to previous image
+envchain local kamal app exec "sh"  # shell into the running container
+```
+
+### Local Docker
+
+```bash
+docker compose up -d    # build and run on http://localhost:8080
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI | React 19, Tailwind CSS 3.4 |
+| State | Zustand 5 |
+| Build | Vite 6, TypeScript 5.7 |
+| Test | Vitest |
+| Icons | Lucide React |
+| Deploy | Kamal 2, Docker, nginx |
+| CI/CD | GitHub Actions |
+
+## Project Structure
+
+```
+src/
+  lib/              Core music theory engine
+    Note.ts         Pitch representation & transposition
+    Interval.ts     Interval arithmetic
+    Scale.ts        Scale definitions & generation
+    Mode.ts         Modal derivation
+    Chord.ts        Chord voicings
+    synth.ts        Web Audio synthesizer
+    arpeggiator.ts  Arpeggiator engine
+    metronome.ts    Metronome engine
+    __tests__/      Unit tests
+  store/            Zustand store slices
+  components/       React components
+  hooks/            Custom React hooks
+```
+
+## License
+
+MIT
+
+---
+
+<details>
+<summary>The whole-tone scale vanishes under M6</summary>
 
 While building the harmonic spectrum analyser (`src/lib/harmonicSpectrum.ts`), a neat
 algebraic fact surfaced: multiply every note of the whole-tone scale by 6 in mod-12
@@ -25,97 +123,16 @@ and any even number times 6 is a multiple of 12:
 
 > **2k × 6 = 12k ≡ 0 (mod 12)**
 
-The same symmetry shows up in every other maximally symmetric set, each collapsing
-completely under its own characteristic multiplier:
+The same symmetry shows up in every other maximally symmetric set:
 
-| Set | Interval | Collapse multiplier | Why |
-|---|---|---|---|
-| Augmented triad `{0, 4, 8}` | Major third (×3) | M3 | 4k × 3 = 12k |
-| Diminished 7th `{0, 3, 6, 9}` | Minor third (×4) | M4 | 3k × 4 = 12k |
-| Whole-tone scale `{0, 2, 4, 6, 8, 10}` | Whole step (×6) | M6 | 2k × 6 = 12k |
-| Chromatic scale `{0…11}` | Semitone (×12) | M12 | trivially 0 |
+| Set | Collapse multiplier | Why |
+|---|---|---|
+| Augmented triad `{0, 4, 8}` | M3 | 4k × 3 = 12k |
+| Diminished 7th `{0, 3, 6, 9}` | M4 | 3k × 4 = 12k |
+| Whole-tone scale `{0, 2, 4, 6, 8, 10}` | M6 | 2k × 6 = 12k |
+| Chromatic scale `{0…11}` | M12 | trivially 0 |
 
-The M6 collapse is the most dramatic because six notes become one. It also explains
-why the whole-tone scale sounds "untethered" — the operation that should reveal its
-inner structure instead flattens it entirely, leaving no tonal hierarchy to stand on.
+These **M_n operations** are implemented in `src/lib/pitchClassSet.ts` as `multiplySet(pcs, n)`
+and `harmonicProjection(pcs, n)`.
 
-These **M_n operations** (pitch class multiplication) are implemented in
-`src/lib/pitchClassSet.ts` as `multiplySet(pcs, n)` and `harmonicProjection(pcs, n)`,
-and the full harmonic spectrum — which multiplier makes each set cluster or collapse —
-is computed by `harmonicSpectrum(pcs)` in `src/lib/harmonicSpectrum.ts`.
-
-M7 and M5 are also useful: multiplying any diatonic scale by 7 reorders its notes
-into the circle-of-fifths sequence, and M5 gives the circle-of-fourths sequence — the
-same 7 pitch classes, just visited in a different order.
-
----
-
-## Quick Start
-
-```bash
-# Development
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173)
-
-## Docker
-
-```bash
-# Build and run
-docker compose up -d
-
-# Or build manually
-docker build -t fretkit .
-docker run -p 8080:80 fretkit
-```
-
-Open [http://localhost:8080](http://localhost:8080)
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Type-check and build for production |
-| `npm run preview` | Preview production build locally |
-| `npm test` | Run tests |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run lint` | Lint source files |
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| UI | React 19, Tailwind CSS 3.4 |
-| State | Zustand 5 (sliced store with localStorage persistence) |
-| Build | Vite 6, TypeScript 5.7 |
-| Test | Vitest |
-| Icons | Lucide React |
-| Deploy | Docker (node:22-alpine + nginx) |
-| CI | GitHub Actions |
-
-## Project Structure
-
-```
-src/
-  lib/              Core music theory engine
-    Note.ts         Pitch representation & transposition
-    Interval.ts     Interval arithmetic
-    Scale.ts        Scale definitions & generation
-    Mode.ts         Modal derivation
-    Chord.ts        Chord voicings
-    synth.ts        Web Audio synthesizer
-    arpeggiator.ts  Arpeggiator engine
-    metronome.ts    Metronome engine
-    synthUtils.ts   Shared synth helpers
-    __tests__/      193 unit tests
-  store/            Zustand store slices
-  components/       React components
-  hooks/            Custom React hooks
-```
-
-## License
-
-MIT
+</details>

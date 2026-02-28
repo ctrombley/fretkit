@@ -21,7 +21,7 @@ export function pitchToRadius(semitones: number): number {
   const hi = 84;
   const clamped = Math.max(lo, Math.min(hi, semitones));
   const t = (clamped - lo) / (hi - lo); // 0..1, low to high
-  return 14 - t * 8; // 14px low notes, 6px high notes
+  return 10 - t * 6; // 10px low notes, 4px high notes
 }
 
 export function getPitchClassColor(baseSemitones: number): string {
