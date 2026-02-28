@@ -1,4 +1,5 @@
-import { X, GripVertical, Pencil } from 'lucide-react';
+import { useState } from 'react';
+import { X, GripVertical, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
 import type { ChordConfig } from '../types';
 import useChordDerived from '../hooks/useChordDerived';
@@ -14,11 +15,16 @@ interface SongChordCardProps {
 export default function SongChordCard({ songId, chord, index }: SongChordCardProps) {
   const removeSongChord = useStore(s => s.removeSongChord);
   const reorderSongChords = useStore(s => s.reorderSongChords);
+  const updateSongChord = useStore(s => s.updateSongChord);
   const activeSongChordId = useStore(s => s.activeSongChordId);
   const setActiveSongChordId = useStore(s => s.setActiveSongChordId);
-  const { current, litNotes, sequences } = useChordDerived(chord);
+  const { current, litNotes, sequences, maxInversions } = useChordDerived(chord);
+
+  const [arrowMode, setArrowMode] = useState<'voicing' | 'inversion'>('voicing');
 
   const isEditing = activeSongChordId === chord.id;
+
+  const update = (data: Partial<ChordConfig>) => updateSongChord(songId, chord.id, data);
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('text/plain', String(index));
@@ -38,9 +44,36 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
     e.dataTransfer.dropEffect = 'move';
   };
 
+  // Arrow navigation logic
+  const isVoicing = arrowMode === 'voicing';
+  const prevDisabled = isVoicing
+    ? !chord.sequenceEnabled || !sequences.length || chord.sequenceIdx === 0
+    : chord.inversion <= 0;
+  const nextDisabled = isVoicing
+    ? !chord.sequenceEnabled || !sequences.length || chord.sequenceIdx === sequences.length - 1
+    : chord.inversion >= maxInversions;
+
+  const handlePrev = () => {
+    if (isVoicing) {
+      update({ sequenceIdx: (chord.sequenceIdx ?? 1) - 1 });
+    } else {
+      update({ inversion: Math.max(0, chord.inversion - 1) });
+    }
+  };
+
+  const handleNext = () => {
+    if (isVoicing) {
+      update({ sequenceIdx: (chord.sequenceIdx ?? -1) + 1 });
+    } else {
+      update({ inversion: Math.min(maxInversions, chord.inversion + 1) });
+    }
+  };
+
   const displayName = current
     ? `${current.root ? '' : ''}${current.name}`
     : chord.searchStr || 'Empty';
+
+  const hasArrows = sequences.length > 0 || maxInversions > 0;
 
   return (
     <div
@@ -72,19 +105,52 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
           </div>
         </div>
 
-        {/* Diagram */}
-        <ChordDiagram
-          tuning={chord.tuning}
-          current={current}
-          litNotes={litNotes}
-          sequences={sequences}
-          sequenceEnabled={chord.sequenceEnabled}
-          sequenceIdx={chord.sequenceIdx}
-          startingFret={chord.startingFret}
-        />
+        {/* Diagram with flanking arrows */}
+        <div className="flex items-center gap-1">
+          {hasArrows && (
+            <button
+              onClick={handlePrev}
+              disabled={prevDisabled}
+              className="p-0.5 rounded hover:bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label={isVoicing ? 'Previous voicing' : 'Previous inversion'}
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
+          <ChordDiagram
+            tuning={chord.tuning}
+            current={current}
+            litNotes={litNotes}
+            sequences={sequences}
+            sequenceEnabled={chord.sequenceEnabled}
+            sequenceIdx={chord.sequenceIdx}
+            startingFret={chord.startingFret}
+            visibleFrets={chord.fretCount <= 7 ? chord.fretCount : 5}
+            onStartingFretChange={fret => update({ startingFret: fret })}
+          />
+          {hasArrows && (
+            <button
+              onClick={handleNext}
+              disabled={nextDisabled}
+              className="p-0.5 rounded hover:bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label={isVoicing ? 'Next voicing' : 'Next inversion'}
+            >
+              <ChevronRight size={16} />
+            </button>
+          )}
+        </div>
 
-        {/* Label */}
+        {/* Mode toggle + Label */}
         <div className="text-center mt-1">
+          {hasArrows && (
+            <button
+              onClick={() => setArrowMode(m => m === 'voicing' ? 'inversion' : 'voicing')}
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-500 mb-0.5 transition-colors"
+              title={isVoicing ? 'Voicing mode — click to switch to inversions' : 'Inversion mode — click to switch to voicings'}
+            >
+              {isVoicing ? 'V' : 'I'}
+            </button>
+          )}
           <p className="text-sm font-medium text-dark truncate max-w-[130px]">
             {displayName}
           </p>

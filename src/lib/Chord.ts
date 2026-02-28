@@ -15,6 +15,19 @@ export default class Chord {
     }
   }
 
+  get maxInversions(): number {
+    return Math.max(0, this.notes.length - 1);
+  }
+
+  invert(n: number): Note[] {
+    if (n <= 0 || this.notes.length === 0) return [...this.notes];
+    const clamped = Math.min(n, this.maxInversions);
+    const lower = this.notes.slice(0, clamped).map(
+      note => new Note(note.baseSemitones + 12),
+    );
+    return [...this.notes.slice(clamped), ...lower];
+  }
+
   private parseString(chordStr: string): void {
     const result = chordStr.match(chordRegex);
     if (!result) {

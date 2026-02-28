@@ -12,6 +12,7 @@ export interface FretboardState {
   id: number;
   current: { name: string; type: string; root?: Note } | null;
   fretCount: number;
+  inversion: number;
   litNotes: Note[];
   position: number;
   searchStr: string;

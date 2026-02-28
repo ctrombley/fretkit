@@ -16,6 +16,7 @@ export interface ChordConfig {
   position: number;
   sequenceEnabled: boolean;
   sequenceIdx: number | null;
+  inversion: number;
   label?: string;
 }
 

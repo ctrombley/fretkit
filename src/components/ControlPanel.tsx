@@ -1,5 +1,10 @@
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
+import Chord from '../lib/Chord';
 import tunings from '../lib/tunings';
+
+const FRET_WINDOW_SIZES = [5, 6, 7] as const;
 
 export default function ControlPanel() {
   const settings = useStore(s => s.settings);
@@ -7,13 +12,52 @@ export default function ControlPanel() {
   const updateFretboard = useStore(s => s.updateFretboard);
   const searchAction = useStore(s => s.search);
 
+  const [arrowMode, setArrowMode] = useState<'voicing' | 'inversion'>('voicing');
+
   if (!fretboard) return null;
 
   const id = settings.settingsId;
 
-  const sequenceControlDisabled = !fretboard.sequenceEnabled || !fretboard.sequences.length;
-  const prevDisabled = sequenceControlDisabled || fretboard.sequenceIdx === 0;
-  const nextDisabled = sequenceControlDisabled || fretboard.sequenceIdx === fretboard.sequences.length - 1;
+  // Compute maxInversions from current chord
+  let maxInversions = 0;
+  if (fretboard.current?.type === 'Chord' && fretboard.searchStr) {
+    try {
+      const chordObj = new Chord(fretboard.searchStr);
+      maxInversions = chordObj.maxInversions;
+    } catch { /* ignore */ }
+  }
+
+  const isVoicing = arrowMode === 'voicing';
+  const prevDisabled = isVoicing
+    ? !fretboard.sequenceEnabled || !fretboard.sequences.length || fretboard.sequenceIdx === 0
+    : fretboard.inversion <= 0;
+  const nextDisabled = isVoicing
+    ? !fretboard.sequenceEnabled || !fretboard.sequences.length || fretboard.sequenceIdx === fretboard.sequences.length - 1
+    : fretboard.inversion >= maxInversions;
+
+  const handlePrev = () => {
+    if (isVoicing) {
+      updateFretboard(id, { sequenceIdx: (fretboard.sequenceIdx ?? 1) - 1 });
+    } else {
+      const newInversion = Math.max(0, fretboard.inversion - 1);
+      updateFretboard(id, { inversion: newInversion });
+      // Re-run search with new inversion
+      searchAction(id, fretboard.searchStr);
+    }
+  };
+
+  const handleNext = () => {
+    if (isVoicing) {
+      updateFretboard(id, { sequenceIdx: (fretboard.sequenceIdx ?? -1) + 1 });
+    } else {
+      const newInversion = Math.min(maxInversions, fretboard.inversion + 1);
+      updateFretboard(id, { inversion: newInversion });
+      // Re-run search with new inversion
+      searchAction(id, fretboard.searchStr);
+    }
+  };
+
+  const hasArrows = fretboard.sequences.length > 0 || maxInversions > 0;
 
   return (
     <div className="space-y-4 pt-2">
@@ -41,15 +85,22 @@ export default function ControlPanel() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fret Count</label>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={fretboard.fretCount}
-            onChange={e => updateFretboard(id, { fretCount: parseInt(e.target.value, 10) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue"
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fret Window</label>
+          <div className="flex gap-1">
+            {FRET_WINDOW_SIZES.map(size => (
+              <button
+                key={size}
+                onClick={() => updateFretboard(id, { fretCount: size })}
+                className={`flex-1 px-2 py-2 text-xs font-medium rounded-md transition-colors ${
+                  fretboard.fretCount === size
+                    ? 'bg-fret-blue text-white'
+                    : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -70,48 +121,38 @@ export default function ControlPanel() {
         </select>
       </div>
 
-      <div className="border-t border-gray-200 pt-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={fretboard.sequenceEnabled}
-            disabled={!fretboard.sequences.length}
-            onChange={e => updateFretboard(id, { sequenceEnabled: e.target.checked })}
-            className="rounded border-gray-300 text-fret-blue focus:ring-fret-blue"
-          />
-          <span className="font-medium text-gray-700">Sequence mode</span>
-        </label>
-
-        <div className="mt-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            disabled={sequenceControlDisabled}
-            value={fretboard.position}
-            onChange={e => updateFretboard(id, { position: parseInt(e.target.value, 10) })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue disabled:opacity-50"
-          />
+      {/* Voicing / Inversion arrows */}
+      {hasArrows && (
+        <div className="border-t border-gray-200 pt-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setArrowMode(m => m === 'voicing' ? 'inversion' : 'voicing')}
+              className="text-xs font-mono px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+              title={isVoicing ? 'Voicing mode — click for inversions' : 'Inversion mode — click for voicings'}
+            >
+              {isVoicing ? 'Voicing' : 'Inversion'}
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={prevDisabled}
+                className="p-1.5 rounded border border-fret-blue text-fret-blue hover:bg-fret-blue hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={isVoicing ? 'Previous voicing' : 'Previous inversion'}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={nextDisabled}
+                className="p-1.5 rounded border border-fret-blue text-fret-blue hover:bg-fret-blue hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label={isVoicing ? 'Next voicing' : 'Next inversion'}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div className="flex gap-2 mt-3">
-          <button
-            onClick={() => updateFretboard(id, { sequenceIdx: (fretboard.sequenceIdx ?? 1) - 1 })}
-            disabled={prevDisabled}
-            className="flex-1 px-3 py-1.5 text-sm border border-fret-blue text-fret-blue rounded-md hover:bg-fret-blue hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Prev
-          </button>
-          <button
-            onClick={() => updateFretboard(id, { sequenceIdx: (fretboard.sequenceIdx ?? -1) + 1 })}
-            disabled={nextDisabled}
-            className="flex-1 px-3 py-1.5 text-sm border border-fret-blue text-fret-blue rounded-md hover:bg-fret-blue hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

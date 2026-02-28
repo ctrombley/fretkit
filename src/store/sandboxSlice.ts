@@ -1,6 +1,7 @@
 import tunings from '../lib/tunings';
 import generate from '../lib/sequenceGenerator';
 import termSearch from '../lib/termSearch';
+import Chord from '../lib/Chord';
 import getStrings from '../lib/getStrings';
 import { getSynth } from '../lib/synth';
 import { getArpeggiator } from '../lib/arpeggiator';
@@ -10,6 +11,7 @@ import type { AppState, FretboardState, Settings, StoreSet, StoreGet } from './t
 const defaultFretboard: Omit<FretboardState, 'id'> = {
   current: null,
   fretCount: 12,
+  inversion: 0,
   litNotes: [],
   position: 1,
   searchStr: '',
@@ -122,15 +124,22 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       const state = get();
       const fb = state.fretboards[id]!;
       const { current, notes } = termSearch(searchTerm);
+
+      let effectiveNotes = notes;
+      if (current?.type === 'Chord' && fb.inversion > 0) {
+        const chordObj = new Chord(searchTerm);
+        effectiveNotes = chordObj.invert(fb.inversion);
+      }
+
       const strings = getStrings(fb.fretCount, fb.tuning);
-      const sequences = current ? generate(notes, strings, fb.position) : [];
+      const sequences = current ? generate(effectiveNotes, strings, fb.position) : [];
 
       set((state: AppState) => ({
         fretboards: {
           ...state.fretboards,
           [id]: {
             ...state.fretboards[id]!,
-            litNotes: notes,
+            litNotes: effectiveNotes,
             current: current ?? null,
             searchStr: searchTerm,
             sequences,

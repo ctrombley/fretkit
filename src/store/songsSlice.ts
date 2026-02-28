@@ -10,6 +10,7 @@ const defaultChordConfig: Omit<ChordConfig, 'id'> = {
   position: 1,
   sequenceEnabled: false,
   sequenceIdx: null,
+  inversion: 0,
 };
 
 export const SONGS_PERSISTED_KEYS: (keyof AppState)[] = [

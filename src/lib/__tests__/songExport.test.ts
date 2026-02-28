@@ -21,6 +21,7 @@ const validExport: SongExport = {
           position: 1,
           sequenceEnabled: false,
           sequenceIdx: null,
+          inversion: 0,
           label: 'Intro',
         },
       ],

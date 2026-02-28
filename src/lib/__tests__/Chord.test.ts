@@ -113,6 +113,55 @@ describe('Chord', () => {
     });
   });
 
+  describe('inversions', () => {
+    it('returns maxInversions = notes.length - 1', () => {
+      const triad = new Chord('C M');
+      expect(triad.maxInversions).toBe(2);
+      const seventh = new Chord('C 7');
+      expect(seventh.maxInversions).toBe(3);
+    });
+
+    it('returns 0 maxInversions for empty chord', () => {
+      const chord = new Chord();
+      expect(chord.maxInversions).toBe(0);
+    });
+
+    it('invert(0) returns original notes', () => {
+      const chord = new Chord('C M');
+      const inverted = chord.invert(0);
+      expect(inverted.map(n => n.baseSemitones)).toEqual([0, 4, 7]);
+    });
+
+    it('invert(1) moves root up an octave (1st inversion)', () => {
+      const chord = new Chord('C M');
+      const inverted = chord.invert(1);
+      // E(4), G(7), C(12 = 0 base)
+      expect(inverted.map(n => n.baseSemitones)).toEqual([4, 7, 0]);
+      // The moved note should have semitones >= 12
+      expect(inverted[2]!.semitones).toBe(12);
+    });
+
+    it('invert(2) produces 2nd inversion', () => {
+      const chord = new Chord('C M');
+      const inverted = chord.invert(2);
+      // G(7), C(12), E(16)
+      expect(inverted.map(n => n.baseSemitones)).toEqual([7, 0, 4]);
+    });
+
+    it('clamps inversion to maxInversions', () => {
+      const chord = new Chord('C M');
+      const inverted = chord.invert(10);
+      // Same as invert(2) for a triad
+      expect(inverted.map(n => n.baseSemitones)).toEqual([7, 0, 4]);
+    });
+
+    it('invert with negative returns original notes', () => {
+      const chord = new Chord('C M');
+      const inverted = chord.invert(-1);
+      expect(inverted.map(n => n.baseSemitones)).toEqual([0, 4, 7]);
+    });
+  });
+
   describe('error handling', () => {
     it('throws on invalid chord', () => {
       expect(() => new Chord('X invalid')).toThrow('Invalid chord string');

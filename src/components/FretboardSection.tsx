@@ -1,5 +1,6 @@
+import { useRef, useCallback } from 'react';
 import { useStore } from '../store';
-import Fretboard from './Fretboard';
+import Fretboard, { calcFretWidth } from './Fretboard';
 import FretboardLabel from './FretboardLabel';
 import { X, Settings } from 'lucide-react';
 
@@ -12,6 +13,42 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
   const settings = useStore(s => s.settings);
   const deleteFretboard = useStore(s => s.deleteFretboard);
   const openSettings = useStore(s => s.openSettings);
+  const updateFretboard = useStore(s => s.updateFretboard);
+
+  const dragState = useRef<{ startX: number; startFret: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (!fretboard) return;
+    dragState.current = { startX: e.clientX, startFret: fretboard.startingFret };
+    containerRef.current?.setPointerCapture(e.pointerId);
+    if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
+  }, [fretboard]);
+
+  const handlePointerMove = useCallback((_e: React.PointerEvent) => {
+    if (!dragState.current || !fretboard) return;
+    if (containerRef.current) containerRef.current.style.cursor = 'grabbing';
+  }, [fretboard]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragState.current || !fretboard) return;
+    const dx = e.clientX - dragState.current.startX;
+
+    // Convert pixel delta to fret count using average fret width
+    const avgFretWidth = calcFretWidth(Math.max(1, fretboard.startingFret));
+    const fretDelta = Math.round(-dx / avgFretWidth);
+
+    const maxStart = Math.max(1, 25 - fretboard.fretCount);
+    const newFret = Math.min(maxStart, Math.max(1, dragState.current.startFret + fretDelta));
+
+    if (newFret !== fretboard.startingFret) {
+      updateFretboard(id, { startingFret: newFret });
+    }
+
+    dragState.current = null;
+    if (containerRef.current) containerRef.current.style.cursor = 'grab';
+    containerRef.current?.releasePointerCapture(e.pointerId);
+  }, [fretboard, id, updateFretboard]);
 
   if (!fretboard) return null;
 
@@ -19,9 +56,13 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-lg my-4 p-2 transition-all ${
+      ref={containerRef}
+      className={`relative overflow-hidden rounded-lg my-4 p-2 transition-all cursor-grab select-none ${
         isSelected ? 'ring-2 ring-fret-blue' : ''
       }`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
       <div className="absolute top-2 right-2 flex gap-1 z-10">
         <button

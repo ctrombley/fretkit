@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 
@@ -22,6 +23,7 @@ interface ChordDiagramProps {
   sequenceIdx: number | null;
   startingFret: number;
   visibleFrets?: number;
+  onStartingFretChange?: (fret: number) => void;
 }
 
 export default function ChordDiagram({
@@ -33,16 +35,19 @@ export default function ChordDiagram({
   sequenceIdx,
   startingFret,
   visibleFrets = 5,
+  onStartingFretChange,
 }: ChordDiagramProps) {
   const stringCount = tuning.length;
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
   const isOpenPosition = startingFret === 1;
 
+  const dragState = useRef<{ startY: number; startFret: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   // Determine visible fret range
   let displayStart = startingFret;
   if (sequenceEnabled && sequence && sequence.length > 0) {
     const minFret = sequence.minFret;
-    // If sequence uses open strings (fret 0), show from fret 1
     displayStart = minFret <= 0 ? 1 : Math.max(1, minFret);
   }
   const showNut = displayStart === 1;
@@ -53,13 +58,40 @@ export default function ChordDiagram({
   const stringX = (stringIdx: number) => MARGIN_LEFT + stringIdx * STRING_SPACING;
   const fretY = (fretIdx: number) => MARGIN_TOP + fretIdx * FRET_SPACING;
 
-  // Check if a note at a given fret/string is lit
+  // Drag-to-slide handlers (vertical for chord diagrams)
+  const handlePointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (!onStartingFretChange) return;
+    dragState.current = { startY: e.clientY, startFret: startingFret };
+    svgRef.current?.setPointerCapture(e.pointerId);
+    if (svgRef.current) svgRef.current.style.cursor = 'grabbing';
+  }, [onStartingFretChange, startingFret]);
+
+  const handlePointerMove = useCallback((_e: React.PointerEvent<SVGSVGElement>) => {
+    if (!dragState.current) return;
+    if (svgRef.current) svgRef.current.style.cursor = 'grabbing';
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (!dragState.current || !onStartingFretChange) return;
+    const dy = e.clientY - dragState.current.startY;
+    const fretDelta = Math.round(-dy / FRET_SPACING);
+    const maxStart = Math.max(1, 25 - visibleFrets);
+    const newFret = Math.min(maxStart, Math.max(1, dragState.current.startFret + fretDelta));
+
+    if (newFret !== startingFret) {
+      onStartingFretChange(newFret);
+    }
+
+    dragState.current = null;
+    if (svgRef.current) svgRef.current.style.cursor = 'grab';
+    svgRef.current?.releasePointerCapture(e.pointerId);
+  }, [onStartingFretChange, startingFret, visibleFrets]);
+
   function isNoteLit(stringIdx: number, fretNumber: number): boolean {
     const openNote = new Note(tuning[stringIdx]!);
     const note = openNote.add(fretNumber);
 
     if (sequenceEnabled && sequence) {
-      // In sequence mode, stringNotes use reversed string indices
       const seqStringIdx = stringCount - 1 - stringIdx;
       return sequence.stringNotes.some(
         sn => sn.semitones === note.semitones && sn.string === seqStringIdx,
@@ -76,7 +108,15 @@ export default function ChordDiagram({
   }
 
   return (
-    <svg width={width} height={height} className="block">
+    <svg
+      ref={svgRef}
+      width={width}
+      height={height}
+      className={`block${onStartingFretChange ? ' cursor-grab select-none' : ''}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
       {/* Nut or position indicator */}
       {showNut ? (
         <line
@@ -148,13 +188,11 @@ export default function ChordDiagram({
 
       {/* Note markers */}
       {Array.from({ length: stringCount }, (_, stringIdx) => {
-        // Check open string (fret 0) - show above nut
         const openLit = isOpenPosition && isNoteLit(stringIdx, 0);
         const openRoot = isOpenPosition && isNoteRoot(stringIdx, 0);
 
         return (
           <g key={`notes-${stringIdx}`}>
-            {/* Open string marker */}
             {openLit && (
               <circle
                 cx={stringX(stringIdx)}
@@ -166,7 +204,6 @@ export default function ChordDiagram({
               />
             )}
 
-            {/* Fretted note markers */}
             {Array.from({ length: visibleFrets }, (_, fretIdx) => {
               const fretNumber = displayStart + fretIdx;
               if (!isNoteLit(stringIdx, fretNumber)) return null;
