@@ -132,7 +132,29 @@ describe('computeErgonomicScore', () => {
     expect(breakdown).toHaveProperty('openStringBonus');
     expect(breakdown).toHaveProperty('bassCorrectness');
     expect(breakdown).toHaveProperty('positionWeight');
+    expect(breakdown).toHaveProperty('soundedCount');
     expect(breakdown).toHaveProperty('totalCost');
+  });
+
+  it('soundedCount rewards more sounded strings', () => {
+    // 6 open strings vs 3 open strings — isolates soundedCount
+    const sixOpen: StringAssignment[] = [
+      assign(0, 0), assign(1, 0), assign(2, 0),
+      assign(3, 0), assign(4, 0), assign(5, 0),
+    ];
+    const threeOpen: StringAssignment[] = [
+      assign(0, null), assign(1, null), assign(2, null),
+      assign(3, 0), assign(4, 0), assign(5, 0),
+    ];
+    const sixScore = computeErgonomicScore(sixOpen, 0, undefined, 6);
+    const threeScore = computeErgonomicScore(threeOpen, 0, undefined, 6);
+
+    // soundedCount should be more negative (better) for 6-string
+    expect(sixScore.soundedCount).toBeLessThan(threeScore.soundedCount);
+    expect(sixScore.soundedCount).toBeCloseTo(-1.0);
+    expect(threeScore.soundedCount).toBeCloseTo(-0.5);
+    // 6-string voicing should score better overall
+    expect(sixScore.totalCost).toBeLessThan(threeScore.totalCost);
   });
 });
 

@@ -36,7 +36,7 @@ export interface VoicingConfig {
 const DEFAULT_CONFIG: Required<VoicingConfig> = {
   maxSpan: 4,
   maxFingers: 4,
-  minSounded: 3,
+  minSounded: 4,
   maxResults: 20,
   allowOpen: true,
   weights: undefined!,
@@ -131,6 +131,7 @@ export function generateVoicings(
         assignments as StringAssignment[],
         normalizedRoot,
         cfg.weights,
+        stringCount,
       );
       results.push({ assignments, score: breakdown.totalCost });
       return;
@@ -212,11 +213,59 @@ export function generateVoicings(
 
   dfs(0);
 
-  // Sort by score ascending (best first) and limit results
+  // Sort by score ascending (best first)
   results.sort((a, b) => a.score - b.score);
-  const topResults = results.slice(0, cfg.maxResults);
+
+  // Remove subset voicings (dominated by a superset with same frets on shared strings)
+  const pruned = pruneSubsets(results);
+
+  const topResults = pruned.slice(0, cfg.maxResults);
 
   return topResults.map(r => assignmentsToSequence(r.assignments, tuning));
+}
+
+type VoicingResult = { assignments: ({ string: number; fret: number | null; semitones?: number | null; pitchClass?: number | null })[]; score: number };
+
+/**
+ * Remove voicings that are strict subsets of another voicing.
+ * A voicing A is a subset of B if every sounded string in A has the same fret in B,
+ * and B sounds strictly more strings. Since results are already sorted by score,
+ * we keep the better-scoring voicing (earlier in the list) and remove later subsets.
+ */
+function pruneSubsets(sorted: VoicingResult[]): VoicingResult[] {
+  const kept: VoicingResult[] = [];
+
+  for (const candidate of sorted) {
+    const cFrets = candidate.assignments.map(a => a.fret);
+    const cSounded = cFrets.filter(f => f !== null).length;
+
+    let isSubset = false;
+    for (const existing of kept) {
+      const eFrets = existing.assignments.map(a => a.fret);
+      const eSounded = eFrets.filter(f => f !== null).length;
+
+      if (cSounded >= eSounded) continue; // candidate has same or more strings — not a subset
+
+      // Check if candidate is a subset: every sounded string in candidate matches existing
+      let subset = true;
+      for (let i = 0; i < cFrets.length; i++) {
+        if (cFrets[i] !== null && cFrets[i] !== eFrets[i]) {
+          subset = false;
+          break;
+        }
+      }
+      if (subset) {
+        isSubset = true;
+        break;
+      }
+    }
+
+    if (!isSubset) {
+      kept.push(candidate);
+    }
+  }
+
+  return kept;
 }
 
 /**

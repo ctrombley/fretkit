@@ -19,6 +19,7 @@ export interface ErgonomicWeights {
   openStringBonus: number;
   bassCorrectness: number;
   positionWeight: number;
+  soundedCount: number;
 }
 
 export interface ErgonomicBreakdown {
@@ -29,6 +30,7 @@ export interface ErgonomicBreakdown {
   openStringBonus: number;
   bassCorrectness: number;
   positionWeight: number;
+  soundedCount: number;
   totalCost: number;
 }
 
@@ -38,10 +40,11 @@ const DEFAULT_WEIGHTS: ErgonomicWeights = {
   fretSpan: 1.0,
   fingerCount: 1.5,
   stretchEvenness: 0.5,
-  stringContiguity: 1.2,
+  stringContiguity: 2.0,
   openStringBonus: 0.4,
   bassCorrectness: 1.0,
   positionWeight: 0.2,
+  soundedCount: 1.0,
 };
 
 /**
@@ -121,6 +124,7 @@ export function computeErgonomicScore(
   assignments: StringAssignment[],
   rootPitchClass: number,
   weights: ErgonomicWeights = DEFAULT_WEIGHTS,
+  totalStrings?: number,
 ): ErgonomicBreakdown {
   const sounded = assignments.filter(a => a.fret !== null);
   const fretted = sounded.filter(a => a.fret! > 0);
@@ -200,6 +204,10 @@ export function computeErgonomicScore(
     positionWeightScore = minFret / 12;
   }
 
+  // Sounded count reward (negative = reward for sounding more strings)
+  const strCount = totalStrings ?? assignments.length;
+  const soundedCountScore = strCount > 0 ? -(soundedCount / strCount) : 0;
+
   const totalCost =
     weights.fretSpan * fretSpanScore +
     weights.fingerCount * fingerCountScore +
@@ -207,7 +215,8 @@ export function computeErgonomicScore(
     weights.stringContiguity * stringContiguityScore +
     weights.openStringBonus * openStringBonusScore +
     weights.bassCorrectness * bassCorrectnessScore +
-    weights.positionWeight * positionWeightScore;
+    weights.positionWeight * positionWeightScore +
+    weights.soundedCount * soundedCountScore;
 
   return {
     fretSpan: fretSpanScore,
@@ -217,6 +226,7 @@ export function computeErgonomicScore(
     openStringBonus: openStringBonusScore,
     bassCorrectness: bassCorrectnessScore,
     positionWeight: positionWeightScore,
+    soundedCount: soundedCountScore,
     totalCost,
   };
 }
@@ -228,6 +238,7 @@ export function scoreVoicing(
   assignments: StringAssignment[],
   rootPitchClass: number,
   weights?: ErgonomicWeights,
+  totalStrings?: number,
 ): number {
-  return computeErgonomicScore(assignments, rootPitchClass, weights).totalCost;
+  return computeErgonomicScore(assignments, rootPitchClass, weights, totalStrings).totalCost;
 }

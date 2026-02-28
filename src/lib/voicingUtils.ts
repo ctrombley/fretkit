@@ -114,7 +114,7 @@ export function scoreSequence(
     }
   }
 
-  return computeErgonomicScore(assignments, rootPitchClass);
+  return computeErgonomicScore(assignments, rootPitchClass, undefined, stringCount);
 }
 
 /** Map total cost to difficulty tier. */

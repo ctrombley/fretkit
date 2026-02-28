@@ -59,37 +59,88 @@ describe('generateVoicings', () => {
     expect(voicings.length).toBeGreaterThan(0);
   });
 
-  it('open C voicing (x32010) appears in C major results', () => {
+  it('open C voicing (x32010) ranks in top 5', () => {
     const pitchClasses = [0, 4, 7]; // C, E, G
     const voicings = generateVoicings(pitchClasses, 0, STANDARD_TUNING, 5, {
       maxResults: 50,
     });
     const patterns = voicings.map(v => fretPattern(v, 6));
     const openC = [null, 3, 2, 0, 1, 0]; // x32010
-    const found = patterns.some(p => matchesPattern(p, openC));
-    expect(found).toBe(true);
+    const idx = patterns.findIndex(p => matchesPattern(p, openC));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(5);
   });
 
-  it('open E voicing (022100) appears in E major results', () => {
+  it('open G voicing (320003) ranks in top 5', () => {
+    const pitchClasses = [7, 11, 2]; // G, B, D
+    const voicings = generateVoicings(pitchClasses, 7, STANDARD_TUNING, 5, {
+      maxResults: 50,
+    });
+    const patterns = voicings.map(v => fretPattern(v, 6));
+    const openG = [3, 2, 0, 0, 0, 3]; // 320003
+    const idx = patterns.findIndex(p => matchesPattern(p, openG));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(5);
+  });
+
+  it('open Am voicing (x02210) ranks in top 5', () => {
+    const pitchClasses = [9, 0, 4]; // A, C, E
+    const voicings = generateVoicings(pitchClasses, 9, STANDARD_TUNING, 5, {
+      maxResults: 50,
+    });
+    const patterns = voicings.map(v => fretPattern(v, 6));
+    const openAm = [null, 0, 2, 2, 1, 0]; // x02210
+    const idx = patterns.findIndex(p => matchesPattern(p, openAm));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(5);
+  });
+
+  it('open E voicing (022100) ranks in top 5', () => {
     const pitchClasses = [4, 8, 11]; // E, G#, B
     const voicings = generateVoicings(pitchClasses, 4, STANDARD_TUNING, 5, {
       maxResults: 50,
     });
     const patterns = voicings.map(v => fretPattern(v, 6));
     const openE = [0, 2, 2, 1, 0, 0]; // 022100
-    const found = patterns.some(p => matchesPattern(p, openE));
-    expect(found).toBe(true);
+    const idx = patterns.findIndex(p => matchesPattern(p, openE));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(5);
   });
 
-  it('F barre (133211) appears in F major results', () => {
+  it('open D voicing (xx0232) ranks in top 5', () => {
+    const pitchClasses = [2, 6, 9]; // D, F#, A
+    const voicings = generateVoicings(pitchClasses, 2, STANDARD_TUNING, 5, {
+      maxResults: 50,
+    });
+    const patterns = voicings.map(v => fretPattern(v, 6));
+    const openD = [null, null, 0, 2, 3, 2]; // xx0232
+    const idx = patterns.findIndex(p => matchesPattern(p, openD));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(5);
+  });
+
+  it('open Em voicing (022000) ranks in top 5', () => {
+    const pitchClasses = [4, 7, 11]; // E, G, B
+    const voicings = generateVoicings(pitchClasses, 4, STANDARD_TUNING, 5, {
+      maxResults: 50,
+    });
+    const patterns = voicings.map(v => fretPattern(v, 6));
+    const openEm = [0, 2, 2, 0, 0, 0]; // 022000
+    const idx = patterns.findIndex(p => matchesPattern(p, openEm));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(5);
+  });
+
+  it('F barre (133211) ranks in top 10', () => {
     const pitchClasses = [5, 9, 0]; // F, A, C
     const voicings = generateVoicings(pitchClasses, 5, STANDARD_TUNING, 5, {
       maxResults: 50,
     });
     const patterns = voicings.map(v => fretPattern(v, 6));
     const fBarre = [1, 3, 3, 2, 1, 1]; // 133211
-    const found = patterns.some(p => matchesPattern(p, fBarre));
-    expect(found).toBe(true);
+    const idx = patterns.findIndex(p => matchesPattern(p, fBarre));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(10);
   });
 
   it('all voicings cover all required pitch classes', () => {
