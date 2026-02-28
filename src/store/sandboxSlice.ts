@@ -1,5 +1,6 @@
 import tunings from '../lib/tunings';
 import generate from '../lib/sequenceGenerator';
+import { generateVoicings } from '../lib/voicingGenerator';
 import termSearch from '../lib/termSearch';
 import Chord from '../lib/Chord';
 import getStrings from '../lib/getStrings';
@@ -131,8 +132,15 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         effectiveNotes = chordObj.invert(fb.inversion);
       }
 
-      const strings = getStrings(fb.fretCount, fb.tuning);
-      const sequences = current ? generate(effectiveNotes, strings, fb.position) : [];
+      let sequences: import('../lib/Sequence').default[] = [];
+      if (current?.type === 'Chord') {
+        const pitchClasses = effectiveNotes.map(n => n.baseSemitones);
+        const bassTarget = effectiveNotes[0]!.baseSemitones;
+        sequences = generateVoicings(pitchClasses, bassTarget, fb.tuning, 15);
+      } else if (current) {
+        const strings = getStrings(fb.fretCount, fb.tuning);
+        sequences = generate(effectiveNotes, strings, fb.position);
+      }
 
       set((state: AppState) => ({
         fretboards: {
