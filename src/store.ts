@@ -49,6 +49,20 @@ interface AppState {
   setSpiralMode: (mode: 'major' | 'minor') => void;
   setSpiralHighlightedChord: (degree: number | null) => void;
 
+  // Overtones
+  overtoneRoot: number;
+  overtoneOctave: number;
+  overtoneCount: number;
+  overtoneShowET: boolean;
+  overtoneUseET: boolean;
+
+  // Overtone actions
+  setOvertoneRoot: (root: number) => void;
+  setOvertoneOctave: (octave: number) => void;
+  setOvertoneCount: (count: number) => void;
+  setOvertoneShowET: (show: boolean) => void;
+  setOvertoneUseET: (use: boolean) => void;
+
   // Sandbox actions
   createFretboard: () => void;
   updateFretboard: (id: string, data: Partial<FretboardState>) => void;
@@ -114,6 +128,11 @@ export const useStore = create<AppState>()(
       spiralRoot: 0,
       spiralMode: 'major' as const,
       spiralHighlightedChord: null,
+      overtoneRoot: 9,
+      overtoneOctave: 2,
+      overtoneCount: 16,
+      overtoneShowET: false,
+      overtoneUseET: false,
 
       setSpiralRoot: (root) => {
         set({ spiralRoot: root, spiralHighlightedChord: null });
@@ -126,6 +145,12 @@ export const useStore = create<AppState>()(
       setSpiralHighlightedChord: (degree) => {
         set({ spiralHighlightedChord: degree });
       },
+
+      setOvertoneRoot: (root) => set({ overtoneRoot: root }),
+      setOvertoneOctave: (octave) => set({ overtoneOctave: octave }),
+      setOvertoneCount: (count) => set({ overtoneCount: count }),
+      setOvertoneShowET: (show) => set({ overtoneShowET: show }),
+      setOvertoneUseET: (use) => set({ overtoneUseET: use }),
 
       createFretboard: () => {
         const id = nextId++;

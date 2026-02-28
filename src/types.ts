@@ -2,7 +2,8 @@ export type View =
   | { name: 'sandbox' }
   | { name: 'songList' }
   | { name: 'songDetail'; songId: string }
-  | { name: 'spiral' };
+  | { name: 'spiral' }
+  | { name: 'overtones' };
 
 export interface ChordConfig {
   id: string;
