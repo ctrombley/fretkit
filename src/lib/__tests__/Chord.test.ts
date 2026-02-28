@@ -60,6 +60,35 @@ describe('Chord', () => {
     });
   });
 
+  describe('diminished triad', () => {
+    it('parses C diminished', () => {
+      const chord = new Chord('C °');
+      expect(chord.notes.map(n => n.baseSemitones)).toEqual([0, 3, 6]);
+    });
+
+    it('parses with alias "dim"', () => {
+      const chord = new Chord('C dim');
+      expect(chord.notes.map(n => n.baseSemitones)).toEqual([0, 3, 6]);
+    });
+
+    it('parses B diminished', () => {
+      const chord = new Chord('B °');
+      expect(chord.notes.map(n => n.baseSemitones)).toEqual([11, 2, 5]);
+    });
+  });
+
+  describe('augmented triad', () => {
+    it('parses C augmented', () => {
+      const chord = new Chord('C +');
+      expect(chord.notes.map(n => n.baseSemitones)).toEqual([0, 4, 8]);
+    });
+
+    it('parses with alias "aug"', () => {
+      const chord = new Chord('C aug');
+      expect(chord.notes.map(n => n.baseSemitones)).toEqual([0, 4, 8]);
+    });
+  });
+
   describe('sixth chords', () => {
     it('parses major 6th', () => {
       const chord = new Chord('C 6');

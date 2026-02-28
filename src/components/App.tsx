@@ -3,6 +3,7 @@ import Header from './Header';
 import SandboxView from './SandboxView';
 import SongListView from './SongListView';
 import SongDetailView from './SongDetailView';
+import SpiralView from './SpiralView';
 
 export default function App() {
   const view = useStore(s => s.view);
@@ -13,6 +14,7 @@ export default function App() {
       {view.name === 'sandbox' && <SandboxView />}
       {view.name === 'songList' && <SongListView />}
       {view.name === 'songDetail' && <SongDetailView songId={view.songId} />}
+      {view.name === 'spiral' && <SpiralView />}
     </div>
   );
 }

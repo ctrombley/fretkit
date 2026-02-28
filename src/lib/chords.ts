@@ -8,6 +8,8 @@ const chords: Record<string, string[]> = {
   'ø7': ['1', '♭3', '♭5', '♭7'],
   'mM7': ['1', '♭3', '5', '7'],
   '+M7': ['1', '3', '♯5', '7'],
+  '°': ['1', '♭3', '♭5'],
+  '+': ['1', '3', '♯5'],
   '6': ['1', '3', '5', '6'],
   'm6': ['1', '♭3', '5', '6'],
 };
@@ -56,5 +58,9 @@ chords['+Δ7'] = chords['+M7']!;
 chords['M6'] = chords['6']!;
 chords['major 6th'] = chords['6']!;
 chords['minor 6th'] = chords['m6']!;
+chords['dim'] = chords['°']!;
+chords['diminished'] = chords['°']!;
+chords['aug'] = chords['+']!;
+chords['augmented'] = chords['+']!;
 
 export default chords;

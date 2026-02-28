@@ -1,4 +1,4 @@
-import { Guitar, Music, LayoutGrid } from 'lucide-react';
+import { Guitar, Music, LayoutGrid, Orbit } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Header() {
@@ -33,6 +33,17 @@ export default function Header() {
         >
           <Music size={16} />
           Songs
+        </button>
+        <button
+          onClick={() => navigate({ name: 'spiral' })}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+            view.name === 'spiral'
+              ? 'bg-gray-100 text-dark'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <Orbit size={16} />
+          Spiral
         </button>
       </nav>
     </header>

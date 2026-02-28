@@ -39,6 +39,16 @@ interface AppState {
   songs: Record<string, Song>;
   activeSongChordId: string | null;
 
+  // Spiral
+  spiralRoot: number;
+  spiralMode: 'major' | 'minor';
+  spiralHighlightedChord: number | null;
+
+  // Spiral actions
+  setSpiralRoot: (root: number) => void;
+  setSpiralMode: (mode: 'major' | 'minor') => void;
+  setSpiralHighlightedChord: (degree: number | null) => void;
+
   // Sandbox actions
   createFretboard: () => void;
   updateFretboard: (id: string, data: Partial<FretboardState>) => void;
@@ -101,6 +111,21 @@ export const useStore = create<AppState>()(
       view: { name: 'sandbox' } as View,
       songs: {},
       activeSongChordId: null,
+      spiralRoot: 0,
+      spiralMode: 'major' as const,
+      spiralHighlightedChord: null,
+
+      setSpiralRoot: (root) => {
+        set({ spiralRoot: root, spiralHighlightedChord: null });
+      },
+
+      setSpiralMode: (mode) => {
+        set({ spiralMode: mode, spiralHighlightedChord: null });
+      },
+
+      setSpiralHighlightedChord: (degree) => {
+        set({ spiralHighlightedChord: degree });
+      },
 
       createFretboard: () => {
         const id = nextId++;
