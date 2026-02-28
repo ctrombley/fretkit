@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import type Sequence from '../lib/Sequence';
@@ -38,7 +38,6 @@ export default function FretboardLabel({
 }: FretboardLabelProps) {
   const search = useStore(s => s.search);
   const updateFretboard = useStore(s => s.updateFretboard);
-  const openSettings = useStore(s => s.openSettings);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(searchStr);
@@ -169,13 +168,6 @@ export default function FretboardLabel({
           stringCount={tuning.length}
         />
       )}
-      <button
-        onClick={(e) => { e.stopPropagation(); openSettings(id); }}
-        className="p-0.5 rounded text-gray-300 hover:text-gray-500 transition-colors"
-        aria-label="Fretboard settings"
-      >
-        <Settings size={14} />
-      </button>
     </div>
   );
 }

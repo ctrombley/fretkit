@@ -7,8 +7,6 @@ interface ChordEditorProps {
   chord: ChordConfig;
 }
 
-const FRET_WINDOW_SIZES = [5, 6, 7] as const;
-
 export default function ChordEditor({ songId, chord }: ChordEditorProps) {
   const updateSongChord = useStore(s => s.updateSongChord);
 
@@ -39,26 +37,6 @@ export default function ChordEditor({ songId, chord }: ChordEditorProps) {
           }}
           className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue focus:border-transparent"
         />
-      </div>
-
-      {/* Fret window size toggle */}
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Fret Window</label>
-        <div className="flex gap-1">
-          {FRET_WINDOW_SIZES.map(size => (
-            <button
-              key={size}
-              onClick={() => update({ fretCount: size })}
-              className={`flex-1 px-2 py-1.5 text-xs font-medium rounded transition-colors ${
-                chord.fretCount === size
-                  ? 'bg-fret-blue text-white'
-                  : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div>

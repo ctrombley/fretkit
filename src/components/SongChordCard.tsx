@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, GripVertical, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, GripVertical, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
 import type { ChordConfig } from '../types';
 import useChordDerived from '../hooks/useChordDerived';
@@ -21,8 +21,31 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
   const { current, litNotes, sequences, maxInversions } = useChordDerived(chord);
 
   const [arrowMode, setArrowMode] = useState<'voicing' | 'inversion'>('voicing');
+  const [editingName, setEditingName] = useState(false);
+  const [draft, setDraft] = useState(chord.searchStr);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = activeSongChordId === chord.id;
+
+  useEffect(() => {
+    if (editingName) {
+      setDraft(chord.searchStr);
+      requestAnimationFrame(() => inputRef.current?.select());
+    }
+  }, [editingName, chord.searchStr]);
+
+  const commitName = () => {
+    setEditingName(false);
+    const trimmed = draft.trim();
+    if (trimmed !== chord.searchStr) {
+      update({ searchStr: trimmed, sequenceIdx: 0, inversion: 0 });
+    }
+  };
+
+  const cancelName = () => {
+    setEditingName(false);
+    setDraft(chord.searchStr);
+  };
 
   // Auto-enable voicing mode for chords with voicings
   const effectiveSequenceEnabled =
@@ -97,9 +120,9 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
             <button
               onClick={() => setActiveSongChordId(isEditing ? null : chord.id)}
               className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Edit chord"
+              aria-label="Chord settings"
             >
-              <Pencil size={12} />
+              <Settings size={12} />
             </button>
             <button
               onClick={() => removeSongChord(songId, chord.id)}
@@ -157,9 +180,29 @@ export default function SongChordCard({ songId, chord, index }: SongChordCardPro
               {isVoicing ? 'V' : 'I'}
             </button>
           )}
-          <p className="text-sm font-medium text-dark truncate max-w-[130px]">
-            {displayName}
-          </p>
+          {editingName ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitName();
+                if (e.key === 'Escape') cancelName();
+              }}
+              onBlur={commitName}
+              placeholder="e.g. C major"
+              className="w-full px-1 py-0.5 text-sm text-center border border-fret-blue rounded focus:outline-none focus:ring-1 focus:ring-fret-blue"
+            />
+          ) : (
+            <p
+              className="text-sm font-medium text-dark truncate max-w-[130px] cursor-pointer hover:text-fret-blue transition-colors"
+              onClick={() => setEditingName(true)}
+              title="Click to edit chord"
+            >
+              {displayName}
+            </p>
+          )}
           {chord.label && (
             <p className="text-xs text-gray-400">{chord.label}</p>
           )}
