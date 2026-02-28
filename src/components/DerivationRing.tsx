@@ -188,21 +188,47 @@ export default function DerivationRing({
         );
       })}
 
-      {/* Layer 2: Deviation arcs */}
+      {/* Layer 2: Deviation arcs (red = sharp, blue = flat) */}
       {derivation.steps.map(note => {
         const d = getDeviationArc(note);
         if (!d) return null;
+        const isSharp = note.centsDeviation > 0;
+        const arcColor = isSharp ? '#ef4444' : '#3b82f6';
+        const isActive = visibleStep === note.step;
         return (
           <path
             key={`dev-${note.step}`}
             d={d}
             fill="none"
-            stroke={color}
-            strokeWidth={2}
-            strokeOpacity={0.3}
+            stroke={arcColor}
+            strokeWidth={isActive ? 3 : 1.5}
+            strokeOpacity={isActive ? 0.8 : 0.2}
           />
         );
       })}
+
+      {/* Deviation arc label for hovered note */}
+      {hoveredInfo && Math.abs(hoveredInfo.centsDeviation) >= 0.5 && (() => {
+        const etCents = hoveredInfo.nearestETStep * centsPerStep;
+        const midCents = (etCents + hoveredInfo.centsInOctave) / 2;
+        const arcR = (ET_RING_R + DERIVED_RING_R) / 2;
+        const midAngle = (midCents / 1200) * 2 * Math.PI - Math.PI / 2;
+        const labelR = arcR + (hoveredInfo.centsDeviation > 0 ? 14 : -14);
+        const isSharp = hoveredInfo.centsDeviation > 0;
+        return (
+          <text
+            x={CX + labelR * Math.cos(midAngle)}
+            y={CY + labelR * Math.sin(midAngle)}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={9}
+            fontWeight="bold"
+            fill={isSharp ? '#ef4444' : '#3b82f6'}
+          >
+            {Math.abs(hoveredInfo.centsDeviation).toFixed(1)}&#162; {isSharp ? 'sharp' : 'flat'}
+          </text>
+        );
+      })()}
 
       {/* Layer 3: Connection arrows */}
       {derivation.steps.slice(0, -1).map((note, i) => {
@@ -273,36 +299,61 @@ export default function DerivationRing({
           y={commaLabelPos.y}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={10}
+          fontSize={9}
           fill="#ef4444"
           fontWeight="bold"
         >
-          {derivation.commaCents >= 0 ? '+' : ''}{derivation.commaCents.toFixed(1)}&#162;
+          <tspan x={commaLabelPos.x} dy="-0.5em">comma gap</tspan>
+          <tspan x={commaLabelPos.x} dy="1.2em">
+            {Math.abs(derivation.commaCents).toFixed(1)}&#162; {derivation.commaCents > 0 ? 'overshoot' : 'undershoot'}
+          </tspan>
         </text>
       )}
 
       {/* Layer 6: Info panel */}
-      {hoveredInfo && (
-        <foreignObject x={310} y={10} width={180} height={140}>
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 text-xs leading-relaxed">
-            <div className="font-bold text-sm mb-1">
-              Step {hoveredInfo.step}
-              <span
-                className="ml-1.5 inline-block w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: color }}
-              />
+      {hoveredInfo && (() => {
+        const dev = hoveredInfo.centsDeviation;
+        const isSharp = dev > 0;
+        const isExact = Math.abs(dev) < 0.5;
+        const etCents = hoveredInfo.nearestETStep * centsPerStep;
+        return (
+          <foreignObject x={310} y={10} width={180} height={170}>
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 text-xs leading-relaxed">
+              <div className="font-bold text-sm mb-1">
+                Step {hoveredInfo.step}: {hoveredInfo.nearestNoteName}
+                <span
+                  className="ml-1.5 inline-block w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+              </div>
+              <div className="text-gray-600 space-y-0.5">
+                {hoveredInfo.step === 0 ? (
+                  <div>Root (unison)</div>
+                ) : (
+                  <div>
+                    {derivation.generator.ratio[0]}/{derivation.generator.ratio[1]} &#215; {hoveredInfo.step} = {hoveredInfo.centsInOctave.toFixed(1)}&#162;
+                  </div>
+                )}
+                {hoveredInfo.step > 0 && (
+                  <>
+                    <div>
+                      Nearest {divisions}-TET: {etCents.toFixed(1)}&#162;
+                    </div>
+                    {isExact ? (
+                      <div className="text-green-600 font-semibold">Exact match</div>
+                    ) : (
+                      <div className={`font-semibold ${isSharp ? 'text-red-500' : 'text-blue-500'}`}>
+                        {Math.abs(dev).toFixed(1)}&#162; {isSharp ? 'sharp' : 'flat'} of ET
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="text-gray-400 pt-0.5">{hoveredInfo.frequency.toFixed(1)} Hz</div>
+              </div>
             </div>
-            <div className="text-gray-600">
-              <div>Ratio: {derivation.generator.ratio[0]}/{derivation.generator.ratio[1]} x{hoveredInfo.step}</div>
-              <div>JI: {hoveredInfo.centsInOctave.toFixed(1)}&#162;</div>
-              <div>ET: {(hoveredInfo.nearestETStep * centsPerStep).toFixed(1)}&#162;</div>
-              <div>Deviation: {hoveredInfo.centsDeviation >= 0 ? '+' : ''}{hoveredInfo.centsDeviation.toFixed(1)}&#162;</div>
-              <div>Note: <strong>{hoveredInfo.nearestNoteName}</strong></div>
-              <div>{hoveredInfo.frequency.toFixed(1)} Hz</div>
-            </div>
-          </div>
-        </foreignObject>
-      )}
+          </foreignObject>
+        );
+      })()}
     </svg>
   );
 }

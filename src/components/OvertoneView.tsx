@@ -246,15 +246,27 @@ export default function OvertoneView() {
 
       {/* Visualization */}
       {isDeriveMode ? (
-        <DerivationRing
-          fundamentalHz={fundHz}
-          pitchClass={overtoneRoot}
-          generator={derivationGenerator}
-          steps={derivationSteps}
-          divisions={derivationDivisions}
-          activeStep={derivationActiveStep}
-          onActiveStepChange={setDerivationActiveStep}
-        />
+        <>
+          <DerivationRing
+            fundamentalHz={fundHz}
+            pitchClass={overtoneRoot}
+            generator={derivationGenerator}
+            steps={derivationSteps}
+            divisions={derivationDivisions}
+            activeStep={derivationActiveStep}
+            onActiveStepChange={setDerivationActiveStep}
+          />
+          <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
+            Inner dots show pitches from stacking pure-ratio intervals.
+            The outer ring marks {derivationDivisions}-TET positions.
+            Arcs show how far each pitch misses its nearest ET step:
+            {' '}<span className="text-red-400">red = sharp</span>,
+            {' '}<span className="text-blue-400">blue = flat</span>.
+            The <span className="text-red-400">dashed line</span> shows
+            the comma gap — how far the chain misses closing the octave.
+            Hover a dot for details.
+          </p>
+        </>
       ) : (
         <OvertoneSpiral
           fundamentalHz={fundHz}
