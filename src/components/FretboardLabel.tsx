@@ -126,47 +126,51 @@ export default function FretboardLabel({
 
   // Display mode with click-to-edit and optional voicing arrows
   return (
-    <div className="text-center text-xl h-8 flex items-center justify-center gap-2 flex-wrap">
-      {hasMultipleVoicings && (
-        <button
-          onClick={handlePrevVoicing}
-          disabled={sequenceIdx === 0}
-          className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Previous voicing"
+    <div className="text-center flex flex-col items-center gap-0.5">
+      {/* Chord name row — always centered */}
+      <div className="text-xl flex items-center justify-center gap-1">
+        {hasMultipleVoicings ? (
+          <button
+            onClick={handlePrevVoicing}
+            disabled={sequenceIdx === 0}
+            className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Previous voicing"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        ) : <span className="w-[22px]" />}
+        <span
+          className="cursor-pointer hover:text-fret-blue transition-colors"
+          onClick={() => setEditing(true)}
+          title="Click to edit search"
         >
-          <ChevronLeft size={18} />
-        </button>
-      )}
-      <span
-        className="cursor-pointer hover:text-fret-blue transition-colors"
-        onClick={() => setEditing(true)}
-        title="Click to edit search"
-      >
-        {current.name} ({current.type})
-      </span>
-      {sequenceEnabled && sequenceIdx !== null && sequences[sequenceIdx] && (
-        <span className="text-gray-500 text-base">
-          {sequenceIdx + 1}/{sequences.length}
+          {current.name} ({current.type})
         </span>
-      )}
-      {hasMultipleVoicings && (
-        <button
-          onClick={handleNextVoicing}
-          disabled={sequenceIdx === sequences.length - 1}
-          className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Next voicing"
-        >
-          <ChevronRight size={18} />
-        </button>
-      )}
+        {hasMultipleVoicings ? (
+          <button
+            onClick={handleNextVoicing}
+            disabled={sequenceIdx === sequences.length - 1}
+            className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Next voicing"
+          >
+            <ChevronRight size={18} />
+          </button>
+        ) : <span className="w-[22px]" />}
+      </div>
+      {/* Voicing metadata row */}
       {isChordVoicing && (
-        <VoicingInfo
-          sequence={sequence}
-          tuning={tuning}
-          inversion={inversion}
-          rootPitchClass={current.root?.baseSemitones ?? 0}
-          stringCount={tuning.length}
-        />
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          {sequenceIdx !== null && (
+            <span className="text-xs">{sequenceIdx + 1}/{sequences.length}</span>
+          )}
+          <VoicingInfo
+            sequence={sequence}
+            tuning={tuning}
+            inversion={inversion}
+            rootPitchClass={current.root?.baseSemitones ?? 0}
+            stringCount={tuning.length}
+          />
+        </div>
       )}
     </div>
   );
