@@ -6,6 +6,7 @@ import Chord from '../lib/Chord';
 import getStrings from '../lib/getStrings';
 import { getSynth } from '../lib/synth';
 import { getArpeggiator } from '../lib/arpeggiator';
+import { getSampler } from '../lib/sampler';
 import { pluckMonochord } from '../lib/monochord';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { latchVoices } from './latchVoices';
@@ -58,6 +59,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
 
     killAllNotes: () => {
       getSynth().killAll();
+      getSampler().stopAll();
       getArpeggiator().clear();
       for (const voice of latchVoices.values()) voice.stop();
       latchVoices.clear();
