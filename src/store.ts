@@ -124,6 +124,10 @@ export const useStore = create<AppState>()(
             sampler.loadSample(i, slot.url).catch(console.error);
           }
         });
+        // Restore crossfade position
+        const cf = state.samplerCrossfade ?? 0.5;
+        master.getBus('synth').setCrossfadeGain(Math.cos(cf * Math.PI / 2));
+        master.getBus('sampler').setCrossfadeGain(Math.sin(cf * Math.PI / 2));
       },
     },
   ),

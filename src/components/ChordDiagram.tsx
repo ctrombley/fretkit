@@ -3,6 +3,7 @@ import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { stringStatuses, tabShorthand } from '../lib/voicingUtils';
+import { getPitchClassColor } from '../lib/noteColors';
 
 const STRING_SPACING = 20;
 const FRET_SPACING = 22;
@@ -128,7 +129,7 @@ export default function ChordDiagram({
           x2={stringX(stringCount - 1) + 1}
           y1={MARGIN_TOP}
           y2={MARGIN_TOP}
-          stroke="#000"
+          stroke="#6b7280"
           strokeWidth={NUT_WIDTH}
         />
       ) : (
@@ -164,7 +165,7 @@ export default function ChordDiagram({
           x2={stringX(i)}
           y1={MARGIN_TOP}
           y2={fretY(visibleFrets)}
-          stroke="#000"
+          stroke="#9ca3af"
           strokeWidth={1}
         />
       ))}
@@ -214,16 +215,22 @@ export default function ChordDiagram({
 
         if (status === 'open') {
           const openRoot = isNoteRoot(stringIdx, 0);
+          const openNote = new Note(tuning[stringIdx]!);
+          const color = getPitchClassColor(openNote.baseSemitones);
           return (
-            <circle
-              key={`status-${stringIdx}`}
-              cx={cx}
-              cy={INDICATOR_Y}
-              r={MARKER_RADIUS - 2}
-              fill="none"
-              stroke={openRoot ? '#99C432' : '#F73667'}
-              strokeWidth={2}
-            />
+            <g key={`status-${stringIdx}`}>
+              <circle
+                cx={cx}
+                cy={INDICATOR_Y}
+                r={MARKER_RADIUS - 2}
+                fill={openRoot ? color : 'none'}
+                stroke={color}
+                strokeWidth={2}
+              />
+              {openRoot && (
+                <circle cx={cx} cy={INDICATOR_Y} r={2.5} fill="white" pointerEvents="none" />
+              )}
+            </g>
           );
         }
 
@@ -237,15 +244,19 @@ export default function ChordDiagram({
             const fretNumber = displayStart + fretIdx;
             if (!isNoteLit(stringIdx, fretNumber)) return null;
             const isRoot = isNoteRoot(stringIdx, fretNumber);
+            const openNote = new Note(tuning[stringIdx]!);
+            const noteForFret = openNote.add(fretNumber);
+            const color = getPitchClassColor(noteForFret.baseSemitones);
+            const cy = fretY(fretIdx) + FRET_SPACING / 2;
+            const cx = stringX(stringIdx);
 
             return (
-              <circle
-                key={`note-${stringIdx}-${fretIdx}`}
-                cx={stringX(stringIdx)}
-                cy={fretY(fretIdx) + FRET_SPACING / 2}
-                r={MARKER_RADIUS}
-                fill={isRoot ? '#99C432' : '#F73667'}
-              />
+              <g key={`note-${stringIdx}-${fretIdx}`}>
+                <circle cx={cx} cy={cy} r={MARKER_RADIUS} fill={color} />
+                {isRoot && (
+                  <circle cx={cx} cy={cy} r={3} fill="white" pointerEvents="none" />
+                )}
+              </g>
             );
           })}
         </g>

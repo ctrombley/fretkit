@@ -14,6 +14,8 @@ interface ColtraneMandalaProps {
   divisions: SymmetricDivision;
   highlightedAxis: number | null;
   onHighlightAxis: (axis: number | null) => void;
+  activePc?: number | null;
+  bloomKey?: number;
 }
 
 const SIZE = 500;
@@ -57,6 +59,8 @@ export default function ColtraneMandala({
   divisions,
   highlightedAxis,
   onHighlightAxis,
+  activePc = null,
+  bloomKey = 0,
 }: ColtraneMandalaProps) {
   const [hoveredNote, setHoveredNote] = useState<number | null>(null);
   const [hoveredLine, setHoveredLine] = useState<[number, number] | null>(null);
@@ -185,6 +189,16 @@ export default function ColtraneMandala({
               onMouseEnter={() => setHoveredNote(pc)}
               onMouseLeave={() => setHoveredNote(null)}
             >
+              {pc === activePc && (
+                <circle
+                  key={bloomKey}
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={NODE_R}
+                  fill={NOTE_COLORS[pc]}
+                  className="string__marker-bloom"
+                />
+              )}
               <circle
                 cx={pos.x}
                 cy={pos.y}

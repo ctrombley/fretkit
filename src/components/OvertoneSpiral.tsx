@@ -17,6 +17,8 @@ interface OvertoneSpiralProps {
   count: number;
   showET: boolean;
   useET: boolean;
+  activeN?: number | null;
+  bloomKey?: number;
 }
 
 const SIZE = 500;
@@ -26,7 +28,7 @@ const BASE_R = 40;
 const GROWTH = 38;
 const BASE_NODE_R = 18;
 
-export default function OvertoneSpiral({ fundamentalHz, pitchClass, count, showET, useET }: OvertoneSpiralProps) {
+export default function OvertoneSpiral({ fundamentalHz, pitchClass, count, showET, useET, activeN = null, bloomKey = 0 }: OvertoneSpiralProps) {
   const [hoveredN, setHoveredN] = useState<number | null>(null);
   const playRef = useRef<{ stop: () => void } | null>(null);
 
@@ -120,6 +122,16 @@ export default function OvertoneSpiral({ fundamentalHz, pitchClass, count, showE
             onClick={() => handleClick(h)}
             className="cursor-pointer"
           >
+            {h.n === activeN && (
+              <circle
+                key={bloomKey}
+                cx={pos.x}
+                cy={pos.y}
+                r={r}
+                fill={color}
+                className="string__marker-bloom"
+              />
+            )}
             <circle
               cx={pos.x}
               cy={pos.y}

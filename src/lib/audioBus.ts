@@ -6,19 +6,22 @@ export class AudioBus {
   private readonly _input: GainNode;
   private readonly _volume: GainNode;
   private readonly _mute: GainNode;
+  private readonly _crossfade: GainNode;
   private readonly _analyser: AnalyserNode;
 
   constructor(ctx: AudioContext) {
     this._input = ctx.createGain();
     this._volume = ctx.createGain();
     this._mute = ctx.createGain();
+    this._crossfade = ctx.createGain();
     this._analyser = ctx.createAnalyser();
     this._analyser.fftSize = 256;
 
+    // input → volume → mute → crossfade → analyser (tap) → output
     this._input.connect(this._volume);
     this._volume.connect(this._mute);
-    // Tap the post-mute signal into the analyser (doesn't affect routing)
-    this._mute.connect(this._analyser);
+    this._mute.connect(this._crossfade);
+    this._crossfade.connect(this._analyser);
   }
 
   get input(): GainNode {
@@ -33,12 +36,16 @@ export class AudioBus {
     this._mute.gain.value = muted ? 0 : 1;
   }
 
+  setCrossfadeGain(v: number): void {
+    this._crossfade.gain.value = Math.max(0, Math.min(1, v));
+  }
+
   connect(dest: AudioNode): void {
-    this._mute.connect(dest);
+    this._crossfade.connect(dest);
   }
 
   disconnect(): void {
-    this._mute.disconnect();
+    this._crossfade.disconnect();
   }
 
   getRmsLevel(): number {

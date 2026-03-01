@@ -1,6 +1,6 @@
 # Kamal 2 deploy config — https://kamal-deploy.org
 service: fretkit
-image: registry.digitalocean.com/fretkit/fretkit
+image: trombs/fretkit
 
 servers:
   web:

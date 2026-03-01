@@ -16,6 +16,8 @@ interface ColtraneCircleProps {
   showCadences: boolean;
   highlightedAxis: number | null;
   onHighlightAxis: (axis: number | null) => void;
+  activePc?: number | null;
+  bloomKey?: number;
 }
 
 const SIZE = 500;
@@ -53,6 +55,8 @@ export default function ColtraneCircle({
   showCadences,
   highlightedAxis,
   onHighlightAxis,
+  activePc = null,
+  bloomKey = 0,
 }: ColtraneCircleProps) {
   const [hoveredNote, setHoveredNote] = useState<number | null>(null);
   const playRef = useRef<{ stop: () => void } | null>(null);
@@ -193,6 +197,16 @@ export default function ColtraneCircle({
             onMouseEnter={() => setHoveredNote(pc)}
             onMouseLeave={() => setHoveredNote(null)}
           >
+            {pc === activePc && (
+              <circle
+                key={bloomKey}
+                cx={pos.x}
+                cy={pos.y}
+                r={NODE_R}
+                fill={NOTE_COLORS[pc]}
+                className="string__marker-bloom"
+              />
+            )}
             <circle
               cx={pos.x}
               cy={pos.y}

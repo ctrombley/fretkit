@@ -12,24 +12,28 @@
 
 .fret__wire {
   fill: none;
-  stroke: #000;
+  stroke: #9ca3af;
+}
+
+.fret__wire--nut {
+  stroke: #6b7280;
 }
 
 .fret__marker > circle {
   r: 10;
-  fill: #ddd;
+  fill: #e5e7eb;
 }
 
 .label {
-  fill: #000;
-  stroke: #000;
+  fill: #6b7280;
+  stroke: #6b7280;
   stroke-width: 0;
   text-anchor: middle;
 }
 
 .string__line {
   fill: none;
-  stroke: #000;
+  stroke: #6b7280;
 }
 
 .string__overlay {
@@ -47,21 +51,7 @@
 }
 
 .string__marker-lit {
-  fill: #F73667;
-}
-
-.string__marker-lit.string__marker-nut {
-  fill: none;
-  stroke: #F73667;
-}
-
-.string__marker-root {
-  fill: #99C432;
-}
-
-.string__marker-root.string__marker-nut {
-  fill: none;
-  stroke: #99C432;
+  /* fill/stroke set via inline style from pitch class color */
 }
 
 @keyframes pulse {
@@ -141,4 +131,14 @@
 .synth-panel {
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
+}
+
+/* Toast slide-in */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.18s ease-out forwards;
 }

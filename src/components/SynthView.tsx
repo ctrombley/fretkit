@@ -63,7 +63,14 @@ export default function SynthView() {
   const lfo2Target = useStore(s => s.synthLfo2Target);
   const samplerMode = useStore(s => s.samplerMode);
   const setSamplerMode = useStore(s => s.setSamplerMode);
+  const crossfade = useStore(s => s.samplerCrossfade);
+  const setCrossfade = useStore(s => s.setSamplerCrossfade);
+  const buses = useStore(s => s.buses);
+  const setBusMuted = useStore(s => s.setBusMuted);
   const bottomPadding = useBottomPadding();
+
+  const synthMuted = buses['synth']?.muted ?? false;
+  const samplerMuted = buses['sampler']?.muted ?? false;
 
   const handleLfoDrop = (param: LfoTargetParam, lfoNum: 1 | 2) => {
     setLfoTarget(lfoNum, param);
@@ -79,13 +86,50 @@ export default function SynthView() {
           {samplerMode === 'synth' && <SynthPresetSelector />}
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex gap-1 mb-6">
+        {/* Tab switcher + crossfader */}
+        <div className="flex gap-1 mb-3">
           <button onClick={() => setSamplerMode('synth')} className={tabClass(samplerMode === 'synth')}>
             Synth
           </button>
           <button onClick={() => setSamplerMode('sampler')} className={tabClass(samplerMode === 'sampler')}>
             Sampler
+          </button>
+        </div>
+
+        {/* Crossfader */}
+        <div className="flex items-center gap-2 mb-6 select-none">
+          <button
+            onClick={() => setBusMuted('synth', !synthMuted)}
+            title={synthMuted ? 'Unmute synth' : 'Mute synth'}
+            className={`text-[9px] uppercase tracking-wider w-6 h-6 rounded flex items-center justify-center transition-colors flex-shrink-0 ${
+              synthMuted ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            M
+          </button>
+          <span className="text-[9px] text-gray-500 w-8 text-right flex-shrink-0">SYN</span>
+          <div className="relative flex-1">
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.001}
+              value={crossfade}
+              onChange={e => setCrossfade(parseFloat(e.target.value))}
+              className="w-full h-1 accent-gray-400"
+            />
+            {/* center tick */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-px -translate-y-1/2 w-px h-3 bg-gray-700 pointer-events-none" />
+          </div>
+          <span className="text-[9px] text-gray-500 w-8 flex-shrink-0">SMP</span>
+          <button
+            onClick={() => setBusMuted('sampler', !samplerMuted)}
+            title={samplerMuted ? 'Unmute sampler' : 'Mute sampler'}
+            className={`text-[9px] uppercase tracking-wider w-6 h-6 rounded flex items-center justify-center transition-colors flex-shrink-0 ${
+              samplerMuted ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            M
           </button>
         </div>
 

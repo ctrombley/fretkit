@@ -288,9 +288,11 @@ export interface AppState {
   samplerPresets: SamplerPreset[];
   samplerActivePresetIndex: number | null;
   samplerAutoSave: { slots: (SamplerSlotDef | null)[]; keyMap: (number | null)[]; params: SamplerParams[]; rootNotes: (number | null)[]; timestamp: number } | null;
+  samplerCrossfade: number;
 
   // Sampler actions
   setSamplerMode: (mode: 'synth' | 'sampler') => void;
+  setSamplerCrossfade: (v: number) => void;
   setSamplerSlot: (idx: number, slot: SamplerSlotDef | null) => void;
   setSamplerSlotUrl: (idx: number, url: string) => void;
   setSamplerSlotFile: (idx: number, file: File) => void;

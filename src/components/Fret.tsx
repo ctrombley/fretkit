@@ -69,7 +69,7 @@ export default function Fret({
         />
       )}
       <line
-        className="fret__wire"
+        className={`fret__wire${isFirst ? ' fret__wire--nut' : ''}`}
         x1={xOffset}
         x2={xOffset}
         y1={fretboardMargin}

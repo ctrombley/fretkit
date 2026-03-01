@@ -2,6 +2,7 @@ import type { AppState, StoreSet } from './types';
 import type { SamplerParams } from '../lib/sampler';
 import { getSampler, DEFAULT_SAMPLER_PARAMS } from '../lib/sampler';
 import type { SamplerSlotDef, SamplerPreset } from '../lib/samplerPresets';
+import { getMasterBus } from '../lib/masterBus';
 
 export type { SamplerSlotDef, SamplerPreset };
 
@@ -15,7 +16,15 @@ export const SAMPLER_PERSISTED_KEYS: (keyof AppState)[] = [
   'samplerPresets',
   'samplerActivePresetIndex',
   'samplerAutoSave',
+  'samplerCrossfade',
 ];
+
+// Equal-power crossfade: 0 = full synth, 1 = full sampler
+function applyCrossfade(v: number): void {
+  const master = getMasterBus();
+  master.getBus('synth').setCrossfadeGain(Math.cos(v * Math.PI / 2));
+  master.getBus('sampler').setCrossfadeGain(Math.sin(v * Math.PI / 2));
+}
 
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -30,8 +39,14 @@ export function createSamplerSlice(set: StoreSet) {
     samplerPresets: [] as SamplerPreset[],
     samplerActivePresetIndex: null as number | null,
     samplerAutoSave: null as { slots: (SamplerSlotDef | null)[]; keyMap: (number | null)[]; params: SamplerParams[]; rootNotes: (number | null)[]; timestamp: number } | null,
+    samplerCrossfade: 0.5,
 
     setSamplerMode: (mode: 'synth' | 'sampler') => set({ samplerMode: mode }),
+
+    setSamplerCrossfade: (v: number) => {
+      set({ samplerCrossfade: v });
+      applyCrossfade(v);
+    },
 
     setSamplerSlot: (idx: number, slot: SamplerSlotDef | null) =>
       set(s => {
