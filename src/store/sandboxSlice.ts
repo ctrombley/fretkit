@@ -6,6 +6,7 @@ import Chord from '../lib/Chord';
 import getStrings from '../lib/getStrings';
 import { getSynth } from '../lib/synth';
 import { getArpeggiator } from '../lib/arpeggiator';
+import { pluckMonochord } from '../lib/monochord';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { latchVoices } from './latchVoices';
 import { latchFrequencies } from './latchFrequencies';
@@ -26,9 +27,8 @@ const defaultFretboard: Omit<FretboardState, 'id'> = {
   tuning: tunings['guitar']!['standard']!,
 };
 
-let nextId = 1;
-
 export const SANDBOX_PERSISTED_KEYS: (keyof AppState)[] = [
+  'fretboards',
   'bloomAllOctaves',
   'sandboxLatch',
 ];
@@ -83,7 +83,12 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         if (state.arpEnabled) {
           getArpeggiator().addNote(frequency, semitones);
         } else {
-          latchVoices.set(semitones, getSynth().play(frequency));
+          if (state.view.name === 'monochord') {
+            const stop = pluckMonochord(frequency);
+            latchVoices.set(semitones, { stop });
+          } else {
+            latchVoices.set(semitones, getSynth().play(frequency));
+          }
           latchFrequencies.set(semitones, frequency);
         }
         set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
@@ -93,7 +98,12 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     activateSandboxNote: (semitones: number, frequency: number) => {
       const state = get();
       if (state.sandboxActiveNotes.includes(semitones)) return;
-      latchVoices.set(semitones, getSynth().play(frequency));
+      if (state.view.name === 'monochord') {
+        const stop = pluckMonochord(frequency);
+        latchVoices.set(semitones, { stop });
+      } else {
+        latchVoices.set(semitones, getSynth().play(frequency));
+      }
       latchFrequencies.set(semitones, frequency);
       set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
     },
@@ -149,7 +159,8 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     },
 
     createFretboard: () => {
-      const id = nextId++;
+      const existing = get().fretboards;
+      const id = Math.max(0, ...Object.values(existing).map(fb => fb.id)) + 1;
       set((state: AppState) => ({
         fretboards: {
           ...state.fretboards,

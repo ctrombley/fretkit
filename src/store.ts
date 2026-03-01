@@ -8,10 +8,11 @@ import { createTransportSlice, TRANSPORT_PERSISTED_KEYS } from './store/transpor
 import { createSynthSlice, SYNTH_PERSISTED_KEYS } from './store/synthSlice';
 import { createSynthPresetsSlice, SYNTH_PRESETS_PERSISTED_KEYS } from './store/synthPresetsSlice';
 import { createViewsSlice } from './store/viewsSlice';
-import { createNavigationSlice } from './store/navigationSlice';
+import { createNavigationSlice, NAVIGATION_PERSISTED_KEYS } from './store/navigationSlice';
 import { createSongsSlice, SONGS_PERSISTED_KEYS } from './store/songsSlice';
 import { createBusSlice, BUS_PERSISTED_KEYS } from './store/busSlice';
 import { createMidiSlice, MIDI_PERSISTED_KEYS } from './store/midiSlice';
+import { createMonochordScalesSlice, MONOCHORD_SCALES_PERSISTED_KEYS } from './store/monochordScalesSlice';
 import { getMasterBus } from './lib/masterBus';
 
 export type { AppState, FretboardState, Settings } from './store/types';
@@ -25,6 +26,8 @@ const ALL_PERSISTED_KEYS: (keyof AppState)[] = [
   ...SONGS_PERSISTED_KEYS,
   ...BUS_PERSISTED_KEYS,
   ...MIDI_PERSISTED_KEYS,
+  ...MONOCHORD_SCALES_PERSISTED_KEYS,
+  ...NAVIGATION_PERSISTED_KEYS,
 ];
 
 export const useStore = create<AppState>()(
@@ -40,16 +43,27 @@ export const useStore = create<AppState>()(
       ...createSongsSlice(set, get),
       ...createBusSlice(set),
       ...createMidiSlice(set),
+      ...createMonochordScalesSlice(set),
     }),
     {
       name: 'fretkit-storage',
-      version: 2,
+      version: 5,
       migrate: (persisted, version) => {
         // v1 → v2: add bus/midi defaults to existing state
-        if (version < 2) {
-          return { ...(persisted as object) };
+        // v2 → v3: add monochord scales defaults
+        // v3 → v4: add fretboards + view persistence
+        // v4 → v5: ensure fretboard entries always have sequences/litNotes/current
+        //          (v4 could store them without those fields if saved before the fix)
+        const state = { ...(persisted as Record<string, unknown>) };
+        if (version < 5 && state.fretboards) {
+          const boards = state.fretboards as Record<string, Record<string, unknown>>;
+          const fixed: Record<string, object> = {};
+          for (const [id, fb] of Object.entries(boards)) {
+            fixed[id] = { litNotes: [], current: null, sequences: [], ...fb };
+          }
+          state.fretboards = fixed;
         }
-        return persisted as AppState;
+        return state as unknown as AppState;
       },
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,6 +71,30 @@ export const useStore = create<AppState>()(
         for (const key of ALL_PERSISTED_KEYS) {
           partial[key] = state[key];
         }
+        // Strip non-serializable Note/Sequence instances from fretboards.
+        // Only store plain-data fields; litNotes/current/sequences are
+        // regenerated from searchStr on rehydration.
+        const safeBoards: Record<string, object> = {};
+        for (const [fbId, fb] of Object.entries(state.fretboards)) {
+          safeBoards[fbId] = {
+            id: fb.id,
+            fretCount: fb.fretCount,
+            inversion: fb.inversion,
+            // litNotes/current/sequences hold Note/Sequence class instances that
+            // don't survive JSON round-trip; store safe defaults and regenerate
+            // from searchStr in onRehydrateStorage instead.
+            litNotes: [],
+            current: null,
+            sequences: [],
+            position: fb.position,
+            searchStr: fb.searchStr,
+            sequenceEnabled: fb.sequenceEnabled,
+            sequenceIdx: fb.sequenceIdx,
+            startingFret: fb.startingFret,
+            tuning: fb.tuning,
+          };
+        }
+        partial['fretboards'] = safeBoards;
         return partial;
       },
       onRehydrateStorage: () => (state) => {
@@ -68,6 +106,12 @@ export const useStore = create<AppState>()(
         }
         master.setMasterVolume(state.masterBusVolume);
         master.setMasterMuted(state.masterBusMuted);
+        // Re-derive litNotes/sequences/current from persisted searchStr
+        for (const [fbId, fb] of Object.entries(state.fretboards)) {
+          if (fb.searchStr) {
+            state.search(fbId, fb.searchStr);
+          }
+        }
       },
     },
   ),

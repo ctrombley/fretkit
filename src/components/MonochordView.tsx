@@ -1,7 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Star } from 'lucide-react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import MonochordString, { type MonochordStringHandle } from './MonochordString';
+import MonochordScaleSelector from './MonochordScaleSelector';
 import ConchSpiral from './ConchSpiral';
 import {
   CANONICAL_RATIOS,
@@ -13,6 +15,12 @@ import {
   bridgePosForBeat,
   type FundamentalNote,
 } from '../lib/monochord';
+import {
+  FACTORY_SCALE_PRESETS,
+  computeScalePins,
+  posToEntry,
+  type ScalePin,
+} from '../lib/monochordScales';
 
 // ── Module-level drone state (survives navigation) ────────────────────────
 const _droneState: { leftStop: (() => void) | null; rightStop: (() => void) | null } = {
@@ -82,6 +90,30 @@ export default function MonochordView() {
     FUNDAMENTAL_NOTES.find(n => n.name === fundamentalName) ?? DEFAULT_FUNDAMENTAL;
 
   const [beatInput, setBeatInput] = useState('');
+  const [leftMuted,  setLeftMuted]  = useState(false);
+  const [rightMuted, setRightMuted] = useState(false);
+
+  // Scale state from store
+  const scaleId         = useStore(s => s.monochordScaleId);
+  const customEntries   = useStore(s => s.monochordCustomEntries);
+  const userPresets     = useStore(s => s.monochordUserPresets);
+  const addCustomEntry    = useStore(s => s.addMonochordCustomEntry);
+  const removeCustomEntry = useStore(s => s.removeMonochordCustomEntry);
+
+  // Compute active scale entries
+  const activeEntries = useMemo(() => {
+    if (scaleId === 'custom') return customEntries;
+    const factory = FACTORY_SCALE_PRESETS.find(p => p.id === scaleId);
+    if (factory) return factory.entries;
+    const user = userPresets.find(p => p.id === scaleId);
+    return user?.entries ?? [];
+  }, [scaleId, customEntries, userPresets]);
+
+  // Recompute pins whenever entries or fundamental changes
+  const scalePins: ScalePin[] = useMemo(
+    () => computeScalePins(activeEntries, fundamental.pitchClass),
+    [activeEntries, fundamental.pitchClass],
+  );
 
   const stringRef = useRef<MonochordStringHandle>(null);
   const plucksRef = useRef<{ stop: () => void }[]>([]);
@@ -99,13 +131,11 @@ export default function MonochordView() {
     stopAllPlucks();
     const lp = binaural ? -1 : 0;
     const rp = binaural ?  1 : 0;
-    if (side === 'left'  || side === 'both') plucksRef.current.push({ stop: pluckMonochord(info.left.hz,  undefined, lp) });
-    if (side === 'right' || side === 'both') plucksRef.current.push({ stop: pluckMonochord(info.right.hz, undefined, rp) });
-  }, [info.left.hz, info.right.hz, binaural]);
+    if ((side === 'left'  || side === 'both') && !leftMuted)  plucksRef.current.push({ stop: pluckMonochord(info.left.hz,  undefined, lp) });
+    if ((side === 'right' || side === 'both') && !rightMuted) plucksRef.current.push({ stop: pluckMonochord(info.right.hz, undefined, rp) });
+  }, [info.left.hz, info.right.hz, binaural, leftMuted, rightMuted]);
 
   function pluckBoth()  { stringRef.current?.pluck('both');  handlePluck('both');  }
-  function pluckLeft()  { stringRef.current?.pluck('left');  handlePluck('left');  }
-  function pluckRight() { stringRef.current?.pluck('right'); handlePluck('right'); }
 
   // ── Drone — module-level state survives navigation ─────────────────────
 
@@ -114,13 +144,13 @@ export default function MonochordView() {
       _stopDrones();
       const lp = binaural ? -1 : 0;
       const rp = binaural ?  1 : 0;
-      _droneState.leftStop  = startDrone(info.left.hz,  lp);
-      _droneState.rightStop = startDrone(info.right.hz, rp);
+      if (!leftMuted)  _droneState.leftStop  = startDrone(info.left.hz,  lp);
+      if (!rightMuted) _droneState.rightStop = startDrone(info.right.hz, rp);
     } else {
       _stopDrones();
     }
     // No cleanup — drone keeps running when component navigates away
-  }, [droneOn, info.left.hz, info.right.hz, binaural]);
+  }, [droneOn, info.left.hz, info.right.hz, binaural, leftMuted, rightMuted]);
 
   // ── Snap to canonical ratio ────────────────────────────────────────────
 
@@ -132,8 +162,8 @@ export default function MonochordView() {
       const lp = binaural ? -1 : 0;
       const rp = binaural ?  1 : 0;
       stopAllPlucks();
-      plucksRef.current.push({ stop: pluckMonochord(i.left.hz,  undefined, lp) });
-      plucksRef.current.push({ stop: pluckMonochord(i.right.hz, undefined, rp) });
+      if (!leftMuted)  plucksRef.current.push({ stop: pluckMonochord(i.left.hz,  undefined, lp) });
+      if (!rightMuted) plucksRef.current.push({ stop: pluckMonochord(i.right.hz, undefined, rp) });
     }, 30);
   }
 
@@ -141,6 +171,16 @@ export default function MonochordView() {
     stopAllPlucks();
     if (droneOn) { _stopDrones(); setDroneOn(false); }
     setFundamentalName(fn.name);
+  }
+
+  // ── Pin current position to custom scale ──────────────────────────────
+
+  function saveTone(pos: number) {
+    addCustomEntry(posToEntry(pos));
+  }
+
+  function handleScalePinSnap(pin: ScalePin) {
+    snapTo(pin.pos);
   }
 
   // ── Layout ─────────────────────────────────────────────────────────────
@@ -157,23 +197,29 @@ export default function MonochordView() {
           </p>
         </div>
 
-        {/* Fundamental selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-gray-500">Fundamental</span>
-          <select
-            value={fundamental.name}
-            onChange={e => {
-              const fn = FUNDAMENTAL_NOTES.find(n => n.name === e.target.value);
-              if (fn) changeFundamental(fn);
-            }}
-            className="text-sm rounded px-2 py-1 font-mono border border-gray-200 bg-white text-dark"
-          >
-            {FUNDAMENTAL_NOTES.map(fn => (
-              <option key={fn.name} value={fn.name}>
-                {fn.name}  ({fn.hz.toFixed(1)} Hz)
-              </option>
-            ))}
-          </select>
+        {/* Fundamental + Scale selectors */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-gray-500">Fundamental</span>
+            <select
+              value={fundamental.name}
+              onChange={e => {
+                const fn = FUNDAMENTAL_NOTES.find(n => n.name === e.target.value);
+                if (fn) changeFundamental(fn);
+              }}
+              className="text-sm rounded px-2 py-1 font-mono border border-gray-200 bg-white text-dark"
+            >
+              {FUNDAMENTAL_NOTES.map(fn => (
+                <option key={fn.name} value={fn.name}>
+                  {fn.name}  ({fn.hz.toFixed(1)} Hz)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-gray-500">Scale</span>
+            <MonochordScaleSelector />
+          </div>
         </div>
       </div>
 
@@ -185,23 +231,35 @@ export default function MonochordView() {
           onBridgeChange={setBridgePos}
           leftColor={info.left.color}
           rightColor={info.right.color}
+          fundPitchClass={fundamental.pitchClass}
+          scalePins={scalePins}
           onPluck={handlePluck}
           onMarkerSnap={snapTo}
+          onSaveTone={saveTone}
+          onScalePinSnap={handleScalePinSnap}
         />
       </div>
 
-      {/* ── Pluck controls ──────────────────────────────────────────────── */}
+      {/* ── Pluck / mute controls ───────────────────────────────────────── */}
       <div className="flex items-center justify-center gap-2 mt-3 px-6">
+        {/* Left mute toggle */}
         <button
-          onClick={pluckLeft}
-          className="px-3 py-1.5 rounded text-xs font-mono transition-colors border"
-          style={{
+          onClick={() => setLeftMuted(m => !m)}
+          title={leftMuted ? 'Unmute left side' : 'Mute left side'}
+          className="px-3 py-1.5 rounded text-xs font-mono transition-all border"
+          style={leftMuted ? {
+            background: 'transparent',
+            color: '#9ca3af',
+            borderColor: '#d1d5db',
+            textDecoration: 'line-through',
+            opacity: 0.55,
+          } : {
             background: `${info.left.color}18`,
             color: info.left.color,
             borderColor: `${info.left.color}50`,
           }}
         >
-          ◂ Left  ({info.left.noteName})
+          {leftMuted ? '⊘' : '◂'} Left  ({info.left.noteName})
         </button>
         <button
           onClick={pluckBoth}
@@ -209,16 +267,24 @@ export default function MonochordView() {
         >
           Both
         </button>
+        {/* Right mute toggle */}
         <button
-          onClick={pluckRight}
-          className="px-3 py-1.5 rounded text-xs font-mono transition-colors border"
-          style={{
+          onClick={() => setRightMuted(m => !m)}
+          title={rightMuted ? 'Unmute right side' : 'Mute right side'}
+          className="px-3 py-1.5 rounded text-xs font-mono transition-all border"
+          style={rightMuted ? {
+            background: 'transparent',
+            color: '#9ca3af',
+            borderColor: '#d1d5db',
+            textDecoration: 'line-through',
+            opacity: 0.55,
+          } : {
             background: `${info.right.color}18`,
             color: info.right.color,
             borderColor: `${info.right.color}50`,
           }}
         >
-          Right ▸  ({info.right.noteName})
+          Right ({info.right.noteName}) {rightMuted ? '⊘' : '▸'}
         </button>
         <button
           onClick={() => setDroneOn(!droneOn)}
@@ -240,7 +306,56 @@ export default function MonochordView() {
         >
           {binaural ? '◉ Binaural' : '○ Binaural'}
         </button>
+        <button
+          onClick={() => saveTone(bridgePos)}
+          title="Favourite this position (adds to custom scale; or right-click the string)"
+          className={`ml-1 p-1.5 rounded transition-colors ${
+            scaleId === 'custom' && customEntries.some(e => Math.abs(e.pos - bridgePos) < 0.002)
+              ? 'text-amber-500 hover:text-amber-600'
+              : 'text-gray-400 hover:text-amber-500'
+          }`}
+        >
+          <Star
+            size={15}
+            fill={
+              scaleId === 'custom' && customEntries.some(e => Math.abs(e.pos - bridgePos) < 0.002)
+                ? 'currentColor' : 'none'
+            }
+          />
+        </button>
       </div>
+
+      {/* ── Scale pin strip — shows active scale's pins as clickable chips ── */}
+      {scalePins.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2 px-6">
+          {scalePins.map((pin, i) => (
+            <button
+              key={`${pin.pos.toFixed(7)}-${i}`}
+              onClick={() => handleScalePinSnap(pin)}
+              title={pin.ratio}
+              className="flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full text-xs font-mono border transition-all hover:opacity-80 active:scale-95"
+              style={{
+                color:       pin.color,
+                borderColor: `${pin.color}55`,
+                background:  `${pin.color}12`,
+              }}
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: pin.color }}
+              />
+              {pin.noteName}
+              <span className="opacity-40 text-[9px] ml-0.5">{pin.ratio}</span>
+              {scaleId === 'custom' && (
+                <span
+                  onClick={e => { e.stopPropagation(); removeCustomEntry(pin.pos); }}
+                  className="ml-0.5 opacity-40 hover:opacity-90 leading-none cursor-pointer select-none"
+                >×</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Binaural beat panel ─────────────────────────────────────────── */}
       {binaural && (
@@ -439,8 +554,9 @@ export default function MonochordView() {
       {/* ── Footer note ────────────────────────────────────────────────── */}
       <div className="mt-8 pb-4 px-6 text-center">
         <p className="text-xs font-mono text-gray-300" style={{ lineHeight: 1.8 }}>
-          Drag the bridge · Click a marker to snap to it · Click a segment to pluck ·
-          φ marks the irrational golden ratio
+          Drag the bridge · Click a marker to snap · Click a segment to pluck ·
+          Scroll to zoom · Drag or Shift+scroll to pan · ← → to navigate when zoomed ·
+          ⊕ Pin / right-click to add to custom scale · φ = golden ratio
         </p>
       </div>
     </div>

@@ -32,13 +32,17 @@ function toStoreKey(paramKey: string): string {
   return `synth${paramKey.charAt(0).toUpperCase()}${paramKey.slice(1)}`;
 }
 
-/** Convert SynthParams into a partial store state with synth-prefixed keys. */
+/** Convert SynthParams into a partial store state with synth-prefixed keys.
+ *  Skips keys whose value is undefined so that stale persisted snapshots/presets
+ *  (saved before a param was added) don't overwrite the store's current defaults. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function synthParamsToStoreState(params: SynthParams): Record<string, any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result: Record<string, any> = {};
   for (const key of SYNTH_PARAM_KEYS) {
-    result[toStoreKey(key)] = params[key];
+    if (params[key] !== undefined) {
+      result[toStoreKey(key)] = params[key];
+    }
   }
   return result;
 }

@@ -3,6 +3,8 @@ import { getSynth } from '../lib/synth';
 import { synthParamsToStoreState, gatherSynthParams } from '../lib/synthUtils';
 import type { AppState, StoreSet, StoreGet } from './types';
 
+export const NAVIGATION_PERSISTED_KEYS: (keyof AppState)[] = ['view'];
+
 const SYNTH_BUS_MAP: Partial<Record<string, string>> = {
   sandbox: 'sandbox',
   songList: 'songs',

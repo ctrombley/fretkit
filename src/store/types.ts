@@ -8,6 +8,7 @@ import type { SynthPreset } from '../lib/synthPresets';
 import type { MetronomeTimbre } from '../lib/metronome';
 import type { ArpPattern } from '../lib/arpeggiator';
 import type { MidiChannel, MidiBusConfig } from '../lib/midi';
+import type { ScaleEntry, UserScalePreset } from '../lib/monochordScales';
 
 export interface FretboardState {
   id: number;
@@ -207,6 +208,17 @@ export interface AppState {
   setMonochordBinaural: (on: boolean) => void;
   setMonochordFundamentalName: (name: string) => void;
   setMonochordBridgePos: (pos: number) => void;
+
+  // Monochord scales
+  monochordScaleId: string;
+  monochordCustomEntries: ScaleEntry[];
+  monochordUserPresets: UserScalePreset[];
+  setMonochordScaleId: (id: string) => void;
+  addMonochordCustomEntry: (entry: ScaleEntry) => void;
+  removeMonochordCustomEntry: (pos: number) => void;
+  clearMonochordCustomEntries: () => void;
+  saveMonochordUserPreset: (name: string, entries: ScaleEntry[]) => void;
+  deleteMonochordUserPreset: (id: string) => void;
 
   // Metronome actions
   setMetronomeVolume: (volume: number) => void;
