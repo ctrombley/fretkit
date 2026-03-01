@@ -12,6 +12,7 @@ import MonochordView from './MonochordView';
 import KeyboardPanel from './KeyboardPanel';
 import TransportBar from './TransportBar';
 import KeybindingsModal from './KeybindingsModal';
+import ToastContainer from './ToastContainer';
 
 export default function App() {
   const view = useStore(s => s.view);
@@ -28,11 +29,9 @@ export default function App() {
       }
 
       if (e.key === 'p') {
-        const v = useStore.getState().view;
-        if (v.name === 'overtones' || v.name === 'coltrane') {
-          const s = useStore.getState();
-          s.setSeriesPlaying(!s.seriesPlaying);
-        }
+        const s = useStore.getState();
+        if (s.view.name === 'coltrane') s.setColtraneSeriesPlaying(!s.coltraneSeriesPlaying);
+        if (s.view.name === 'overtones') s.setOvertoneSeriesPlaying(!s.overtoneSeriesPlaying);
       }
 
       if (e.key === 'Escape') {
@@ -40,8 +39,10 @@ export default function App() {
           setShowKeybindings(false);
           return;
         }
-        useStore.getState().killAllNotes();
-        useStore.getState().setSeriesPlaying(false);
+        const s = useStore.getState();
+        s.killAllNotes();
+        s.setColtraneSeriesPlaying(false);
+        s.setOvertoneSeriesPlaying(false);
       }
     };
 
@@ -65,6 +66,7 @@ export default function App() {
       {showKeybindings && (
         <KeybindingsModal onClose={() => setShowKeybindings(false)} />
       )}
+      <ToastContainer />
     </div>
   );
 }

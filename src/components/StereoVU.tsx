@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { getSynth } from '../lib/synth';
+import { getMasterBus } from '../lib/masterBus';
 
-export default function StereoVU() {
+interface StereoVUProps {
+  onClick?: () => void;
+}
+
+export default function StereoVU({ onClick }: StereoVUProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
@@ -19,7 +23,7 @@ export default function StereoVU() {
     const barH = Math.floor((H - (bars - 1)) / bars);
 
     const draw = () => {
-      const { left, right } = getSynth().getStereoLevels();
+      const { left, right } = getMasterBus().getStereoLevels();
       ctx.clearRect(0, 0, W, H);
 
       for (const [ch, level] of [[0, left], [1, right]] as [number, number][]) {
@@ -40,5 +44,14 @@ export default function StereoVU() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  return <canvas ref={canvasRef} width={14} height={19} className="flex-shrink-0" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={14}
+      height={19}
+      className={`flex-shrink-0 ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+      title={onClick ? 'Open mixer' : undefined}
+    />
+  );
 }

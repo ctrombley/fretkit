@@ -1,4 +1,4 @@
-import { getSynth } from './synth';
+import { getMasterBus } from './masterBus';
 
 export type MetronomeTimbre = 'click' | 'wood' | 'beep' | 'cowbell';
 
@@ -41,7 +41,7 @@ export class MetronomeEngine {
   onArpTick: ((time: number) => void) | null = null;
 
   private getCtx(): AudioContext {
-    return getSynth().getAudioContext();
+    return getMasterBus().getAudioContext();
   }
 
   start(): void {
@@ -144,7 +144,7 @@ export class MetronomeEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, time + config.decay);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(getMasterBus().getBus('metronome').input);
 
     osc.start(time);
     osc.stop(time + config.decay + 0.01);

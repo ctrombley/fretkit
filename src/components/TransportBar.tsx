@@ -1,5 +1,5 @@
-import { useCallback, useRef } from 'react';
-import { Play, Square, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { Play, Square, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { useStore } from '../store';
 import { lfoFor } from '../lib/synthUtils';
 import type { LfoTargetParam } from '../lib/synth';
@@ -9,6 +9,7 @@ import BeatIndicator from './BeatIndicator';
 import SubdivisionSelector from './SubdivisionSelector';
 import MetronomeControls from './MetronomeControls';
 import TransportMixer from './TransportMixer';
+import MixerPanel from './MixerPanel';
 
 const TIME_SIGS: [number, number][] = [
   [4, 4],
@@ -20,6 +21,7 @@ const TIME_SIGS: [number, number][] = [
 ];
 
 export default function TransportBar() {
+  const [showMixer, setShowMixer] = useState(false);
   const playing = useStore(s => s.transportPlaying);
   const bpm = useStore(s => s.transportBpm);
   const beatsPerMeasure = useStore(s => s.transportBeatsPerMeasure);
@@ -166,7 +168,21 @@ export default function TransportBar() {
 
         <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
-        <TransportMixer />
+        <TransportMixer onOpenMixer={() => setShowMixer(true)} />
+
+        {/* Mixer button */}
+        <button
+          onClick={() => setShowMixer(v => !v)}
+          className={`p-1 rounded transition-colors ${
+            showMixer
+              ? 'text-magenta bg-magenta/10'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+          aria-label="Toggle mixer"
+          title="Mixer"
+        >
+          <SlidersHorizontal size={14} />
+        </button>
 
         {/* Collapse toggle */}
         <button
@@ -177,6 +193,8 @@ export default function TransportBar() {
           <ChevronDown size={14} />
         </button>
       </div>
+
+      <MixerPanel open={showMixer} onClose={() => setShowMixer(false)} />
     </div>
   );
 }

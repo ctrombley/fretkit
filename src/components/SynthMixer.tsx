@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
-import { getSynth } from '../lib/synth';
+import { getMasterBus } from '../lib/masterBus';
 import SynthKnob from './SynthKnob';
 import type { LfoTargetParam } from '../lib/synth';
 import { lfoFor, formatPan } from '../lib/synthUtils';
@@ -27,7 +27,7 @@ function VUMeter({ visible }: { visible: boolean }) {
     if (!visible) return;
 
     const tick = () => {
-      const data = getSynth().getAnalyserData();
+      const data = getMasterBus().getAnalyserData();
       let sum = 0;
       for (let i = 0; i < data.length; i++) {
         const norm = data[i]! / 255;

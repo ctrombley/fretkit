@@ -1,3 +1,5 @@
+import { getMasterBus } from './masterBus';
+
 export type OscWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
 export type LfoWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
 export type LfoTargetParam = keyof SynthParams | 'bpm' | null;
@@ -102,14 +104,6 @@ interface LfoState {
   baseValues: Map<string, number>;
 }
 
-function rms(buf: Uint8Array): number {
-  let sum = 0;
-  for (let i = 0; i < buf.length; i++) {
-    const norm = buf[i]! / 255;
-    sum += norm * norm;
-  }
-  return Math.min(1, Math.sqrt(sum / buf.length) * 2.5);
-}
 
 class SynthEngine {
   private ctx: AudioContext;
@@ -126,10 +120,7 @@ class SynthEngine {
   private delayPanL: StereoPannerNode;
   private delayPanR: StereoPannerNode;
   private masterGain: GainNode;
-  private analyser: AnalyserNode;
-  private splitter: ChannelSplitterNode;
-  private analyserL: AnalyserNode;
-  private analyserR: AnalyserNode;
+  private currentBusId = 'sandbox';
   params: SynthParams;
   onBpmModulation: ((bpm: number) => void) | null = null;
   private lfo1State: LfoState = { phase: 0, baseValues: new Map() };
@@ -138,7 +129,7 @@ class SynthEngine {
   private activeVoices: Set<{ stop: () => void }> = new Set();
 
   constructor() {
-    this.ctx = new AudioContext();
+    this.ctx = getMasterBus().getAudioContext();
     this.params = { ...DEFAULT_PARAMS };
 
     this.hp = this.ctx.createBiquadFilter();
@@ -180,9 +171,6 @@ class SynthEngine {
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.params.masterVolume;
 
-    this.analyser = this.ctx.createAnalyser();
-    this.analyser.fftSize = 256;
-
     this.filter.connect(this.panner);
     this.panner.connect(this.dryGain);
     this.dryGain.connect(this.masterGain);
@@ -194,17 +182,7 @@ class SynthEngine {
     this.panner.connect(this.delaySend);
     this.wireDelay(this.params.delayPingPong);
 
-    this.masterGain.connect(this.analyser);
-    this.analyser.connect(this.ctx.destination);
-
-    this.splitter = this.ctx.createChannelSplitter(2);
-    this.analyserL = this.ctx.createAnalyser();
-    this.analyserL.fftSize = 256;
-    this.analyserR = this.ctx.createAnalyser();
-    this.analyserR.fftSize = 256;
-    this.masterGain.connect(this.splitter);
-    this.splitter.connect(this.analyserL, 0);
-    this.splitter.connect(this.analyserR, 1);
+    this.masterGain.connect(getMasterBus().getBus('sandbox').input);
 
     this.startLfoLoop();
   }
@@ -519,24 +497,11 @@ class SynthEngine {
     }
   }
 
-  getStereoLevels(): { left: number; right: number } {
-    const bufL = new Uint8Array(this.analyserL.frequencyBinCount);
-    const bufR = new Uint8Array(this.analyserR.frequencyBinCount);
-    this.analyserL.getByteFrequencyData(bufL);
-    this.analyserR.getByteFrequencyData(bufR);
-    return { left: rms(bufL), right: rms(bufR) };
-  }
-
-  getRmsLevel(): number {
-    const buf = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteFrequencyData(buf);
-    return rms(buf);
-  }
-
-  getAnalyserData(): Uint8Array {
-    const data = new Uint8Array(this.analyser.frequencyBinCount);
-    this.analyser.getByteFrequencyData(data);
-    return data;
+  setOutputBus(busId: string): void {
+    if (busId === this.currentBusId) return;
+    this.masterGain.disconnect();
+    this.masterGain.connect(getMasterBus().getBus(busId).input);
+    this.currentBusId = busId;
   }
 
   getAudioContext(): AudioContext {

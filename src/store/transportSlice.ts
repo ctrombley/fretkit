@@ -1,4 +1,5 @@
 import { getSynth } from '../lib/synth';
+import { getMasterBus } from '../lib/masterBus';
 import type { MetronomeTimbre } from '../lib/metronome';
 import type { AppState, StoreSet } from './types';
 
@@ -40,8 +41,14 @@ export function createTransportSlice(set: StoreSet) {
       set({ transportBeatsPerMeasure: beats, transportBeatUnit: unit }),
     setTransportBeat: (beat: number, measure: number) =>
       set({ transportCurrentBeat: beat, transportCurrentMeasure: measure }),
-    setMetronomeVolume: (volume: number) => set({ metronomeVolume: volume }),
-    setMetronomeMuted: (muted: boolean) => set({ metronomeMuted: muted }),
+    setMetronomeVolume: (volume: number) => {
+      set({ metronomeVolume: volume });
+      getMasterBus().getBus('metronome').setVolume(volume);
+    },
+    setMetronomeMuted: (muted: boolean) => {
+      set({ metronomeMuted: muted });
+      getMasterBus().getBus('metronome').setMuted(muted);
+    },
     setMetronomeTimbre: (timbre: MetronomeTimbre) => set({ metronomeTimbre: timbre }),
     setMetronomeSubdivision: (subdivision: number) => set({ metronomeSubdivision: subdivision }),
     setMetronomeSubdivisionAccent: (accent: boolean) => set({ metronomeSubdivisionAccent: accent }),

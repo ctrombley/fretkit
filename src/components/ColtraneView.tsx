@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
@@ -11,6 +11,18 @@ import {
 import ColtraneCircle from './ColtraneCircle';
 import ColtraneMandala from './ColtraneMandala';
 import SynthPresetSelector from './SynthPresetSelector';
+
+// ── Module-level loop state (survives navigation) ─────────────────────────
+let _loopId = 0;
+const _voices: { stop: () => void }[] = [];
+const _timeouts: ReturnType<typeof setTimeout>[] = [];
+
+function _clearLoop() {
+  _timeouts.forEach(clearTimeout);
+  _timeouts.length = 0;
+  _voices.forEach(h => h.stop());
+  _voices.length = 0;
+}
 
 const PITCH_CLASSES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const DIVISIONS: SymmetricDivision[] = [2, 3, 4, 6];
@@ -31,35 +43,32 @@ export default function ColtraneView() {
   const setShowCadences = useStore(s => s.setColtraneShowCadences);
   const setHighlightedAxis = useStore(s => s.setColtraneHighlightedAxis);
   const transportBpm = useStore(s => s.transportBpm);
-  const seriesPlaying = useStore(s => s.seriesPlaying);
-  const setSeriesPlaying = useStore(s => s.setSeriesPlaying);
+  const seriesPlaying = useStore(s => s.coltraneSeriesPlaying);
+  const setSeriesPlaying = useStore(s => s.setColtraneSeriesPlaying);
 
-  const voicesRef = useRef<{ stop: () => void }[]>([]);
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [activePc, setActivePc] = useState<number | null>(null);
+  const [bloomKey, setBloomKey] = useState(0);
 
   const preferSharps = usesSharps(root);
   const rootName = noteName(root, preferSharps);
   const preset = DIVISION_PRESETS[division];
 
-  const stopPlayback = useCallback(() => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-    voicesRef.current.forEach(h => h.stop());
-    voicesRef.current = [];
-  }, []);
-
-  // Main playback loop driven by seriesPlaying
+  // Main playback loop — module-level state survives navigation
   useEffect(() => {
     if (!seriesPlaying) {
-      stopPlayback();
+      _loopId++;
+      _clearLoop();
+      setActivePc(null);
       return;
     }
 
+    const myId = ++_loopId;
+    _clearLoop();
+
     const interval = 60000 / transportBpm;
-    let cancelled = false;
 
     function scheduleLoop() {
-      if (cancelled) return;
+      if (_loopId !== myId) return;
 
       const cadences = getCadences(root, division);
       let step = 0;
@@ -67,46 +76,37 @@ export default function ColtraneView() {
       for (const cadence of cadences) {
         const fromFreq = 261.63 * Math.pow(2, ((cadence.from) % 12) / 12);
         const tid1 = setTimeout(() => {
-          if (cancelled) return;
-          const h = play(fromFreq);
-          voicesRef.current.push(h);
+          if (_loopId !== myId) return;
+          setActivePc(cadence.from % 12);
+          setBloomKey(k => k + 1);
+          _voices.push(play(fromFreq));
         }, step * interval);
-        timeoutsRef.current.push(tid1);
+        _timeouts.push(tid1);
         step++;
 
         const domFreq = 261.63 * Math.pow(2, ((cadence.dominant) % 12) / 12);
         const tid2 = setTimeout(() => {
-          if (cancelled) return;
-          const h = play(domFreq);
-          voicesRef.current.push(h);
+          if (_loopId !== myId) return;
+          setActivePc(cadence.dominant % 12);
+          setBloomKey(k => k + 1);
+          _voices.push(play(domFreq));
         }, step * interval);
-        timeoutsRef.current.push(tid2);
+        _timeouts.push(tid2);
         step++;
       }
 
-      // Schedule next loop
       const tid = setTimeout(() => {
-        voicesRef.current.forEach(h => h.stop());
-        voicesRef.current = [];
+        if (_loopId !== myId) return;
+        _voices.forEach(h => h.stop());
+        _voices.length = 0;
         scheduleLoop();
       }, step * interval);
-      timeoutsRef.current.push(tid);
+      _timeouts.push(tid);
     }
 
     scheduleLoop();
-
-    return () => {
-      cancelled = true;
-      stopPlayback();
-    };
-  }, [seriesPlaying, transportBpm, root, division, stopPlayback]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      setSeriesPlaying(false);
-    };
-  }, [setSeriesPlaying]);
+    // No cleanup — loop keeps running when component navigates away
+  }, [seriesPlaying, transportBpm, root, division]);
 
   return (
     <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
@@ -235,6 +235,8 @@ export default function ColtraneView() {
           showCadences={showCadences}
           highlightedAxis={highlightedAxis}
           onHighlightAxis={setHighlightedAxis}
+          activePc={activePc}
+          bloomKey={bloomKey}
         />
       ) : (
         <ColtraneMandala
@@ -242,6 +244,8 @@ export default function ColtraneView() {
           divisions={division}
           highlightedAxis={highlightedAxis}
           onHighlightAxis={setHighlightedAxis}
+          activePc={activePc}
+          bloomKey={bloomKey}
         />
       )}
 

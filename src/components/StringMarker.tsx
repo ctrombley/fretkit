@@ -1,6 +1,6 @@
 import type Note from '../lib/Note';
 import { pitchToRadius, getPitchClassColor } from '../lib/noteColors';
-import { getSynth } from '../lib/synth';
+import { getMasterBus } from '../lib/masterBus';
 
 interface StringMarkerProps {
   className?: string;
@@ -39,7 +39,7 @@ export default function StringMarker({
     : undefined;
 
   const bloomR = isPlaying && note
-    ? pitchToRadius(note.semitones) + getSynth().getRmsLevel() * 4
+    ? pitchToRadius(note.semitones) + getMasterBus().getRmsLevel() * 4
     : 6;
 
   return (

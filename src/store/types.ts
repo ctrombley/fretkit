@@ -7,6 +7,7 @@ import type { OscWaveform, SynthParams, LfoWaveform, LfoTargetParam } from '../l
 import type { SynthPreset } from '../lib/synthPresets';
 import type { MetronomeTimbre } from '../lib/metronome';
 import type { ArpPattern } from '../lib/arpeggiator';
+import type { MidiChannel, MidiBusConfig } from '../lib/midi';
 
 export interface FretboardState {
   id: number;
@@ -149,6 +150,21 @@ export interface AppState {
   // Per-view synth snapshots
   viewSynthSnapshots: Record<string, { params: SynthParams; presetIndex: number | null }>;
 
+  // Bus
+  buses: Record<string, { volume: number; muted: boolean }>;
+  masterBusVolume: number;
+  masterBusMuted: boolean;
+  setBusVolume: (busId: string, volume: number) => void;
+  setBusMuted: (busId: string, muted: boolean) => void;
+  setMasterBusVolume: (volume: number) => void;
+  setMasterBusMuted: (muted: boolean) => void;
+
+  // MIDI
+  midiBuses: Record<string, MidiBusConfig>;
+  setMidiEnabled: (toyId: string, enabled: boolean) => void;
+  setMidiReceiveChannel: (toyId: string, channel: MidiChannel) => void;
+  setMidiTransmitChannel: (toyId: string, channel: number) => void;
+
   // Transport actions
   setTransportPlaying: (playing: boolean) => void;
   setTransportBpm: (bpm: number) => void;
@@ -176,9 +192,21 @@ export interface AppState {
   arpStrikeNote: number | null;
   arpStrikeCount: number;
 
-  // Series/cycle playback
-  seriesPlaying: boolean;
-  setSeriesPlaying: (playing: boolean) => void;
+  // Series/cycle playback — separate flags per toy
+  coltraneSeriesPlaying: boolean;
+  setColtraneSeriesPlaying: (playing: boolean) => void;
+  overtoneSeriesPlaying: boolean;
+  setOvertoneSeriesPlaying: (playing: boolean) => void;
+
+  // Monochord persistent state
+  monochordDroneOn: boolean;
+  monochordBinaural: boolean;
+  monochordFundamentalName: string;
+  monochordBridgePos: number;
+  setMonochordDroneOn: (on: boolean) => void;
+  setMonochordBinaural: (on: boolean) => void;
+  setMonochordFundamentalName: (name: string) => void;
+  setMonochordBridgePos: (pos: number) => void;
 
   // Metronome actions
   setMetronomeVolume: (volume: number) => void;

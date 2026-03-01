@@ -26,6 +26,18 @@ vi.mock('../../lib/arpeggiator', () => ({
   getArpeggiator: () => ({ addNote: vi.fn(), removeNote: vi.fn(), clear: vi.fn() }),
 }));
 
+vi.mock('../../lib/masterBus', () => ({
+  getMasterBus: () => ({
+    getAudioContext: () => ({}),
+    getBus: () => ({ input: {}, setVolume: vi.fn(), setMuted: vi.fn() }),
+    setMasterVolume: vi.fn(),
+    setMasterMuted: vi.fn(),
+    getStereoLevels: () => ({ left: 0, right: 0 }),
+    getRmsLevel: () => 0,
+    getAnalyserData: () => new Uint8Array(128),
+  }),
+}));
+
 // The latch maps are module-level; import them so we can inspect them.
 import { latchVoices } from '../latchVoices';
 import { latchFrequencies } from '../latchFrequencies';

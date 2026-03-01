@@ -3,6 +3,13 @@ import { getSynth } from '../lib/synth';
 import { synthParamsToStoreState, gatherSynthParams } from '../lib/synthUtils';
 import type { AppState, StoreSet, StoreGet } from './types';
 
+const SYNTH_BUS_MAP: Partial<Record<string, string>> = {
+  sandbox: 'sandbox',
+  songList: 'songs',
+  songDetail: 'songs',
+  synth: 'synth',
+};
+
 export function createNavigationSlice(set: StoreSet, get: StoreGet) {
   return {
     view: { name: 'sandbox' } as View,
@@ -11,6 +18,9 @@ export function createNavigationSlice(set: StoreSet, get: StoreGet) {
       const state = get();
       const leavingSynth = state.view.name === 'synth';
       const enteringSynth = view.name === 'synth';
+
+      const targetBusId = SYNTH_BUS_MAP[view.name];
+      if (targetBusId) getSynth().setOutputBus(targetBusId);
 
       const updates: Partial<AppState> = { view, activeSongChordId: null };
 

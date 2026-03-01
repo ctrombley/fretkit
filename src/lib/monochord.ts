@@ -12,6 +12,7 @@
 
 import { getPitchClassColor } from './noteColors';
 import { noteName } from './harmony';
+import { getMasterBus } from './masterBus';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -287,20 +288,17 @@ export const DEFAULT_FUNDAMENTAL =
 
 // ── Standalone Web Audio ──────────────────────────────────────────────────
 
-let _ctx: AudioContext | null = null;
-
 function audioCtx(): AudioContext {
-  if (!_ctx) _ctx = new AudioContext();
-  if (_ctx.state === 'suspended') void _ctx.resume();
-  return _ctx;
+  return getMasterBus().getAudioContext();
 }
 
 /**
  * Pluck the monochord string at `hz`.
  * Pure sine with faint 2nd harmonic — mathematical, resonant.
+ * `pan` is -1 (full left) … 0 (centre) … +1 (full right).
  * Returns a stop() function.
  */
-export function pluckMonochord(hz: number, duration = 4.5): () => void {
+export function pluckMonochord(hz: number, duration = 4.5, pan = 0): () => void {
   const ctx = audioCtx();
   const now = ctx.currentTime;
 
@@ -320,10 +318,14 @@ export function pluckMonochord(hz: number, duration = 4.5): () => void {
   gain2.gain.setValueAtTime(0.055, now);
   gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.35);
 
+  const panner = ctx.createStereoPanner();
+  panner.pan.setValueAtTime(pan, now);
+
   osc.connect(gain);
-  gain.connect(ctx.destination);
   osc2.connect(gain2);
-  gain2.connect(ctx.destination);
+  gain.connect(panner);
+  gain2.connect(panner);
+  panner.connect(getMasterBus().getBus('monochord').input);
 
   osc.start(now);
   osc2.start(now);
@@ -346,8 +348,8 @@ export function pluckMonochord(hz: number, duration = 4.5): () => void {
   };
 }
 
-/** Sustain a drone tone at `hz`. Returns a stop() function. */
-export function startDrone(hz: number): () => void {
+/** Sustain a drone tone at `hz`. `pan` is -1…+1. Returns a stop() function. */
+export function startDrone(hz: number, pan = 0): () => void {
   const ctx = audioCtx();
   const now = ctx.currentTime;
 
@@ -359,8 +361,12 @@ export function startDrone(hz: number): () => void {
   gain.gain.setValueAtTime(0, now);
   gain.gain.linearRampToValueAtTime(0.22, now + 0.08);
 
+  const panner = ctx.createStereoPanner();
+  panner.pan.setValueAtTime(pan, now);
+
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(panner);
+  panner.connect(getMasterBus().getBus('monochord').input);
   osc.start(now);
 
   return () => {
@@ -370,4 +376,20 @@ export function startDrone(hz: number): () => void {
     gain.gain.linearRampToValueAtTime(0, t + 0.18);
     osc.stop(t + 0.22);
   };
+}
+
+/**
+ * Given a target binaural beat frequency B and fundamental f0, returns the
+ * bridge position t ∈ (0.5, 0.96] such that |leftHz − rightHz| = B.
+ *
+ * Derivation: for t > 0.5, beat = f0·(2t−1)/(t·(1−t)).
+ * Solving the quadratic B·t²+(2f0−B)·t−f0=0 gives:
+ *   t = ((B − 2f0) + √(4f0² + B²)) / (2B)
+ * which always lands in (0.5, 1) for B,f0 > 0.
+ */
+export function bridgePosForBeat(targetBeatHz: number, fundHz: number): number {
+  if (targetBeatHz <= 0) return 0.5;
+  const B = targetBeatHz, f0 = fundHz;
+  const t = ((B - 2 * f0) + Math.sqrt(4 * f0 * f0 + B * B)) / (2 * B);
+  return Math.max(0.5, Math.min(0.96, t));
 }

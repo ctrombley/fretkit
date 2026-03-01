@@ -22,7 +22,14 @@ export function createViewsSlice(set: StoreSet) {
     coltraneOrdering: 'fifths' as const,
     coltraneShowCadences: false,
     coltraneHighlightedAxis: null as number | null,
-    seriesPlaying: false,
+    coltraneSeriesPlaying: false,
+    overtoneSeriesPlaying: false,
+
+    // Monochord persistent state
+    monochordDroneOn: false,
+    monochordBinaural: false,
+    monochordFundamentalName: 'A2',
+    monochordBridgePos: 2 / 3,
 
     setSpiralRoot: (root: number) => set({ spiralRoot: root, spiralHighlightedChord: null }),
     setSpiralMode: (mode: 'major' | 'minor') => set({ spiralMode: mode, spiralHighlightedChord: null }),
@@ -42,6 +49,11 @@ export function createViewsSlice(set: StoreSet) {
     setColtraneOrdering: (ordering: 'fifths' | 'chromatic') => set({ coltraneOrdering: ordering }),
     setColtraneShowCadences: (show: boolean) => set({ coltraneShowCadences: show }),
     setColtraneHighlightedAxis: (axis: number | null) => set({ coltraneHighlightedAxis: axis }),
-    setSeriesPlaying: (playing: boolean) => set({ seriesPlaying: playing }),
+    setColtraneSeriesPlaying: (playing: boolean) => set({ coltraneSeriesPlaying: playing }),
+    setOvertoneSeriesPlaying: (playing: boolean) => set({ overtoneSeriesPlaying: playing }),
+    setMonochordDroneOn: (on: boolean) => set({ monochordDroneOn: on }),
+    setMonochordBinaural: (on: boolean) => set({ monochordBinaural: on }),
+    setMonochordFundamentalName: (name: string) => set({ monochordFundamentalName: name }),
+    setMonochordBridgePos: (pos: number) => set({ monochordBridgePos: pos }),
   };
 }

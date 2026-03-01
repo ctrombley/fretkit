@@ -5,7 +5,11 @@ import type { LfoTargetParam } from '../lib/synth';
 import SynthKnob from './SynthKnob';
 import StereoVU from './StereoVU';
 
-export default function TransportMixer() {
+interface TransportMixerProps {
+  onOpenMixer?: () => void;
+}
+
+export default function TransportMixer({ onOpenMixer }: TransportMixerProps = {}) {
   const masterVolume = useStore(s => s.synthMasterVolume);
   const pan = useStore(s => s.synthPan);
   const reverbSend = useStore(s => s.synthReverbSend);
@@ -32,7 +36,7 @@ export default function TransportMixer() {
       >
         <OctagonX size={16} />
       </button>
-      <StereoVU />
+      <StereoVU onClick={onOpenMixer} />
       <SynthKnob
         label="Master"
         value={masterVolume}

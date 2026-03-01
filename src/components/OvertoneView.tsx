@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
@@ -8,6 +8,18 @@ import { getDerivation, GENERATOR_PRESETS, type GeneratorPreset } from '../lib/d
 import OvertoneSpiral from './OvertoneSpiral';
 import DerivationRing from './DerivationRing';
 import SynthPresetSelector from './SynthPresetSelector';
+
+// ── Module-level loop state (survives navigation) ─────────────────────────
+let _loopId = 0;
+const _voices: { stop: () => void }[] = [];
+const _timeouts: ReturnType<typeof setTimeout>[] = [];
+
+function _clearLoop() {
+  _timeouts.forEach(clearTimeout);
+  _timeouts.length = 0;
+  _voices.forEach(h => h.stop());
+  _voices.length = 0;
+}
 
 const PITCH_CLASSES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 const OCTAVES = [1, 2, 3, 4, 5];
@@ -38,57 +50,53 @@ export default function OvertoneView() {
   const setDerivationActiveStep = useStore(s => s.setDerivationActiveStep);
   const setDerivationDivisions = useStore(s => s.setDerivationDivisions);
   const transportBpm = useStore(s => s.transportBpm);
-  const seriesPlaying = useStore(s => s.seriesPlaying);
-  const setSeriesPlaying = useStore(s => s.setSeriesPlaying);
+  const seriesPlaying = useStore(s => s.overtoneSeriesPlaying);
+  const setSeriesPlaying = useStore(s => s.setOvertoneSeriesPlaying);
 
-  const voicesRef = useRef<{ stop: () => void }[]>([]);
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [activeN, setActiveN] = useState<number | null>(null);
+  const [bloomKey, setBloomKey] = useState(0);
 
   const fundHz = fundamentalFrequency(overtoneRoot, overtoneOctave);
   const preferSharps = usesSharps(overtoneRoot);
   const rootName = noteName(overtoneRoot, preferSharps);
   const isDeriveMode = overtoneMode === 'derive';
 
-  const stopPlayback = useCallback(() => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-    voicesRef.current.forEach(h => h.stop());
-    voicesRef.current = [];
-    setDerivationActiveStep(null);
-  }, [setDerivationActiveStep]);
-
-  // Main playback loop driven by seriesPlaying
+  // Main playback loop — module-level state survives navigation
   useEffect(() => {
     if (!seriesPlaying) {
-      stopPlayback();
+      _loopId++;
+      _clearLoop();
+      setDerivationActiveStep(null);
+      setActiveN(null);
       return;
     }
 
+    const myId = ++_loopId;
+    _clearLoop();
+
     const interval = 60000 / transportBpm;
-    let cancelled = false;
 
     function scheduleLoop() {
-      if (cancelled) return;
+      if (_loopId !== myId) return;
 
       if (isDeriveMode) {
         const derivation = getDerivation(derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions);
         derivation.steps.forEach((note, i) => {
           const tid = setTimeout(() => {
-            if (cancelled) return;
+            if (_loopId !== myId) return;
             setDerivationActiveStep(note.step);
-            const handle = play(note.frequency);
-            voicesRef.current.push(handle);
+            _voices.push(play(note.frequency));
           }, i * interval);
-          timeoutsRef.current.push(tid);
+          _timeouts.push(tid);
         });
-        // Schedule next loop after all steps
         const tid = setTimeout(() => {
-          voicesRef.current.forEach(h => h.stop());
-          voicesRef.current = [];
+          if (_loopId !== myId) return;
+          _voices.forEach(h => h.stop());
+          _voices.length = 0;
           setDerivationActiveStep(null);
           scheduleLoop();
         }, derivationSteps * interval);
-        timeoutsRef.current.push(tid);
+        _timeouts.push(tid);
       } else {
         const useET = overtoneMode === 'et';
         for (let n = 1; n <= overtoneCount; n++) {
@@ -96,36 +104,26 @@ export default function OvertoneView() {
             ? fundHz * Math.pow(2, Math.round(1200 * Math.log2(n) / 100) / 12)
             : n * fundHz;
           const tid = setTimeout(() => {
-            if (cancelled) return;
-            const handle = play(freq);
-            voicesRef.current.push(handle);
+            if (_loopId !== myId) return;
+            setActiveN(n);
+            setBloomKey(k => k + 1);
+            _voices.push(play(freq));
           }, (n - 1) * interval);
-          timeoutsRef.current.push(tid);
+          _timeouts.push(tid);
         }
-        // Schedule next loop after all overtones
         const tid = setTimeout(() => {
-          voicesRef.current.forEach(h => h.stop());
-          voicesRef.current = [];
+          if (_loopId !== myId) return;
+          _voices.forEach(h => h.stop());
+          _voices.length = 0;
           scheduleLoop();
         }, overtoneCount * interval);
-        timeoutsRef.current.push(tid);
+        _timeouts.push(tid);
       }
     }
 
     scheduleLoop();
-
-    return () => {
-      cancelled = true;
-      stopPlayback();
-    };
-  }, [seriesPlaying, transportBpm, isDeriveMode, derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions, overtoneMode, overtoneCount, setDerivationActiveStep, stopPlayback]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      setSeriesPlaying(false);
-    };
-  }, [setSeriesPlaying]);
+    // No cleanup — loop keeps running when component navigates away
+  }, [seriesPlaying, transportBpm, isDeriveMode, derivationGenerator, fundHz, overtoneRoot, derivationSteps, derivationDivisions, overtoneMode, overtoneCount, setDerivationActiveStep]);
 
   return (
     <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
@@ -325,6 +323,8 @@ export default function OvertoneView() {
             count={overtoneCount}
             showET={overtoneShowET}
             useET={overtoneMode === 'et'}
+            activeN={activeN}
+            bloomKey={bloomKey}
           />
           <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
             Spiral shows the overtone series of the selected fundamental.

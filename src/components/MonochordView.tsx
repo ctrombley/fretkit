@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import MonochordString, { type MonochordStringHandle } from './MonochordString';
 import ConchSpiral from './ConchSpiral';
@@ -9,12 +10,22 @@ import {
   getBridgeInfo,
   pluckMonochord,
   startDrone,
+  bridgePosForBeat,
   type FundamentalNote,
 } from '../lib/monochord';
 
-// ── Types ─────────────────────────────────────────────────────────────────
+// ── Module-level drone state (survives navigation) ────────────────────────
+const _droneState: { leftStop: (() => void) | null; rightStop: (() => void) | null } = {
+  leftStop: null,
+  rightStop: null,
+};
 
-type DroneState = { leftStop: (() => void) | null; rightStop: (() => void) | null };
+function _stopDrones() {
+  _droneState.leftStop?.();
+  _droneState.rightStop?.();
+  _droneState.leftStop = null;
+  _droneState.rightStop = null;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -30,6 +41,22 @@ function beatLabel(hz: number): string {
   return `${hz.toFixed(0)} Hz — dissonant flutter`;
 }
 
+function brainwaveLabel(hz: number): string {
+  if (hz < 0.5)  return 'sub-delta';
+  if (hz < 4)    return 'δ delta — deep sleep';
+  if (hz < 8)    return 'θ theta — drowsy / meditation';
+  if (hz < 14)   return 'α alpha — relaxed awareness';
+  if (hz < 30)   return 'β beta — alert / focused';
+  return          'γ gamma — high cognition';
+}
+
+const BRAINWAVE_PRESETS = [
+  { label: 'δ', hz: 2,  title: 'Delta 2 Hz — deep sleep' },
+  { label: 'θ', hz: 6,  title: 'Theta 6 Hz — meditation' },
+  { label: 'α', hz: 10, title: 'Alpha 10 Hz — relaxed' },
+  { label: 'β', hz: 20, title: 'Beta 20 Hz — alert' },
+];
+
 function centsLabel(cents: number): string {
   const et  = Math.round(cents / 100) * 100;
   const dev = cents - et;
@@ -41,12 +68,22 @@ function centsLabel(cents: number): string {
 export default function MonochordView() {
   const bottomPadding = useBottomPadding();
 
-  const [fundamental, setFundamental] = useState<FundamentalNote>(DEFAULT_FUNDAMENTAL);
-  const [bridgePos, setBridgePos]     = useState(2 / 3);
-  const [droneOn, setDroneOn]         = useState(false);
+  // Persistent state lives in the store so it survives navigation
+  const fundamentalName = useStore(s => s.monochordFundamentalName);
+  const bridgePos       = useStore(s => s.monochordBridgePos);
+  const droneOn         = useStore(s => s.monochordDroneOn);
+  const binaural        = useStore(s => s.monochordBinaural);
+  const setFundamentalName = useStore(s => s.setMonochordFundamentalName);
+  const setBridgePos       = useStore(s => s.setMonochordBridgePos);
+  const setDroneOn         = useStore(s => s.setMonochordDroneOn);
+  const setBinaural        = useStore(s => s.setMonochordBinaural);
+
+  const fundamental: FundamentalNote =
+    FUNDAMENTAL_NOTES.find(n => n.name === fundamentalName) ?? DEFAULT_FUNDAMENTAL;
+
+  const [beatInput, setBeatInput] = useState('');
 
   const stringRef = useRef<MonochordStringHandle>(null);
-  const droneRef  = useRef<DroneState>({ leftStop: null, rightStop: null });
   const plucksRef = useRef<{ stop: () => void }[]>([]);
 
   const info = getBridgeInfo(bridgePos, fundamental.hz, fundamental.pitchClass);
@@ -58,36 +95,32 @@ export default function MonochordView() {
     plucksRef.current = [];
   }
 
-  function stopDrones() {
-    droneRef.current.leftStop?.();
-    droneRef.current.rightStop?.();
-    droneRef.current = { leftStop: null, rightStop: null };
-  }
-
   const handlePluck = useCallback((side: 'left' | 'right' | 'both') => {
     stopAllPlucks();
-    if (side === 'left'  || side === 'both') plucksRef.current.push({ stop: pluckMonochord(info.left.hz) });
-    if (side === 'right' || side === 'both') plucksRef.current.push({ stop: pluckMonochord(info.right.hz) });
-  }, [info.left.hz, info.right.hz]);
+    const lp = binaural ? -1 : 0;
+    const rp = binaural ?  1 : 0;
+    if (side === 'left'  || side === 'both') plucksRef.current.push({ stop: pluckMonochord(info.left.hz,  undefined, lp) });
+    if (side === 'right' || side === 'both') plucksRef.current.push({ stop: pluckMonochord(info.right.hz, undefined, rp) });
+  }, [info.left.hz, info.right.hz, binaural]);
 
   function pluckBoth()  { stringRef.current?.pluck('both');  handlePluck('both');  }
   function pluckLeft()  { stringRef.current?.pluck('left');  handlePluck('left');  }
   function pluckRight() { stringRef.current?.pluck('right'); handlePluck('right'); }
 
-  // ── Drone ──────────────────────────────────────────────────────────────
+  // ── Drone — module-level state survives navigation ─────────────────────
 
   useEffect(() => {
     if (droneOn) {
-      stopDrones();
-      droneRef.current.leftStop  = startDrone(info.left.hz);
-      droneRef.current.rightStop = startDrone(info.right.hz);
+      _stopDrones();
+      const lp = binaural ? -1 : 0;
+      const rp = binaural ?  1 : 0;
+      _droneState.leftStop  = startDrone(info.left.hz,  lp);
+      _droneState.rightStop = startDrone(info.right.hz, rp);
     } else {
-      stopDrones();
+      _stopDrones();
     }
-    return stopDrones;
-  }, [droneOn, info.left.hz, info.right.hz]);
-
-  useEffect(() => () => { stopAllPlucks(); stopDrones(); }, []);
+    // No cleanup — drone keeps running when component navigates away
+  }, [droneOn, info.left.hz, info.right.hz, binaural]);
 
   // ── Snap to canonical ratio ────────────────────────────────────────────
 
@@ -95,17 +128,19 @@ export default function MonochordView() {
     setBridgePos(position);
     setTimeout(() => {
       stringRef.current?.pluck('both');
-      const i = getBridgeInfo(position, fundamental.hz, fundamental.pitchClass);
+      const i  = getBridgeInfo(position, fundamental.hz, fundamental.pitchClass);
+      const lp = binaural ? -1 : 0;
+      const rp = binaural ?  1 : 0;
       stopAllPlucks();
-      plucksRef.current.push({ stop: pluckMonochord(i.left.hz) });
-      plucksRef.current.push({ stop: pluckMonochord(i.right.hz) });
+      plucksRef.current.push({ stop: pluckMonochord(i.left.hz,  undefined, lp) });
+      plucksRef.current.push({ stop: pluckMonochord(i.right.hz, undefined, rp) });
     }, 30);
   }
 
   function changeFundamental(fn: FundamentalNote) {
     stopAllPlucks();
-    if (droneOn) { stopDrones(); setDroneOn(false); }
-    setFundamental(fn);
+    if (droneOn) { _stopDrones(); setDroneOn(false); }
+    setFundamentalName(fn.name);
   }
 
   // ── Layout ─────────────────────────────────────────────────────────────
@@ -186,7 +221,7 @@ export default function MonochordView() {
           Right ▸  ({info.right.noteName})
         </button>
         <button
-          onClick={() => setDroneOn(d => !d)}
+          onClick={() => setDroneOn(!droneOn)}
           className={`ml-2 px-3 py-1.5 rounded text-xs font-mono transition-colors border ${
             droneOn
               ? 'bg-amber-50 text-amber-700 border-amber-300'
@@ -195,7 +230,86 @@ export default function MonochordView() {
         >
           {droneOn ? '◉ Drone' : '○ Drone'}
         </button>
+        <button
+          onClick={() => setBinaural(!binaural)}
+          className={`ml-1 px-3 py-1.5 rounded text-xs font-mono transition-colors border ${
+            binaural
+              ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
+              : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
+          }`}
+        >
+          {binaural ? '◉ Binaural' : '○ Binaural'}
+        </button>
       </div>
+
+      {/* ── Binaural beat panel ─────────────────────────────────────────── */}
+      {binaural && (
+        <div className="mt-3 mx-6 rounded-xl p-4 bg-indigo-50 border border-indigo-200">
+          <div className="flex flex-wrap items-start gap-4">
+
+            {/* Current beat readout */}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-mono text-indigo-400">Binaural beat</div>
+              <div className="text-3xl font-bold font-mono text-indigo-700 leading-none mt-0.5">
+                {info.beatHz.toFixed(2)} <span className="text-base font-normal">Hz</span>
+              </div>
+              <div className="text-xs font-mono text-indigo-500 mt-1">
+                {brainwaveLabel(info.beatHz)}
+              </div>
+              <div className="text-xs font-mono text-indigo-300 mt-2">
+                🎧 Requires headphones
+              </div>
+            </div>
+
+            {/* Target input + presets */}
+            <div className="flex flex-col gap-2">
+              <div className="text-xs font-mono text-indigo-400">Set target beat</div>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="0.1"
+                  max="100"
+                  step="0.1"
+                  value={beatInput}
+                  onChange={e => setBeatInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const hz = parseFloat(beatInput);
+                      if (isFinite(hz) && hz > 0) setBridgePos(bridgePosForBeat(hz, fundamental.hz));
+                    }
+                  }}
+                  placeholder="Hz"
+                  className="w-20 px-2 py-1 text-sm font-mono border border-indigo-300 rounded bg-white text-dark"
+                />
+                <button
+                  onClick={() => {
+                    const hz = parseFloat(beatInput);
+                    if (isFinite(hz) && hz > 0) setBridgePos(bridgePosForBeat(hz, fundamental.hz));
+                  }}
+                  className="px-2 py-1 text-xs font-mono bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  Set
+                </button>
+              </div>
+              <div className="flex gap-1">
+                {BRAINWAVE_PRESETS.map(p => (
+                  <button
+                    key={p.label}
+                    title={p.title}
+                    onClick={() => {
+                      setBeatInput(String(p.hz));
+                      setBridgePos(bridgePosForBeat(p.hz, fundamental.hz));
+                    }}
+                    className="px-2 py-1 text-xs font-mono bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 border border-indigo-200"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Main info + spiral ──────────────────────────────────────────── */}
       <div className="mt-5 px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
