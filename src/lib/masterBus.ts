@@ -9,6 +9,7 @@ export const BUS_IDS = [
   'synth',
   'monochord',
   'metronome',
+  'sampler',
 ] as const;
 
 export type BusId = (typeof BUS_IDS)[number];

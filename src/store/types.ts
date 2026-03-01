@@ -9,6 +9,8 @@ import type { MetronomeTimbre } from '../lib/metronome';
 import type { ArpPattern } from '../lib/arpeggiator';
 import type { MidiChannel, MidiBusConfig } from '../lib/midi';
 import type { ScaleEntry, UserScalePreset } from '../lib/monochordScales';
+import type { SamplerParams } from '../lib/sampler';
+import type { SamplerSlotDef, SamplerPreset } from '../lib/samplerPresets';
 
 export interface FretboardState {
   id: number;
@@ -275,6 +277,33 @@ export interface AppState {
   search: (id: string, searchTerm: string) => void;
   openSettings: (id: string) => void;
   updateSettings: (data: Partial<Settings>) => void;
+
+  // Sampler
+  samplerMode: 'synth' | 'sampler';
+  samplerSlots: (SamplerSlotDef | null)[];
+  samplerKeyMap: (number | null)[];
+  samplerSlotParams: SamplerParams[];
+  samplerSlotRootNotes: (number | null)[];
+  samplerSelectedSlot: number | null;
+  samplerPresets: SamplerPreset[];
+  samplerActivePresetIndex: number | null;
+  samplerAutoSave: { slots: (SamplerSlotDef | null)[]; keyMap: (number | null)[]; params: SamplerParams[]; rootNotes: (number | null)[]; timestamp: number } | null;
+
+  // Sampler actions
+  setSamplerMode: (mode: 'synth' | 'sampler') => void;
+  setSamplerSlot: (idx: number, slot: SamplerSlotDef | null) => void;
+  setSamplerSlotUrl: (idx: number, url: string) => void;
+  setSamplerSlotFile: (idx: number, file: File) => void;
+  setSamplerSlotParam: (idx: number, key: keyof SamplerParams, val: SamplerParams[keyof SamplerParams]) => void;
+  setSamplerKeyMap: (keyMap: (number | null)[]) => void;
+  mapSlotToKey: (slotIdx: number, midiNote: number) => void;
+  unmapSlot: (slotIdx: number) => void;
+  setSamplerSelectedSlot: (idx: number | null) => void;
+  saveSamplerPreset: (name: string) => void;
+  loadSamplerPreset: (idx: number) => void;
+  deleteSamplerPreset: (idx: number) => void;
+  renameSamplerPreset: (idx: number, name: string) => void;
+  triggerSamplerAutoSave: () => void;
 
   // Navigation actions
   navigate: (view: View) => void;

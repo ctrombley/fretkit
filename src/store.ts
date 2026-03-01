@@ -13,7 +13,9 @@ import { createSongsSlice, SONGS_PERSISTED_KEYS } from './store/songsSlice';
 import { createBusSlice, BUS_PERSISTED_KEYS } from './store/busSlice';
 import { createMidiSlice, MIDI_PERSISTED_KEYS } from './store/midiSlice';
 import { createMonochordScalesSlice, MONOCHORD_SCALES_PERSISTED_KEYS } from './store/monochordScalesSlice';
+import { createSamplerSlice, SAMPLER_PERSISTED_KEYS } from './store/samplerSlice';
 import { getMasterBus } from './lib/masterBus';
+import { getSampler } from './lib/sampler';
 
 export type { AppState, FretboardState, Settings } from './store/types';
 
@@ -27,6 +29,7 @@ const ALL_PERSISTED_KEYS: (keyof AppState)[] = [
   ...BUS_PERSISTED_KEYS,
   ...MIDI_PERSISTED_KEYS,
   ...MONOCHORD_SCALES_PERSISTED_KEYS,
+  ...SAMPLER_PERSISTED_KEYS,
   ...NAVIGATION_PERSISTED_KEYS,
 ];
 
@@ -44,16 +47,18 @@ export const useStore = create<AppState>()(
       ...createBusSlice(set),
       ...createMidiSlice(set),
       ...createMonochordScalesSlice(set),
+      ...createSamplerSlice(set),
     }),
     {
       name: 'fretkit-storage',
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         // v1 → v2: add bus/midi defaults to existing state
         // v2 → v3: add monochord scales defaults
         // v3 → v4: add fretboards + view persistence
         // v4 → v5: ensure fretboard entries always have sequences/litNotes/current
         //          (v4 could store them without those fields if saved before the fix)
+        // v5 → v6: add sampler slice defaults
         const state = { ...(persisted as Record<string, unknown>) };
         if (version < 5 && state.fretboards) {
           const boards = state.fretboards as Record<string, Record<string, unknown>>;
@@ -112,6 +117,13 @@ export const useStore = create<AppState>()(
             state.search(fbId, fb.searchStr);
           }
         }
+        // Reload sampler audio buffers from persisted URLs
+        const sampler = getSampler();
+        state.samplerSlots.forEach((slot, i) => {
+          if (slot?.url) {
+            sampler.loadSample(i, slot.url).catch(console.error);
+          }
+        });
       },
     },
   ),

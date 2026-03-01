@@ -4,6 +4,7 @@ import SynthKnob from './SynthKnob';
 import SynthOsc2 from './SynthOsc2';
 import SynthLfo from './SynthLfo';
 import SynthPresetSelector from './SynthPresetSelector';
+import SamplerUI from './SamplerUI';
 import type { OscWaveform, LfoTargetParam } from '../lib/synth';
 import { lfoFor } from '../lib/synthUtils';
 
@@ -38,6 +39,14 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
+function tabClass(active: boolean): string {
+  return `px-3 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+    active
+      ? 'bg-gray-200 text-gray-900 font-semibold'
+      : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+  }`;
+}
+
 export default function SynthView() {
   const waveform = useStore(s => s.synthWaveform);
   const hpCutoff = useStore(s => s.synthHpCutoff);
@@ -52,6 +61,8 @@ export default function SynthView() {
   const setLfoTarget = useStore(s => s.setSynthLfoTarget);
   const lfo1Target = useStore(s => s.synthLfo1Target);
   const lfo2Target = useStore(s => s.synthLfo2Target);
+  const samplerMode = useStore(s => s.samplerMode);
+  const setSamplerMode = useStore(s => s.setSamplerMode);
   const bottomPadding = useBottomPadding();
 
   const handleLfoDrop = (param: LfoTargetParam, lfoNum: 1 | 2) => {
@@ -61,14 +72,26 @@ export default function SynthView() {
   return (
     <main className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       <div className="py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-[13px] uppercase tracking-[0.3em] text-gray-400 font-semibold">
             Synth
           </h2>
-          <SynthPresetSelector />
+          {samplerMode === 'synth' && <SynthPresetSelector />}
         </div>
 
-        <div className="space-y-2">
+        {/* Tab switcher */}
+        <div className="flex gap-1 mb-6">
+          <button onClick={() => setSamplerMode('synth')} className={tabClass(samplerMode === 'synth')}>
+            Synth
+          </button>
+          <button onClick={() => setSamplerMode('sampler')} className={tabClass(samplerMode === 'sampler')}>
+            Sampler
+          </button>
+        </div>
+
+        {samplerMode === 'sampler' && <SamplerUI />}
+
+        {samplerMode === 'synth' && <div className="space-y-2">
           {/* Oscillators: Osc1 waveform + Osc2/FM side by side */}
           <SectionHeader>Oscillators</SectionHeader>
           <div className="flex gap-4">
@@ -212,7 +235,7 @@ export default function SynthView() {
               <SynthLfo lfoNum={2} />
             </div>
           </div>
-        </div>
+        </div>}
       </div>
     </main>
   );
