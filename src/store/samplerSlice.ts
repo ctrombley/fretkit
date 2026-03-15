@@ -52,7 +52,11 @@ export function createSamplerSlice(set: StoreSet) {
       set(s => {
         const slots = [...s.samplerSlots];
         slots[idx] = slot;
-        return { samplerSlots: slots };
+        const rootNotes = [...s.samplerSlotRootNotes];
+        rootNotes[idx] = slot?.rootNote ?? null;
+        const params = [...s.samplerSlotParams];
+        params[idx] = slot?.params ?? { ...DEFAULT_SAMPLER_PARAMS };
+        return { samplerSlots: slots, samplerSlotRootNotes: rootNotes, samplerSlotParams: params };
       }),
 
     setSamplerSlotUrl: (idx: number, url: string) => {

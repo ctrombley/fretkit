@@ -4,31 +4,17 @@ import SynthKnob from './SynthKnob';
 import SynthOsc2 from './SynthOsc2';
 import SynthLfo from './SynthLfo';
 import SynthPresetSelector from './SynthPresetSelector';
+import SamplerPresetSelector from './SamplerPresetSelector';
 import SamplerUI from './SamplerUI';
+import EngineBar from './EngineBar';
 import type { OscWaveform, LfoTargetParam } from '../lib/synth';
 import { lfoFor } from '../lib/synthUtils';
 
 const WAVEFORMS: { type: OscWaveform; label: string; path: string }[] = [
-  {
-    type: 'sine',
-    label: 'Sine',
-    path: 'M2 10 Q6 0 10 10 Q14 20 18 10',
-  },
-  {
-    type: 'triangle',
-    label: 'Tri',
-    path: 'M2 10 L6 2 L14 18 L18 10',
-  },
-  {
-    type: 'sawtooth',
-    label: 'Saw',
-    path: 'M2 18 L10 2 L10 18 L18 2',
-  },
-  {
-    type: 'square',
-    label: 'Sq',
-    path: 'M2 18 L2 2 L10 2 L10 18 L18 18 L18 2',
-  },
+  { type: 'sine',     label: 'Sine', path: 'M2 10 Q6 0 10 10 Q14 20 18 10' },
+  { type: 'triangle', label: 'Tri',  path: 'M2 10 L6 2 L14 18 L18 10' },
+  { type: 'sawtooth', label: 'Saw',  path: 'M2 18 L10 2 L10 18 L18 2' },
+  { type: 'square',   label: 'Sq',   path: 'M2 18 L2 2 L10 2 L10 18 L18 18 L18 2' },
 ];
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -39,15 +25,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-function tabClass(active: boolean): string {
-  return `px-3 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
-    active
-      ? 'bg-gray-200 text-gray-900 font-semibold'
-      : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
-  }`;
-}
-
-export default function SynthView() {
+function SynthControls() {
   const waveform = useStore(s => s.synthWaveform);
   const hpCutoff = useStore(s => s.synthHpCutoff);
   const hpResonance = useStore(s => s.synthHpResonance);
@@ -61,13 +39,68 @@ export default function SynthView() {
   const setLfoTarget = useStore(s => s.setSynthLfoTarget);
   const lfo1Target = useStore(s => s.synthLfo1Target);
   const lfo2Target = useStore(s => s.synthLfo2Target);
-  const samplerMode = useStore(s => s.samplerMode);
-  const setSamplerMode = useStore(s => s.setSamplerMode);
-  const bottomPadding = useBottomPadding();
 
-  const handleLfoDrop = (param: LfoTargetParam, lfoNum: 1 | 2) => {
-    setLfoTarget(lfoNum, param);
-  };
+  const handleLfoDrop = (param: LfoTargetParam, lfoNum: 1 | 2) => setLfoTarget(lfoNum, param);
+
+  return (
+    <div className="space-y-2">
+      <SectionHeader>Oscillators</SectionHeader>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <div className="flex gap-1">
+            {WAVEFORMS.map(({ type, label, path }) => (
+              <button
+                key={type}
+                onClick={() => setSynthParam('waveform', type)}
+                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded transition-colors ${
+                  waveform === type
+                    ? 'bg-gray-100 text-fret-green'
+                    : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                }`}
+              >
+                <svg width={20} height={20} viewBox="0 0 20 20">
+                  <path d={path} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="text-[9px] uppercase tracking-wider">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1">
+          <SynthOsc2 onLfoDrop={handleLfoDrop} lfo1Target={lfo1Target} lfo2Target={lfo2Target} />
+        </div>
+      </div>
+
+      <SectionHeader>Filter & Envelope</SectionHeader>
+      <div className="flex flex-wrap justify-center gap-3">
+        <SynthKnob label="HP"   value={hpCutoff}        min={20}    max={2000}  logarithmic onChange={(v) => setSynthParam('hpCutoff', v)}        unit="Hz" paramKey="hpCutoff"        lfoTargeting={lfoFor('hpCutoff',        lfo1Target, lfo2Target)} onDrop={(lfo) => handleLfoDrop('hpCutoff',        lfo)} />
+        <SynthKnob label="HP Q" value={hpResonance}     min={0}     max={30}               onChange={(v) => setSynthParam('hpResonance', v)}    formatValue={(v) => v.toFixed(1)} unit="Q" paramKey="hpResonance"     lfoTargeting={lfoFor('hpResonance',     lfo1Target, lfo2Target)} onDrop={(lfo) => handleLfoDrop('hpResonance',     lfo)} />
+        <SynthKnob label="LP"   value={filterCutoff}   min={20}    max={20000} logarithmic onChange={(v) => setSynthParam('filterCutoff', v)}   unit="Hz" paramKey="filterCutoff"   lfoTargeting={lfoFor('filterCutoff',   lfo1Target, lfo2Target)} onDrop={(lfo) => handleLfoDrop('filterCutoff',   lfo)} />
+        <SynthKnob label="LP Q" value={filterResonance} min={0}    max={30}               onChange={(v) => setSynthParam('filterResonance', v)} formatValue={(v) => v.toFixed(1)} unit="Q" paramKey="filterResonance" lfoTargeting={lfoFor('filterResonance', lfo1Target, lfo2Target)} onDrop={(lfo) => handleLfoDrop('filterResonance', lfo)} />
+        <SynthKnob label="Attack"  value={attack}  min={0.001} max={2} logarithmic onChange={(v) => setSynthParam('attack', v)}  formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`} paramKey="attack" />
+        <SynthKnob label="Decay"   value={decay}   min={0.001} max={2} logarithmic onChange={(v) => setSynthParam('decay', v)}   formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`} paramKey="decay" />
+        <SynthKnob label="Sustain" value={sustain} min={0}     max={1}             onChange={(v) => setSynthParam('sustain', v)} formatValue={(v) => `${Math.round(v * 100)}%`}                                   paramKey="sustain" />
+        <SynthKnob label="Release" value={release} min={0.01}  max={5} logarithmic onChange={(v) => setSynthParam('release', v)} formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`} paramKey="release" />
+      </div>
+
+      <SectionHeader>LFOs</SectionHeader>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <div className="text-[9px] uppercase tracking-wider text-gray-400 mb-1">LFO 1</div>
+          <SynthLfo lfoNum={1} />
+        </div>
+        <div className="flex-1">
+          <div className="text-[9px] uppercase tracking-wider text-gray-400 mb-1">LFO 2</div>
+          <SynthLfo lfoNum={2} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SynthView() {
+  const samplerMode = useStore(s => s.samplerMode);
+  const bottomPadding = useBottomPadding();
 
   return (
     <main className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
@@ -76,166 +109,31 @@ export default function SynthView() {
           <h2 className="text-[13px] uppercase tracking-[0.3em] text-gray-400 font-semibold">
             Synth
           </h2>
-          {samplerMode === 'synth' && <SynthPresetSelector />}
+          {samplerMode === 'synth' ? <SynthPresetSelector /> : <SamplerPresetSelector />}
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex gap-1 mb-6">
-          <button onClick={() => setSamplerMode('synth')} className={tabClass(samplerMode === 'synth')}>
-            Synth
-          </button>
-          <button onClick={() => setSamplerMode('sampler')} className={tabClass(samplerMode === 'sampler')}>
-            Sampler
-          </button>
+        <EngineBar />
+
+        {/* Sliding track: both panels live here side-by-side at 50% width each.
+            Translating the track by -50% reveals the sampler panel. */}
+        <div style={{ overflow: 'hidden' }}>
+          <div
+            style={{
+              display: 'flex',
+              width: '200%',
+              alignItems: 'flex-start',
+              transform: samplerMode === 'sampler' ? 'translateX(-50%)' : 'translateX(0)',
+              transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+          >
+            <div style={{ width: '50%' }}>
+              <SynthControls />
+            </div>
+            <div style={{ width: '50%' }}>
+              <SamplerUI />
+            </div>
+          </div>
         </div>
-
-        {samplerMode === 'sampler' && <SamplerUI />}
-
-        {samplerMode === 'synth' && <div className="space-y-2">
-          {/* Oscillators: Osc1 waveform + Osc2/FM side by side */}
-          <SectionHeader>Oscillators</SectionHeader>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="flex gap-1">
-                {WAVEFORMS.map(({ type, label, path }) => (
-                  <button
-                    key={type}
-                    onClick={() => setSynthParam('waveform', type)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2 rounded transition-colors ${
-                      waveform === type
-                        ? 'bg-gray-100 text-fret-green'
-                        : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
-                    }`}
-                  >
-                    <svg width={20} height={20} viewBox="0 0 20 20">
-                      <path
-                        d={path}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.5}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span className="text-[9px] uppercase tracking-wider">{label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex-1">
-              <SynthOsc2
-                onLfoDrop={handleLfoDrop}
-                lfo1Target={lfo1Target}
-                lfo2Target={lfo2Target}
-              />
-            </div>
-          </div>
-
-          {/* Filter & Envelope */}
-          <SectionHeader>Filter & Envelope</SectionHeader>
-          <div className="flex flex-wrap justify-center gap-3">
-            <SynthKnob
-              label="HP"
-              value={hpCutoff}
-              min={20}
-              max={2000}
-              logarithmic
-              onChange={(v) => setSynthParam('hpCutoff', v)}
-              unit="Hz"
-              paramKey="hpCutoff"
-              lfoTargeting={lfoFor('hpCutoff', lfo1Target, lfo2Target)}
-              onDrop={(lfo) => handleLfoDrop('hpCutoff', lfo)}
-            />
-            <SynthKnob
-              label="HP Q"
-              value={hpResonance}
-              min={0}
-              max={30}
-              onChange={(v) => setSynthParam('hpResonance', v)}
-              formatValue={(v) => v.toFixed(1)}
-              unit="Q"
-              paramKey="hpResonance"
-              lfoTargeting={lfoFor('hpResonance', lfo1Target, lfo2Target)}
-              onDrop={(lfo) => handleLfoDrop('hpResonance', lfo)}
-            />
-            <SynthKnob
-              label="LP"
-              value={filterCutoff}
-              min={20}
-              max={20000}
-              logarithmic
-              onChange={(v) => setSynthParam('filterCutoff', v)}
-              unit="Hz"
-              paramKey="filterCutoff"
-              lfoTargeting={lfoFor('filterCutoff', lfo1Target, lfo2Target)}
-              onDrop={(lfo) => handleLfoDrop('filterCutoff', lfo)}
-            />
-            <SynthKnob
-              label="LP Q"
-              value={filterResonance}
-              min={0}
-              max={30}
-              onChange={(v) => setSynthParam('filterResonance', v)}
-              formatValue={(v) => v.toFixed(1)}
-              unit="Q"
-              paramKey="filterResonance"
-              lfoTargeting={lfoFor('filterResonance', lfo1Target, lfo2Target)}
-              onDrop={(lfo) => handleLfoDrop('filterResonance', lfo)}
-            />
-            <SynthKnob
-              label="Attack"
-              value={attack}
-              min={0.001}
-              max={2}
-              logarithmic
-              onChange={(v) => setSynthParam('attack', v)}
-              formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`}
-              paramKey="attack"
-            />
-            <SynthKnob
-              label="Decay"
-              value={decay}
-              min={0.001}
-              max={2}
-              logarithmic
-              onChange={(v) => setSynthParam('decay', v)}
-              formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`}
-              paramKey="decay"
-            />
-            <SynthKnob
-              label="Sustain"
-              value={sustain}
-              min={0}
-              max={1}
-              onChange={(v) => setSynthParam('sustain', v)}
-              formatValue={(v) => `${Math.round(v * 100)}%`}
-              paramKey="sustain"
-            />
-            <SynthKnob
-              label="Release"
-              value={release}
-              min={0.01}
-              max={5}
-              logarithmic
-              onChange={(v) => setSynthParam('release', v)}
-              formatValue={(v) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(1)}s`}
-              paramKey="release"
-            />
-          </div>
-
-          {/* LFOs side by side */}
-          <SectionHeader>LFOs</SectionHeader>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="text-[9px] uppercase tracking-wider text-gray-400 mb-1">LFO 1</div>
-              <SynthLfo lfoNum={1} />
-            </div>
-            <div className="flex-1">
-              <div className="text-[9px] uppercase tracking-wider text-gray-400 mb-1">LFO 2</div>
-              <SynthLfo lfoNum={2} />
-            </div>
-          </div>
-        </div>}
       </div>
     </main>
   );

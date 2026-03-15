@@ -3,11 +3,16 @@ import type Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 
 interface FretboardContextValue {
+  fretboardId: string;
   current: { name: string; type: string; root?: Note } | null;
   litNotes: Note[];
   sequence?: Sequence;
   sequenceEnabled: boolean;
   onStrum?: () => void;
+  // Drone mode
+  droneActive: boolean;
+  droneFrets: (number | null)[];  // indexed by stringNumber (tuning index)
+  onDroneFretSelect?: (stringNumber: number, semitones: number) => void;
 }
 
 const FretboardContext = createContext<FretboardContextValue | null>(null);

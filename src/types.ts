@@ -28,6 +28,7 @@ export interface Song {
   updatedAt: number;
   chords: ChordConfig[];
   savedChords?: ChordConfig[];
+  songGrid?: (ChordConfig | null)[];
 }
 
 export interface SongExport {

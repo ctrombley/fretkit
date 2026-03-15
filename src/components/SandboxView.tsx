@@ -3,10 +3,14 @@ import { useBottomPadding } from '../hooks/useBottomPadding';
 import FretboardSection from './FretboardSection';
 import Sidebar from './Sidebar';
 import ControlPanel from './ControlPanel';
+import DronePanel from './DronePanel';
 import { Plus, Lock, Unlock, Zap, Link, Unlink } from 'lucide-react';
-import type { ArpPattern } from '../lib/arpeggiator';
+import type { ArpPattern, ArpMode } from '../lib/arpeggiator';
+import { FINGER_PICKING_PATTERNS } from '../lib/fingerPickingPatterns';
 import SynthKnob from './SynthKnob';
 import SynthPresetSelector from './SynthPresetSelector';
+import SamplerPresetSelector from './SamplerPresetSelector';
+import HelpPopover from './HelpPopover';
 
 const ARP_SYNC_SPEEDS: { value: number; label: string }[] = [
   { value: 1, label: '1/4' },
@@ -45,8 +49,13 @@ export default function SandboxView() {
   const setArpSyncSpeed = useStore(s => s.setArpSyncSpeed);
   const arpFreeMs = useStore(s => s.arpFreeMs);
   const setArpFreeMs = useStore(s => s.setArpFreeMs);
+  const arpMode = useStore(s => s.arpMode);
+  const setArpMode = useStore(s => s.setArpMode);
+  const arpFingerPickingPatternId = useStore(s => s.arpFingerPickingPatternId);
+  const setArpFingerPickingPatternId = useStore(s => s.setArpFingerPickingPatternId);
   const bloomAllOctaves = useStore(s => s.bloomAllOctaves);
   const setBloomAllOctaves = useStore(s => s.setBloomAllOctaves);
+  const samplerMode = useStore(s => s.samplerMode);
   const bottomPadding = useBottomPadding();
 
   const activeFretboard = fretboards[settings.settingsId];
@@ -62,7 +71,13 @@ export default function SandboxView() {
       <main className="pt-14 px-4 max-w-7xl mx-auto" style={{ paddingBottom: bottomPadding }}>
         {/* Toolbar */}
         <div className="flex items-center gap-2 py-2">
-          <SynthPresetSelector />
+          {samplerMode === 'synth' ? <SynthPresetSelector /> : <SamplerPresetSelector />}
+          <HelpPopover
+            placement="below"
+            text={<>
+              Search for scales or chords by name (e.g. "C major", "C M"). Chords show ranked voicings with tab notation, shape type, and difficulty. Click the label to search; use arrows to navigate voicings. X/O markers show muted/open strings; the mini diagram shows the chord shape. Click notes to play; toggle Latch/Momentary for sustain behavior.
+            </>}
+          />
           {/* Latch toggle (hidden when arp is on) */}
           {!arpEnabled && (
             <button
@@ -106,15 +121,53 @@ export default function SandboxView() {
           {/* Arp controls (visible when arp is on) */}
           {arpEnabled && (
             <>
-              <select
-                value={arpPattern}
-                onChange={(e) => setArpPattern(e.target.value as ArpPattern)}
-                className="text-[10px] bg-white border border-gray-200 rounded px-1.5 py-1 text-gray-600"
-              >
-                {ARP_PATTERNS.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+              {/* Mode tabs: Standard / Strum / Finger Pick */}
+              <div className="flex items-center rounded border border-gray-200 overflow-hidden">
+                {(['standard', 'strum', 'fingerPicking'] as ArpMode[]).map((m) => {
+                  const labels: Record<ArpMode, string> = { standard: 'Standard', strum: 'Strum', fingerPicking: 'Finger Pick' };
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setArpMode(m)}
+                      className={`px-2 py-1 text-[10px] uppercase tracking-wider transition-colors ${
+                        arpMode === m
+                          ? 'bg-magenta text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {labels[m]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Standard mode: pattern selector */}
+              {arpMode === 'standard' && (
+                <select
+                  value={arpPattern}
+                  onChange={(e) => setArpPattern(e.target.value as ArpPattern)}
+                  className="text-[10px] bg-white border border-gray-200 rounded px-1.5 py-1 text-gray-600"
+                >
+                  {ARP_PATTERNS.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Finger picking: pattern library selector */}
+              {arpMode === 'fingerPicking' && (
+                <select
+                  value={arpFingerPickingPatternId}
+                  onChange={(e) => setArpFingerPickingPatternId(e.target.value)}
+                  className="text-[10px] bg-white border border-gray-200 rounded px-1.5 py-1 text-gray-600"
+                  title={FINGER_PICKING_PATTERNS.find(p => p.id === arpFingerPickingPatternId)?.description}
+                >
+                  {FINGER_PICKING_PATTERNS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              )}
+
               <div className="flex items-center gap-1">
                 <span className="text-[9px] uppercase tracking-wider text-gray-400">Oct</span>
                 {[1, 2, 3, 4].map(n => (
@@ -182,14 +235,7 @@ export default function SandboxView() {
         {Object.keys(fretboards).map(id => (
           <FretboardSection key={id} id={id} />
         ))}
-        <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
-          Search for scales or chords by name (e.g. "C major", "C M").
-          Chords show ranked voicings with tab notation, shape type, and difficulty.
-          Click the label to search; use arrows to navigate voicings.
-          X/O markers show muted/open strings; the mini diagram shows the chord shape.
-          Click notes to play; toggle Latch/Momentary for sustain behavior.
-        </p>
-        <div className="mt-4 mb-8">
+        <div className="mt-2 mb-2">
           <button
             onClick={createFretboard}
             className="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
@@ -198,6 +244,7 @@ export default function SandboxView() {
             <Plus size={20} />
           </button>
         </div>
+        <DronePanel />
       </main>
     </>
   );

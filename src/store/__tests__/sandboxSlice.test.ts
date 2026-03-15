@@ -63,7 +63,12 @@ function makeStore(overrides: Partial<AppState> = {}) {
   const get = () => state as AppState;
 
   const slice = createSandboxSlice(set, get);
-  state = { ...slice, ...overrides };
+  state = {
+    ...slice,
+    view: { name: 'sandbox' } as AppState['view'],
+    syncArpToFretboard: vi.fn(),
+    ...overrides,
+  };
 
   return { get, ...slice };
 }

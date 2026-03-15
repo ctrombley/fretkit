@@ -21,6 +21,9 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
   const songs = useStore(s => s.songs);
   const addConfiguredChordToSong = useStore(s => s.addConfiguredChordToSong);
   const navigate = useStore(s => s.navigate);
+  const droneActive = useStore(s => s.droneActive);
+  const droneFretsForBoard = useStore(s => s.droneFrets[id]);
+  const setDroneFret = useStore(s => s.setDroneFret);
 
   const [showSongMenu, setShowSongMenu] = useState(false);
   const dragState = useRef<{ startX: number; startFret: number } | null>(null);
@@ -77,7 +80,7 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
     return () => {
       // Sort bass-to-treble: string 0 = bass (low E), ascending
       const sorted = [...sequence.stringNotes].sort((a, b) => a.string - b.string);
-      strumVoicing(sorted.map(sn => ({ semitones: sn.semitones, frequency: sn.frequency })));
+      strumVoicing(sorted.map(sn => ({ semitones: sn.semitones, frequency: sn.frequency, string: sn.string })), id);
     };
   }, [fretboard?.sequenceEnabled, sequence, strumVoicing]);
 
@@ -305,6 +308,7 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
         inversion={fretboard.inversion}
       />
       <Fretboard
+        fretboardId={id}
         fretCount={fretboard.fretCount}
         litNotes={fretboard.litNotes}
         startingFret={fretboard.startingFret}
@@ -314,6 +318,10 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
         sequenceEnabled={fretboard.sequenceEnabled}
         sequenceIdx={fretboard.sequenceIdx}
         onStrum={onStrum}
+        droneActive={droneActive}
+        droneFrets={droneFretsForBoard}
+        onDroneFretSelect={(stringNumber, semitones) => setDroneFret(id, stringNumber, semitones)}
+        showStringLabels={fretboard.showStringLabels}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import { noteName, usesSharps } from '../lib/harmony';
 import HarmonicSpiral from './HarmonicSpiral';
 import DiatonicChordBar from './DiatonicChordBar';
 import SynthPresetSelector from './SynthPresetSelector';
+import HelpPopover from './HelpPopover';
 
 const KEY_INTERVALS = [
   { label: 'm2', semitones: 1 },
@@ -32,7 +33,13 @@ export default function SpiralView() {
   return (
     <div className="pt-14 px-4 max-w-2xl mx-auto" style={{ paddingBottom: bottomPadding }}>
       <div className="flex items-center justify-between mt-6 mb-4">
-        <h2 className="text-2xl font-bold text-dark">{keyName}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-dark">{keyName}</h2>
+          <HelpPopover
+            placement="below"
+            text="Three rings: inner (pitch classes), middle (major keys), outer (relative minor keys). Click any segment to set the key; green = root, blue tint = dominant/subdominant, pink tint = other diatonic. Use the arrows to step through keys by the selected interval (default: circle of fifths). Click chord buttons below to hear diatonic arpeggios."
+          />
+        </div>
         <SynthPresetSelector />
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
           <button
@@ -98,12 +105,6 @@ export default function SpiralView() {
         <DiatonicChordBar />
       </div>
 
-      <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
-        Three rings: inner (pitch classes), middle (major keys), outer (relative minor keys).
-        Click any segment to set the key; green = root, blue tint = dominant/subdominant, pink tint = other diatonic.
-        Use the arrows to step through keys by the selected interval (default: circle of fifths).
-        Click chord buttons below to hear diatonic arpeggios.
-      </p>
     </div>
   );
 }

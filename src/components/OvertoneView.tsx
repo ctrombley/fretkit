@@ -8,6 +8,7 @@ import { getDerivation, GENERATOR_PRESETS, type GeneratorPreset } from '../lib/d
 import OvertoneSpiral from './OvertoneSpiral';
 import DerivationRing from './DerivationRing';
 import SynthPresetSelector from './SynthPresetSelector';
+import HelpPopover from './HelpPopover';
 
 // ── Module-level loop state (survives navigation) ─────────────────────────
 let _loopId = 0;
@@ -130,12 +131,21 @@ export default function OvertoneView() {
       {/* Title */}
       <div className="mt-6 mb-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-dark">
-            {isDeriveMode
-              ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name}, ${derivationDivisions}-TET)`
-              : `Overtone Series: ${rootName}${overtoneOctave}`
-            }
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-dark">
+              {isDeriveMode
+                ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name}, ${derivationDivisions}-TET)`
+                : `Overtone Series: ${rootName}${overtoneOctave}`
+              }
+            </h2>
+            <HelpPopover
+              placement="below"
+              text={isDeriveMode
+                ? <>Inner dots show pitches from stacking pure-ratio intervals. The outer ring marks {derivationDivisions}-TET positions. Arcs show how far each pitch misses its nearest ET step: <span className="text-red-400">red = sharp</span>, <span className="text-blue-400">blue = flat</span>. The <span className="text-red-400">dashed line</span> shows the comma gap. Hover a dot for details.</>
+                : 'Spiral shows the overtone series of the selected fundamental. Each node is a harmonic partial — hover for frequency and pitch info. Inner nodes = lower partials, outer = higher. Toggle "Show ET" to compare natural harmonics with the 12-TET grid. Switch JI/ET to hear natural vs. equal-tempered tuning.'
+              }
+            />
+          </div>
           <SynthPresetSelector />
         </div>
         <p className="text-sm text-gray-500 mt-0.5">
@@ -304,16 +314,6 @@ export default function OvertoneView() {
             activeStep={derivationActiveStep}
             onActiveStepChange={setDerivationActiveStep}
           />
-          <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
-            Inner dots show pitches from stacking pure-ratio intervals.
-            The outer ring marks {derivationDivisions}-TET positions.
-            Arcs show how far each pitch misses its nearest ET step:
-            {' '}<span className="text-red-400">red = sharp</span>,
-            {' '}<span className="text-blue-400">blue = flat</span>.
-            The <span className="text-red-400">dashed line</span> shows
-            the comma gap — how far the chain misses closing the octave.
-            Hover a dot for details.
-          </p>
         </>
       ) : (
         <>
@@ -326,13 +326,6 @@ export default function OvertoneView() {
             activeN={activeN}
             bloomKey={bloomKey}
           />
-          <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
-            Spiral shows the overtone series of the selected fundamental.
-            Each node is a harmonic partial — hover for frequency and pitch info.
-            Inner nodes = lower partials, outer = higher.
-            Toggle "Show ET" to compare natural harmonics with the 12-TET grid.
-            Switch JI/ET to hear natural vs. equal-tempered tuning.
-          </p>
         </>
       )}
     </div>

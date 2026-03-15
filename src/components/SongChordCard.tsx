@@ -22,6 +22,7 @@ export default function SongChordCard({ songId, chord, index, prevChord }: SongC
   const removeSongChord = useStore(s => s.removeSongChord);
   const reorderSongChords = useStore(s => s.reorderSongChords);
   const updateSongChord = useStore(s => s.updateSongChord);
+  const addSavedChordToProgressionAt = useStore(s => s.addSavedChordToProgressionAt);
   const activeSongChordId = useStore(s => s.activeSongChordId);
   const setActiveSongChordId = useStore(s => s.setActiveSongChordId);
   const strumVoicing = useStore(s => s.strumVoicing);
@@ -66,10 +67,18 @@ export default function SongChordCard({ songId, chord, index, prevChord }: SongC
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    const raw = e.dataTransfer.getData('text/plain');
+    const from = parseInt(raw, 10);
     if (!isNaN(from) && from !== index) {
       reorderSongChords(songId, from, index);
+      return;
     }
+    try {
+      const payload = JSON.parse(raw) as { type: string; id: string };
+      if (payload.type === 'saved-chord') {
+        addSavedChordToProgressionAt(songId, payload.id, index);
+      }
+    } catch { /* ignore */ }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -181,7 +190,7 @@ export default function SongChordCard({ songId, chord, index, prevChord }: SongC
     const seq = sequences[effectiveSequenceIdx ?? 0];
     if (!seq) return;
     const sorted = [...seq.stringNotes].sort((a, b) => a.string - b.string);
-    strumVoicing(sorted.map(sn => ({ semitones: sn.semitones, frequency: sn.frequency })));
+    strumVoicing(sorted.map(sn => ({ semitones: sn.semitones, frequency: sn.frequency, string: sn.string })));
   }, [sequences, effectiveSequenceIdx, strumVoicing]);
 
   const canStrum = !!sequences[effectiveSequenceIdx ?? 0];

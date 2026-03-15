@@ -240,6 +240,31 @@ export default function SamplerParamEditor({ slotIdx }: Props) {
         )}
       </div>
 
+      {/* ADSR */}
+      <div className="space-y-1">
+        <div className="text-[9px] uppercase tracking-wider text-gray-500">ADSR</div>
+        {([
+          { key: 'attack',  label: 'A', min: 0, max: 2,   step: 0.001, fmt: (v: number) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(2)}s` },
+          { key: 'decay',   label: 'D', min: 0, max: 2,   step: 0.001, fmt: (v: number) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(2)}s` },
+          { key: 'sustain', label: 'S', min: 0, max: 1,   step: 0.01,  fmt: (v: number) => `${Math.round(v * 100)}%` },
+          { key: 'release', label: 'R', min: 0, max: 5,   step: 0.001, fmt: (v: number) => v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(2)}s` },
+        ] as const).map(({ key, label, min, max, step, fmt }) => (
+          <div key={key} className="flex items-center gap-2">
+            <span className="text-[9px] text-gray-400 w-4">{label}</span>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={params[key]}
+              onChange={e => p(key, parseFloat(e.target.value))}
+              className="flex-1 h-1 accent-fret-green"
+            />
+            <span className="text-[9px] text-gray-400 w-10 text-right">{fmt(params[key])}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Amplitude + Pitch */}
       <div className="flex gap-4">
         <div className="flex-1 space-y-1">

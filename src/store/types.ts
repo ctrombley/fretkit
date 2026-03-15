@@ -6,11 +6,13 @@ import type { SymmetricDivision } from '../lib/coltrane';
 import type { OscWaveform, SynthParams, LfoWaveform, LfoTargetParam } from '../lib/synth';
 import type { SynthPreset } from '../lib/synthPresets';
 import type { MetronomeTimbre } from '../lib/metronome';
-import type { ArpPattern } from '../lib/arpeggiator';
+import type { ArpPattern, ArpMode } from '../lib/arpeggiator';
+import type { FingerLabel } from '../lib/fingerPickingPatterns';
 import type { MidiChannel, MidiBusConfig } from '../lib/midi';
 import type { ScaleEntry, UserScalePreset } from '../lib/monochordScales';
 import type { SamplerParams } from '../lib/sampler';
 import type { SamplerSlotDef, SamplerPreset } from '../lib/samplerPresets';
+import type { DroneAnalysis } from '../lib/harmonicAnalysis';
 
 export interface FretboardState {
   id: number;
@@ -25,6 +27,8 @@ export interface FretboardState {
   sequences: Sequence[];
   startingFret: number;
   tuning: string[];
+  showStringLabels: boolean;
+  soundPreset: string;
 }
 
 export interface Settings {
@@ -42,6 +46,25 @@ export interface AppState {
   // Sandbox
   fretboards: Record<string, FretboardState>;
   settings: Settings;
+
+  // Drone
+  droneActive: boolean;
+  droneDetuneRange: number;
+  droneOffsets: number[];
+  droneFrets: Record<string, (number | null)[]>;
+  droneLegatoEnabled: boolean;
+  dronePortamentoMs: number;
+  droneAnalysis: DroneAnalysis | null;
+
+  // Drone actions
+  activateDrone: () => void;
+  deactivateDrone: () => void;
+  retriggerDrone: () => void;
+  setDroneFret: (fretboardId: string, stringNumber: number, semitones: number | null) => void;
+  setDroneDetuneRange: (range: number) => void;
+  randomizeDroneOffsets: () => void;
+  setDroneLegatoEnabled: (enabled: boolean) => void;
+  setDronePortamentoMs: (ms: number) => void;
 
   // Navigation
   view: View;
@@ -184,6 +207,8 @@ export interface AppState {
   // Sandbox latch
   sandboxLatch: boolean;
   sandboxActiveNotes: number[];
+  strumPreviewSemitones: number[];
+  sandboxSoundingStrings: number[];
 
   // Arpeggiator
   arpEnabled: boolean;
@@ -192,8 +217,11 @@ export interface AppState {
   arpSync: boolean;
   arpSyncSpeed: number;
   arpFreeMs: number;
-  arpStrikeNote: number | null;
+  arpStrikeNotes: number[];
   arpStrikeCount: number;
+  arpStrikeFingers: Record<number, FingerLabel | null>;
+  arpMode: ArpMode;
+  arpFingerPickingPatternId: string;
 
   // Series/cycle playback — separate flags per toy
   coltraneSeriesPlaying: boolean;
@@ -239,11 +267,12 @@ export interface AppState {
   // Sandbox latch actions
   setSandboxLatch: (latch: boolean) => void;
   killAllNotes: () => void;
-  toggleSandboxNote: (semitones: number, frequency: number) => void;
-  activateSandboxNote: (semitones: number, frequency: number) => void;
-  deactivateSandboxNote: (semitones: number) => void;
-  strumVoicing: (notes: Array<{ semitones: number; frequency: number }>) => void;
+  toggleSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => void;
+  activateSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => void;
+  deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => void;
+  strumVoicing: (notes: Array<{ semitones: number; frequency: number; string?: number }>, fretboardId?: string) => void;
   strumActiveNotes: () => void;
+  setFretboardSoundPreset: (fretboardId: string, presetName: string) => void;
 
   // Arpeggiator actions
   setArpEnabled: (enabled: boolean) => void;
@@ -252,6 +281,10 @@ export interface AppState {
   setArpSync: (sync: boolean) => void;
   setArpSyncSpeed: (speed: number) => void;
   setArpFreeMs: (ms: number) => void;
+  setArpMode: (mode: ArpMode) => void;
+  setArpFingerPickingPatternId: (id: string) => void;
+  loadVoicingIntoArp: (fretboardId: string, overrideSeqIdx?: number) => void;
+  syncArpToFretboard: (fretboardId: string) => void;
 
   // Synth actions
   setSynthParam: <K extends keyof SynthParams>(key: K, value: SynthParams[K]) => void;
@@ -315,6 +348,8 @@ export interface AppState {
   addConfiguredChordToSong: (songId: string, config: Omit<import('../types').ChordConfig, 'id'>) => void;
   removeSavedChord: (songId: string, chordId: string) => void;
   addSavedChordToProgression: (songId: string, savedChordId: string) => void;
+  addSavedChordToProgressionAt: (songId: string, savedChordId: string, atIndex: number) => void;
+  setSongGridStep: (songId: string, step: number, chord: ChordConfig | null) => void;
   deleteSong: (id: string) => void;
   renameSong: (id: string, title: string) => void;
   addChordToSong: (songId: string) => void;

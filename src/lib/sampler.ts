@@ -9,6 +9,10 @@ export interface SamplerParams {
   reverse: boolean;
   amplitude: number;   // 0..2
   pitchSemitones: number; // -24..24
+  attack: number;   // seconds, 0..2
+  decay: number;    // seconds, 0..2
+  sustain: number;  // 0..1
+  release: number;  // seconds, 0..5
 }
 
 export const DEFAULT_SAMPLER_PARAMS: SamplerParams = {
@@ -20,6 +24,10 @@ export const DEFAULT_SAMPLER_PARAMS: SamplerParams = {
   reverse: false,
   amplitude: 1,
   pitchSemitones: 0,
+  attack: 0,
+  decay: 0,
+  sustain: 1,
+  release: 0,
 };
 
 interface ActiveSource {
@@ -126,8 +134,22 @@ class SamplerEngine {
     const busInput = master.getBus(this._outputBusId).input;
 
     const gainNode = ctx.createGain();
-    gainNode.gain.value = p.amplitude * (velocity / 127);
     gainNode.connect(busInput);
+
+    // Apply ADSR envelope
+    const peak = p.amplitude * (velocity / 127);
+    const sustainLevel = peak * p.sustain;
+    const now = ctx.currentTime;
+    gainNode.gain.cancelScheduledValues(now);
+    if (p.attack < 0.001) {
+      gainNode.gain.setValueAtTime(peak, now);
+    } else {
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(peak, now + p.attack);
+    }
+    if (p.decay > 0.001) {
+      gainNode.gain.linearRampToValueAtTime(sustainLevel, now + p.attack + p.decay);
+    }
 
     const source = ctx.createBufferSource();
     const duration = buffer.duration;
@@ -165,12 +187,23 @@ class SamplerEngine {
     if (!active) return;
 
     const slotIdx = keyMap[midiNote];
-    if (slotIdx != null) {
-      const p = params[slotIdx] ?? DEFAULT_SAMPLER_PARAMS;
-      if (!p.loop) return;
+    const p = slotIdx != null ? (params[slotIdx] ?? DEFAULT_SAMPLER_PARAMS) : DEFAULT_SAMPLER_PARAMS;
+
+    // Non-looping sample with no release: let it play out naturally
+    if (!p.loop && p.release < 0.001) return;
+
+    const ctx = getMasterBus().getAudioContext();
+    const now = ctx.currentTime;
+
+    if (p.release > 0.001) {
+      active.gainNode.gain.cancelScheduledValues(now);
+      active.gainNode.gain.setValueAtTime(active.gainNode.gain.value, now);
+      active.gainNode.gain.linearRampToValueAtTime(0, now + p.release);
+      try { active.source.stop(now + p.release); } catch (_) { /* already stopped */ }
+    } else {
+      try { active.source.stop(); } catch (_) { /* already stopped */ }
     }
 
-    try { active.source.stop(); } catch (_) { /* already stopped */ }
     this._activeNotes.delete(midiNote);
   }
 

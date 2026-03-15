@@ -248,6 +248,24 @@ function makeAshoreTurf(): SamplerPreset {
   };
 }
 
+// ---------------------------------------------------------------------------
+// 9. Fret Groan  (anagram of "Front Gear")
+//    Single electric guitar note (Eb4) pitched chromatically across keyboard
+// ---------------------------------------------------------------------------
+function makeFretGroan(): SamplerPreset {
+  const keyMap = makeEmptyKeyMap();
+  mapRange(keyMap, 0, 21, 108);  // A0–C8 → guitar Eb4 sample, pitch-shifted
+  return {
+    name: 'Fret Groan',
+    isFactory: true, keyMap,
+    slots: [
+      { ...slot('Guitar Eb4', SLOT_COLORS[2]!, 63), url: '/samples/guitar/guitar-eb4.wav' },  // Eb4 = MIDI 63
+      null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null,
+    ],
+  };
+}
+
 export const FACTORY_SAMPLER_PRESETS: SamplerPreset[] = [
   makeCufferGarrote(),
   makeGlumoseKeno(),
@@ -257,4 +275,5 @@ export const FACTORY_SAMPLER_PRESETS: SamplerPreset[] = [
   makeAbyssShoaler(),
   makeAssignToll(),
   makeAshoreTurf(),
+  makeFretGroan(),
 ];

@@ -189,6 +189,43 @@ export function createSongsSlice(set: StoreSet, get: StoreGet) {
       });
     },
 
+    addSavedChordToProgressionAt: (songId: string, savedChordId: string, atIndex: number) => {
+      set((state: AppState) => {
+        const song = state.songs[songId];
+        if (!song) return state;
+        const source = (song.savedChords ?? []).find(c => c.id === savedChordId);
+        if (!source) return state;
+        const newChord: ChordConfig = { ...source, id: crypto.randomUUID() };
+        const chords = [...song.chords];
+        chords.splice(atIndex, 0, newChord);
+        return {
+          songs: {
+            ...state.songs,
+            [songId]: { ...song, chords, updatedAt: Date.now() },
+          },
+        };
+      });
+    },
+
+    setSongGridStep: (songId: string, step: number, chord: ChordConfig | null) => {
+      set((state: AppState) => {
+        const song = state.songs[songId];
+        if (!song) return state;
+        const grid: (ChordConfig | null)[] = song.songGrid
+          ? [...song.songGrid]
+          : Array(8).fill(null);
+        // Extend if needed
+        while (grid.length <= step) grid.push(null);
+        grid[step] = chord;
+        return {
+          songs: {
+            ...state.songs,
+            [songId]: { ...song, songGrid: grid, updatedAt: Date.now() },
+          },
+        };
+      });
+    },
+
     importSongs: (data: SongExport) => {
       set((state: AppState) => {
         const newSongs = { ...state.songs };

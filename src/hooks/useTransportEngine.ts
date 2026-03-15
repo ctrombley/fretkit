@@ -43,15 +43,22 @@ export function useTransportEngine() {
     if (!arpEnabled) {
       m.onArpTick = null;
       m.onSubTick = null;
-      arp.onNotePlayed = null;
+      arp.onStepPlayed = null;
       arp.stopFreeRunning();
       return;
     }
 
     arp.enable();
 
-    arp.onNotePlayed = (semitones) => {
-      useStore.setState(s => ({ arpStrikeNote: semitones, arpStrikeCount: s.arpStrikeCount + 1 }));
+    arp.onStepPlayed = (played) => {
+      if (played.length === 0) return;
+      const fingers: Record<number, import('../lib/fingerPickingPatterns').FingerLabel | null> = {};
+      for (const p of played) fingers[p.semitones] = p.finger;
+      useStore.setState(s => ({
+        arpStrikeNotes: played.map(p => p.semitones),
+        arpStrikeCount: s.arpStrikeCount + 1,
+        arpStrikeFingers: fingers,
+      }));
     };
 
     if (arpSync) {
@@ -68,7 +75,7 @@ export function useTransportEngine() {
     return () => {
       m.onArpTick = null;
       m.onSubTick = null;
-      arp.onNotePlayed = null;
+      arp.onStepPlayed = null;
       arp.stopFreeRunning();
     };
   }, [arpEnabled, arpSync, arpSyncSpeed, arpFreeMs]);

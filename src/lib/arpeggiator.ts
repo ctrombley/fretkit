@@ -1,6 +1,9 @@
 import { getSynth } from './synth';
+import { getInternalMidiBus } from './internalMidiBus';
+import { resolvePatternIndex, type PatternStep, type PatternStepFingers, type FingerLabel } from './fingerPickingPatterns';
 
 export type ArpPattern = 'up' | 'down' | 'upDown' | 'downUp' | 'random' | 'asPlayed' | 'converge' | 'diverge';
+export type ArpMode = 'standard' | 'strum' | 'fingerPicking';
 
 interface HeldNote {
   frequency: number;
@@ -14,12 +17,17 @@ export class ArpeggiatorEngine {
   private stepIndex = 0;
   private direction = 1; // 1 = up, -1 = down
   private enabled = false;
-  private currentVoice: { stop: () => void } | null = null;
+  private currentNotes: { semitones: number }[] = [];
   private freeTimer: number | null = null;
 
   pattern: ArpPattern = 'up';
+  mode: ArpMode = 'standard';
+  /** Resolved finger picking sequence (positions into sorted note array). */
+  fingerPickingSequence: PatternStep[] = [0, 1, 2, 3];
+  /** Per-step finger annotations, parallel to fingerPickingSequence. */
+  fingerPickingFingers: PatternStepFingers[] = ['p', 'i', 'm', 'a'];
   octaveRange = 1;
-  onNotePlayed: ((semitones: number) => void) | null = null;
+  onStepPlayed: ((played: Array<{ semitones: number; finger: FingerLabel | null }>) => void) | null = null;
 
   setOctaveRange(range: number): void {
     this.octaveRange = range;
@@ -36,8 +44,7 @@ export class ArpeggiatorEngine {
   disable(): void {
     this.enabled = false;
     this.stopFreeRunning();
-    this.currentVoice?.stop();
-    this.currentVoice = null;
+    this._stopCurrentNotes();
   }
 
   startFreeRunning(ms: number): void {
@@ -71,19 +78,23 @@ export class ArpeggiatorEngine {
     if (this.heldNotes.length === 0) {
       this.stepIndex = 0;
       this.direction = 1;
-      this.currentVoice?.stop();
-      this.currentVoice = null;
+      this._stopCurrentNotes();
     }
   }
 
   clear(): void {
+    this._stopCurrentNotes();
     this.heldNotes = [];
     this.sortedNotes = [];
     this.expandedNotes = [];
     this.stepIndex = 0;
     this.direction = 1;
-    this.currentVoice?.stop();
-    this.currentVoice = null;
+  }
+
+  private _stopCurrentNotes(): void {
+    const bus = getInternalMidiBus();
+    for (const n of this.currentNotes) bus.noteOff(n.semitones, 'arp');
+    this.currentNotes = [];
   }
 
   private rebuildSorted(): void {
@@ -115,14 +126,70 @@ export class ArpeggiatorEngine {
   tick(_time: number): void {
     if (!this.enabled || this.expandedNotes.length === 0) return;
 
-    this.currentVoice?.stop();
-    this.currentVoice = null;
-
-    const note = this.getNextNote();
-    if (note) {
-      this.currentVoice = getSynth().play(note.frequency);
-      this.onNotePlayed?.(note.semitones);
+    if (this.mode === 'strum') {
+      this.tickStrum();
+      return;
     }
+
+    this._stopCurrentNotes();
+
+    const bus = getInternalMidiBus();
+
+    if (this.mode === 'fingerPicking') {
+      const notes = this.getFingerPickingStep();
+      if (notes.length > 0) {
+        for (const n of notes) bus.noteOn(n.semitones, n.frequency, 'arp');
+        this.currentNotes = notes.map(n => ({ semitones: n.semitones }));
+        this.onStepPlayed?.(notes.map(n => ({ semitones: n.semitones, finger: n.finger })));
+      }
+    } else {
+      const note = this.getNextNote();
+      if (note) {
+        bus.noteOn(note.semitones, note.frequency, 'arp');
+        this.currentNotes = [{ semitones: note.semitones }];
+        this.onStepPlayed?.([{ semitones: note.semitones, finger: null }]);
+      }
+    }
+  }
+
+  private tickStrum(): void {
+    const synth = getSynth();
+    const noteOnMs = Math.round((synth.params.attack + synth.params.decay) * 1000);
+    const bus = getInternalMidiBus();
+
+    // Sort low-to-high for natural strum sweep
+    const notes = [...this.expandedNotes].sort((a, b) => a.semitones - b.semitones);
+
+    this.onStepPlayed?.(notes.map(n => ({ semitones: n.semitones, finger: null })));
+    notes.forEach((note, i) => {
+      setTimeout(() => {
+        bus.noteOn(note.semitones, note.frequency, 'arp');
+        setTimeout(() => bus.noteOff(note.semitones, 'arp'), noteOnMs);
+      }, i * 28);
+    });
+  }
+
+  private getFingerPickingStep(): Array<HeldNote & { finger: FingerLabel | null }> {
+    if (this.expandedNotes.length === 0) return [];
+
+    const seq = this.fingerPickingSequence;
+    const seqIdx = this.stepIndex % seq.length;
+    const step = seq[seqIdx]!;
+    const fingerStep: PatternStepFingers = this.fingerPickingFingers[seqIdx] ?? null;
+    this.stepIndex++;
+
+    const positions = Array.isArray(step) ? step : [step];
+    const fingerArr: (FingerLabel | null)[] = Array.isArray(fingerStep)
+      ? fingerStep
+      : positions.map((_, i) => (i === 0 && typeof fingerStep === 'string' ? fingerStep : null));
+
+    return positions
+      .map((pos, i) => {
+        const note = this.expandedNotes[resolvePatternIndex(pos, this.expandedNotes.length)];
+        if (!note) return null;
+        return { ...note, finger: fingerArr[i] ?? null };
+      })
+      .filter((n): n is HeldNote & { finger: FingerLabel | null } => n !== null);
   }
 
   private getNextNote(): HeldNote | null {

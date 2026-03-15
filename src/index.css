@@ -39,6 +39,14 @@
   margin: 0 auto;
 }
 
+.fretboard__string-label {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  fill: #9ca3af;
+  pointer-events: none;
+  user-select: none;
+}
+
 .fret__wire {
   fill: none;
   stroke: #9ca3af;
@@ -79,8 +87,23 @@
   animation: pulse 1.2s infinite;
 }
 
+/* Open string "O" hint — shown when string is unplayed and unlit */
+.string__marker-open {
+  fill: none;
+  stroke: #d1d5db;
+  stroke-width: 1.5;
+  transition: stroke 120ms;
+}
+
 .string__marker-lit {
   /* fill/stroke set via inline style from pitch class color */
+}
+
+.string__marker-drone {
+  fill: #6366f1;
+  stroke: #4f46e5;
+  stroke-width: 1.5;
+  opacity: 0.9;
 }
 
 @keyframes pulse {
@@ -170,4 +193,34 @@
 
 .animate-toast-in {
   animation: toast-in 0.18s ease-out forwards;
+}
+
+
+/* Smaller crossfader variant for EngineBar */
+.crossfader-sm {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+}
+.crossfader-sm::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  border: 1.5px solid #9ca3af;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  cursor: pointer;
+}
+.crossfader-sm::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  border: 1.5px solid #9ca3af;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  cursor: pointer;
 }

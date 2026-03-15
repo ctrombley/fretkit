@@ -1,6 +1,11 @@
 import { getMasterBus } from './masterBus';
 
 export type OscWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
+
+export interface SynthVoice {
+  stop: () => void;
+  setFrequency: (freq: number, portamentoSeconds: number) => void;
+}
 export type LfoWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
 export type LfoTargetParam = keyof SynthParams | 'bpm' | null;
 
@@ -126,7 +131,7 @@ class SynthEngine {
   private lfo1State: LfoState = { phase: 0, baseValues: new Map() };
   private lfo2State: LfoState = { phase: 0, baseValues: new Map() };
   private lastLfoTime: number = 0;
-  private activeVoices: Set<{ stop: () => void }> = new Set();
+  private activeVoices: Set<SynthVoice> = new Set();
 
   constructor() {
     this.ctx = getMasterBus().getAudioContext();
@@ -310,7 +315,7 @@ class SynthEngine {
     if (this.params.lfo2Target === 'bpm') this.lfo2State.baseValues.set('bpm', bpm);
   }
 
-  play(frequency: number): { stop: () => void } {
+  play(frequency: number): SynthVoice {
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
@@ -346,7 +351,7 @@ class SynthEngine {
       modOsc.start(now);
 
       let released = false;
-      const handle = {
+      const handle: SynthVoice = {
         stop: () => {
           if (released) return;
           released = true;
@@ -363,6 +368,18 @@ class SynthEngine {
             fmGain.disconnect();
             envelope.disconnect();
           };
+        },
+        setFrequency: (freq: number, portamentoSeconds: number) => {
+          if (released) return;
+          const now = this.ctx.currentTime;
+          const target = Math.max(0.001, freq);
+          osc1.frequency.cancelScheduledValues(now);
+          osc1.frequency.setValueAtTime(osc1.frequency.value, now);
+          osc1.frequency.exponentialRampToValueAtTime(target, now + portamentoSeconds);
+          const modTarget = Math.max(0.001, freq + osc2Detune / 100 * freq);
+          modOsc.frequency.cancelScheduledValues(now);
+          modOsc.frequency.setValueAtTime(modOsc.frequency.value, now);
+          modOsc.frequency.exponentialRampToValueAtTime(modTarget, now + portamentoSeconds);
         },
       };
       this.activeVoices.add(handle);
@@ -390,7 +407,7 @@ class SynthEngine {
         osc2.start(now);
 
         let released = false;
-        const handle = {
+        const handle: SynthVoice = {
           stop: () => {
             if (released) return;
             released = true;
@@ -409,6 +426,17 @@ class SynthEngine {
               envelope.disconnect();
             };
           },
+          setFrequency: (freq: number, portamentoSeconds: number) => {
+            if (released) return;
+            const now = this.ctx.currentTime;
+            const target = Math.max(0.001, freq);
+            osc1.frequency.cancelScheduledValues(now);
+            osc1.frequency.setValueAtTime(osc1.frequency.value, now);
+            osc1.frequency.exponentialRampToValueAtTime(target, now + portamentoSeconds);
+            osc2.frequency.cancelScheduledValues(now);
+            osc2.frequency.setValueAtTime(osc2.frequency.value, now);
+            osc2.frequency.exponentialRampToValueAtTime(target, now + portamentoSeconds);
+          },
         };
         this.activeVoices.add(handle);
         return handle;
@@ -417,7 +445,7 @@ class SynthEngine {
         osc1.start(now);
 
         let released = false;
-        const handle = {
+        const handle: SynthVoice = {
           stop: () => {
             if (released) return;
             released = true;
@@ -432,6 +460,14 @@ class SynthEngine {
               osc1Gain.disconnect();
               envelope.disconnect();
             };
+          },
+          setFrequency: (freq: number, portamentoSeconds: number) => {
+            if (released) return;
+            const now = this.ctx.currentTime;
+            const target = Math.max(0.001, freq);
+            osc1.frequency.cancelScheduledValues(now);
+            osc1.frequency.setValueAtTime(osc1.frequency.value, now);
+            osc1.frequency.exponentialRampToValueAtTime(target, now + portamentoSeconds);
           },
         };
         this.activeVoices.add(handle);

@@ -9,10 +9,49 @@ import { getArpeggiator } from '../lib/arpeggiator';
 import { getSampler } from '../lib/sampler';
 import { pluckMonochord } from '../lib/monochord';
 import { optimalStartingFret } from '../lib/fretboardUtils';
-import { latchVoices } from './latchVoices';
+import { getInternalMidiBus } from '../lib/internalMidiBus';
+import type { NoteSource } from '../lib/internalMidiBus';
+import { getInstrument } from '../lib/instrument';
+import { FACTORY_SAMPLER_PRESETS } from '../lib/samplerPresets';
 import { latchFrequencies } from './latchFrequencies';
 import { strumPreviewVoices } from './strumPreviewVoices';
 import type { AppState, FretboardState, Settings, StoreSet, StoreGet } from './types';
+
+function noteSourceForFretboard(fretboardId: string | undefined, get: StoreGet): NoteSource {
+  if (!fretboardId) return 'latch';
+  const state = get();
+  const presetName = state.fretboards[fretboardId]?.soundPreset;
+  if (!presetName) return 'latch';
+  const isSampler =
+    FACTORY_SAMPLER_PRESETS.some(p => p.name === presetName) ||
+    state.samplerPresets.some(p => p.name === presetName);
+  return isSampler ? 'latch-sampler' : 'latch-synth';
+}
+
+export function applyPresetByName(presetName: string, state: AppState): void {
+  const factorySamplerIdx = FACTORY_SAMPLER_PRESETS.findIndex(p => p.name === presetName);
+  if (factorySamplerIdx >= 0) {
+    const preset = FACTORY_SAMPLER_PRESETS[factorySamplerIdx]!;
+    preset.slots.forEach((slot, i) => {
+      state.setSamplerSlot(i, slot);
+      if (slot?.url) getSampler().loadSample(i, slot.url).catch(console.error);
+    });
+    state.setSamplerKeyMap([...preset.keyMap]);
+    state.setSamplerCrossfade(1); // sampler engine fully audible
+    return;
+  }
+  const userSamplerIdx = state.samplerPresets.findIndex(p => p.name === presetName);
+  if (userSamplerIdx >= 0) {
+    state.loadSamplerPreset(userSamplerIdx);
+    state.setSamplerCrossfade(1); // sampler engine fully audible
+    return;
+  }
+  const synthIdx = state.synthPresets.findIndex(p => p.name === presetName);
+  if (synthIdx >= 0) {
+    state.loadPreset(synthIdx);
+    state.setSamplerCrossfade(0); // synth engine fully audible
+  }
+}
 
 const defaultFretboard: Omit<FretboardState, 'id'> = {
   current: null,
@@ -26,6 +65,8 @@ const defaultFretboard: Omit<FretboardState, 'id'> = {
   sequences: [],
   startingFret: 1,
   tuning: tunings['guitar']!['standard']!,
+  showStringLabels: false,
+  soundPreset: 'Nylon Strings',
 };
 
 export const SANDBOX_PERSISTED_KEYS: (keyof AppState)[] = [
@@ -46,6 +87,8 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     bloomAllOctaves: true,
     sandboxLatch: true,
     sandboxActiveNotes: [] as number[],
+    strumPreviewSemitones: [] as number[],
+    sandboxSoundingStrings: [] as number[],
 
     setBloomAllOctaves: (v: boolean) => set({ bloomAllOctaves: v }),
 
@@ -58,66 +101,97 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     },
 
     killAllNotes: () => {
-      getSynth().killAll();
+      getInternalMidiBus().allNotesOff();   // instrument clears all voices
+      getSynth().killAll();                 // flush any lingering envelopes
       getSampler().stopAll();
       getArpeggiator().clear();
-      for (const voice of latchVoices.values()) voice.stop();
-      latchVoices.clear();
       latchFrequencies.clear();
       for (const voice of strumPreviewVoices) voice.stop();
       strumPreviewVoices.length = 0;
-      set({ sandboxActiveNotes: [] });
+      set({ sandboxActiveNotes: [], sandboxSoundingStrings: [] });
     },
 
-    toggleSandboxNote: (semitones: number, frequency: number) => {
+    toggleSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => {
       const state = get();
       const isActive = state.sandboxActiveNotes.includes(semitones);
+      const source = noteSourceForFretboard(fretboardId, get);
       if (isActive) {
         if (state.arpEnabled) {
           getArpeggiator().removeNote(semitones);
         } else {
-          latchVoices.get(semitones)?.stop();
-          latchVoices.delete(semitones);
+          getInternalMidiBus().noteOff(semitones, source);
           latchFrequencies.delete(semitones);
         }
-        set({ sandboxActiveNotes: state.sandboxActiveNotes.filter(s => s !== semitones) });
+        set((s: AppState) => ({
+          sandboxActiveNotes: s.sandboxActiveNotes.filter(n => n !== semitones),
+          sandboxSoundingStrings: stringNumber !== undefined
+            ? s.sandboxSoundingStrings.filter(n => n !== stringNumber)
+            : s.sandboxSoundingStrings,
+        }));
       } else {
         if (state.arpEnabled) {
           getArpeggiator().addNote(frequency, semitones);
         } else {
+          // Monochord mode: swap instrument playFn for this note
           if (state.view.name === 'monochord') {
-            const stop = pluckMonochord(frequency);
-            latchVoices.set(semitones, { stop });
+            getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
           } else {
-            latchVoices.set(semitones, getSynth().play(frequency));
+            getInstrument().playFn = freq => getSynth().play(freq);
           }
+          getInternalMidiBus().noteOn(semitones, frequency, source);
           latchFrequencies.set(semitones, frequency);
         }
-        set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
+        set((s: AppState) => ({
+          sandboxActiveNotes: [...s.sandboxActiveNotes, semitones],
+          sandboxSoundingStrings: stringNumber !== undefined && !s.sandboxSoundingStrings.includes(stringNumber)
+            ? [...s.sandboxSoundingStrings, stringNumber]
+            : s.sandboxSoundingStrings,
+        }));
       }
     },
 
-    activateSandboxNote: (semitones: number, frequency: number) => {
+    activateSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => {
       const state = get();
       if (state.sandboxActiveNotes.includes(semitones)) return;
+      const source = noteSourceForFretboard(fretboardId, get);
       if (state.view.name === 'monochord') {
-        const stop = pluckMonochord(frequency);
-        latchVoices.set(semitones, { stop });
+        getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
       } else {
-        latchVoices.set(semitones, getSynth().play(frequency));
+        getInstrument().playFn = freq => getSynth().play(freq);
       }
+      getInternalMidiBus().noteOn(semitones, frequency, source);
       latchFrequencies.set(semitones, frequency);
-      set({ sandboxActiveNotes: [...state.sandboxActiveNotes, semitones] });
+      set((s: AppState) => ({
+        sandboxActiveNotes: [...s.sandboxActiveNotes, semitones],
+        sandboxSoundingStrings: stringNumber !== undefined && !s.sandboxSoundingStrings.includes(stringNumber)
+          ? [...s.sandboxSoundingStrings, stringNumber]
+          : s.sandboxSoundingStrings,
+      }));
     },
 
-    deactivateSandboxNote: (semitones: number) => {
-      latchVoices.get(semitones)?.stop();
-      latchVoices.delete(semitones);
+    deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => {
+      const source = noteSourceForFretboard(fretboardId, get);
+      getInternalMidiBus().noteOff(semitones, source);
       latchFrequencies.delete(semitones);
-      set((s: AppState) => ({ sandboxActiveNotes: s.sandboxActiveNotes.filter(st => st !== semitones) }));
+      set((s: AppState) => ({
+        sandboxActiveNotes: s.sandboxActiveNotes.filter(n => n !== semitones),
+        sandboxSoundingStrings: stringNumber !== undefined
+          ? s.sandboxSoundingStrings.filter(n => n !== stringNumber)
+          : s.sandboxSoundingStrings,
+      }));
     },
 
-    strumVoicing: (notes: Array<{ semitones: number; frequency: number }>) => {
+    setFretboardSoundPreset: (fretboardId: string, presetName: string) => {
+      set((state: AppState) => ({
+        fretboards: {
+          ...state.fretboards,
+          [fretboardId]: { ...state.fretboards[fretboardId]!, soundPreset: presetName },
+        },
+      }));
+      applyPresetByName(presetName, get());
+    },
+
+    strumVoicing: (notes: Array<{ semitones: number; frequency: number; string?: number }>, fretboardId?: string) => {
       // Stop any previous strum preview voices without touching sandbox latch state
       for (const voice of strumPreviewVoices) voice.stop();
       strumPreviewVoices.length = 0;
@@ -126,14 +200,26 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       // controls the fadeout naturally — no artificial fixed timer.
       const synth = getSynth();
       const noteOnMs = Math.round((synth.params.attack + synth.params.decay) * 1000);
+      const releaseMs = Math.round(synth.params.release * 1000);
+      const strumSpreadMs = (notes.length - 1) * 28;
+      const totalMs = strumSpreadMs + noteOnMs + releaseMs;
 
-      // Play bass-to-treble with 28ms stagger; voices are tracked only in
-      // strumPreviewVoices — sandboxActiveNotes / latchVoices are untouched.
+      // Mark specific strings as visually sounding for the duration of the strum
+      const strumStringNums = notes.map(n => n.string).filter((s): s is number => s !== undefined);
+      set({
+        strumPreviewSemitones: notes.map(n => n.semitones),
+        sandboxSoundingStrings: strumStringNums,
+      });
+      setTimeout(() => set({ strumPreviewSemitones: [], sandboxSoundingStrings: [] }), totalMs);
+
+      // Play bass-to-treble with 28ms stagger through the bus so both synth
+      // and sampler engines receive the notes; sandboxActiveNotes / latchVoices untouched.
+      const bus = getInternalMidiBus();
+      const source = noteSourceForFretboard(fretboardId, get);
       notes.forEach((n, i) => {
         setTimeout(() => {
-          const voice = synth.play(n.frequency);
-          strumPreviewVoices.push(voice);
-          setTimeout(() => voice.stop(), noteOnMs);
+          bus.noteOn(n.semitones, n.frequency, source);
+          setTimeout(() => bus.noteOff(n.semitones, source), noteOnMs);
         }, i * 28);
       });
     },
@@ -148,15 +234,12 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         .filter(n => n.frequency > 0)
         .sort((a, b) => a.frequency - b.frequency);
 
-      // Stop current voices and replay with stagger
-      for (const voice of latchVoices.values()) voice.stop();
-      latchVoices.clear();
+      const bus = getInternalMidiBus();
 
+      // Stop all latch voices immediately, then retrigger with stagger through the bus
+      for (const { semitones } of notes) bus.noteOff(semitones, 'latch');
       notes.forEach((n, i) => {
-        setTimeout(() => {
-          const voice = getSynth().play(n.frequency);
-          latchVoices.set(n.semitones, voice);
-        }, i * 28);
+        setTimeout(() => bus.noteOn(n.semitones, n.frequency, 'latch'), i * 28);
       });
     },
 
@@ -169,6 +252,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           [id]: { id, ...defaultFretboard },
         },
       }));
+      get().retriggerDrone();
     },
 
     updateFretboard: (id: string, data: Partial<FretboardState>) => {
@@ -178,6 +262,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           [id]: { ...state.fretboards[id]!, ...data },
         },
       }));
+      get().retriggerDrone();
     },
 
     deleteFretboard: (id: string) => {
@@ -185,6 +270,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         const { [id]: _, ...rest } = state.fretboards;
         return { fretboards: rest };
       });
+      get().retriggerDrone();
     },
 
     search: (id: string, searchTerm: string) => {
@@ -228,6 +314,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           },
         },
       }));
+      get().syncArpToFretboard(id);
     },
 
     openSettings: (id: string) => {

@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { getSampler } from '../lib/sampler';
+import { getInternalMidiBus } from '../lib/internalMidiBus';
 
 const KEY_W = 22; // white key width in px
 const KEY_H_WHITE = 64;
@@ -26,12 +26,21 @@ interface Props {
 export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
   const keyMap = useStore(s => s.samplerKeyMap);
   const slots = useStore(s => s.samplerSlots);
-  const slotParams = useStore(s => s.samplerSlotParams);
-  const slotRootNotes = useStore(s => s.samplerSlotRootNotes);
   const mapSlotToKey = useStore(s => s.mapSlotToKey);
   const [dragOver, setDragOver] = useState<number | null>(null);
-  const [pressedKey, setPressedKey] = useState<number | null>(null);
+  const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Mirror bus activity — lights up keys from any source (fretboard, arp, etc.)
+  useEffect(() => {
+    const bus = getInternalMidiBus();
+    const off1 = bus.onNoteOn(({ semitones }) =>
+      setActiveNotes(prev => new Set([...prev, semitones])));
+    const off2 = bus.onNoteOff(({ semitones }) =>
+      setActiveNotes(prev => { const n = new Set(prev); n.delete(semitones); return n; }));
+    const off3 = bus.onAllNotesOff(() => setActiveNotes(new Set()));
+    return () => { off1(); off2(); off3(); };
+  }, []);
 
   function getKeyColor(midi: number): string | null {
     const slotIdx = keyMap[midi];
@@ -48,9 +57,10 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
   }
 
   function getPressAndPlay(midi: number) {
-    setPressedKey(midi);
-    getSampler().noteOn(midi, 100, keyMap, slotParams, slotRootNotes);
-    setTimeout(() => setPressedKey(null), 150);
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const bus = getInternalMidiBus();
+    bus.noteOn(midi, freq, 'latch', 100);
+    setTimeout(() => bus.noteOff(midi, 'latch'), 150);
   }
 
   function handleDrop(e: React.DragEvent, midi: number) {
@@ -75,7 +85,7 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
         {/* White keys */}
         {whiteKeys.map((midi, wIdx) => {
           const color = getKeyColor(midi);
-          const isPressed = pressedKey === midi;
+          const isPressed = activeNotes.has(midi);
           const isDragOver = dragOver === midi;
           const { note } = midiToOctaveNote(midi);
           const isC = note === 0;
@@ -142,7 +152,7 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
             if (wIdx === -1) continue;
             const x = wIdx * KEY_W + KEY_W - KEY_W_BLACK / 2;
             const color = getKeyColor(m);
-            const isPressed = pressedKey === m;
+            const isPressed = activeNotes.has(m);
             const isDragOver = dragOver === m;
             blacks.push(
               <div

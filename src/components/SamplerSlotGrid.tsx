@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useStore } from '../store';
 import { SLOT_COLORS } from '../lib/samplerPresets';
+import { DEFAULT_SAMPLER_PARAMS } from '../lib/sampler';
 
 interface Props {
   onSelectSlot: (idx: number) => void;
@@ -34,7 +35,7 @@ export default function SamplerSlotGrid({ onSelectSlot, selectedSlot, playingSlo
           url: '',
           color: SLOT_COLORS[idx % SLOT_COLORS.length]!,
           rootNote: null,
-          params: { startFraction: 0, endFraction: 1, loop: false, loopStartFraction: 0, loopEndFraction: 1, reverse: false, amplitude: 1, pitchSemitones: 0 },
+          params: { ...DEFAULT_SAMPLER_PARAMS },
         };
         setSamplerSlot(idx, newSlot);
       }
@@ -54,7 +55,7 @@ export default function SamplerSlotGrid({ onSelectSlot, selectedSlot, playingSlo
       url,
       color: SLOT_COLORS[urlInputIdx % SLOT_COLORS.length]!,
       rootNote: null,
-      params: { startFraction: 0, endFraction: 1, loop: false, loopStartFraction: 0, loopEndFraction: 1, reverse: false, amplitude: 1, pitchSemitones: 0 },
+      params: { ...DEFAULT_SAMPLER_PARAMS },
     });
     setSamplerSlotUrl(urlInputIdx, url);
     onSelectSlot(urlInputIdx);
@@ -76,7 +77,7 @@ export default function SamplerSlotGrid({ onSelectSlot, selectedSlot, playingSlo
       url: '',
       color: SLOT_COLORS[idx % SLOT_COLORS.length]!,
       rootNote: null,
-      params: { startFraction: 0, endFraction: 1, loop: false, loopStartFraction: 0, loopEndFraction: 1, reverse: false, amplitude: 1, pitchSemitones: 0 },
+      params: { ...DEFAULT_SAMPLER_PARAMS },
     });
     setSamplerSlotFile(idx, file);
     onSelectSlot(idx);

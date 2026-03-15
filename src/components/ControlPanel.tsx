@@ -4,12 +4,19 @@ import { useStore } from '../store';
 import Chord from '../lib/Chord';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import tunings from '../lib/tunings';
+import { FACTORY_SAMPLER_PRESETS } from '../lib/samplerPresets';
 
 export default function ControlPanel() {
   const settings = useStore(s => s.settings);
   const fretboard = useStore(s => s.fretboards[s.settings.settingsId]);
   const updateFretboard = useStore(s => s.updateFretboard);
   const searchAction = useStore(s => s.search);
+
+  const arpEnabled = useStore(s => s.arpEnabled);
+  const loadVoicingIntoArp = useStore(s => s.loadVoicingIntoArp);
+  const setFretboardSoundPreset = useStore(s => s.setFretboardSoundPreset);
+  const synthPresets = useStore(s => s.synthPresets);
+  const samplerPresets = useStore(s => s.samplerPresets);
 
   const [arrowMode, setArrowMode] = useState<'voicing' | 'inversion'>('voicing');
 
@@ -42,6 +49,7 @@ export default function ControlPanel() {
         sequenceIdx: newIdx,
         ...(seq ? { startingFret: optimalStartingFret(seq, 1, fretboard.fretCount) } : {}),
       });
+      if (arpEnabled) loadVoicingIntoArp(id, newIdx);
     } else {
       const newInversion = Math.max(0, fretboard.inversion - 1);
       updateFretboard(id, { inversion: newInversion });
@@ -58,6 +66,7 @@ export default function ControlPanel() {
         sequenceIdx: newIdx,
         ...(seq ? { startingFret: optimalStartingFret(seq, 1, fretboard.fretCount) } : {}),
       });
+      if (arpEnabled) loadVoicingIntoArp(id, newIdx);
     } else {
       const newInversion = Math.min(maxInversions, fretboard.inversion + 1);
       updateFretboard(id, { inversion: newInversion });
@@ -108,6 +117,47 @@ export default function ControlPanel() {
             ))
           )}
         </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Sound</label>
+        <select
+          value={fretboard.soundPreset || ''}
+          onChange={e => setFretboardSoundPreset(id, e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue"
+        >
+          <optgroup label="Synth">
+            {synthPresets.filter(p => p.isFactory).map((p, i) => (
+              <option key={`sf${i}`} value={p.name}>{p.name}</option>
+            ))}
+            {synthPresets.filter(p => !p.isFactory).map((p, i) => (
+              <option key={`su${i}`} value={p.name}>{p.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Sampler">
+            {FACTORY_SAMPLER_PRESETS.map((p, i) => (
+              <option key={`ssf${i}`} value={p.name}>{p.name}</option>
+            ))}
+            {samplerPresets.map((p, i) => (
+              <option key={`ssu${i}`} value={p.name}>{p.name}</option>
+            ))}
+          </optgroup>
+        </select>
+      </div>
+
+      {/* String labels toggle */}
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-gray-700">String labels</label>
+        <button
+          onClick={() => updateFretboard(id, { showStringLabels: !fretboard.showStringLabels })}
+          className={`px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+            fretboard.showStringLabels
+              ? 'bg-gray-200 text-fret-green'
+              : 'bg-gray-100 text-gray-500'
+          }`}
+        >
+          {fretboard.showStringLabels ? 'On' : 'Off'}
+        </button>
       </div>
 
       {/* Voicing / Inversion arrows */}

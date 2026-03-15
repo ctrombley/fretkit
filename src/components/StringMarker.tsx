@@ -12,6 +12,7 @@ interface StringMarkerProps {
   isRoot?: boolean;
   isPlaying?: boolean;
   bloomKey?: number;
+  fingerLabel?: string;
 }
 
 export default function StringMarker({
@@ -24,6 +25,7 @@ export default function StringMarker({
   isRoot = false,
   isPlaying = false,
   bloomKey,
+  fingerLabel,
 }: StringMarkerProps) {
   let cx = xOffset + fretWidth / 2;
   if (isNut) cx -= 15;
@@ -61,7 +63,7 @@ export default function StringMarker({
         style={noteStyle}
       />
       {/* White dot to indicate root note */}
-      {isRoot && !isNut && color && (
+      {isRoot && !isNut && color && !fingerLabel && (
         <circle
           cx={cx}
           cy={yOffset}
@@ -69,6 +71,21 @@ export default function StringMarker({
           fill="white"
           pointerEvents="none"
         />
+      )}
+      {/* Finger label (p/i/m/a) shown when arp finger picking is active */}
+      {fingerLabel && (
+        <text
+          x={cx}
+          y={yOffset + 3.5}
+          textAnchor="middle"
+          fontSize={9}
+          fontFamily="ui-monospace, monospace"
+          fill={color && !isNut ? 'white' : '#6b7280'}
+          pointerEvents="none"
+          style={{ userSelect: 'none' }}
+        >
+          {fingerLabel}
+        </text>
       )}
     </g>
   );

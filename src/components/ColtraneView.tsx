@@ -11,6 +11,7 @@ import {
 import ColtraneCircle from './ColtraneCircle';
 import ColtraneMandala from './ColtraneMandala';
 import SynthPresetSelector from './SynthPresetSelector';
+import HelpPopover from './HelpPopover';
 
 // ── Module-level loop state (survives navigation) ─────────────────────────
 let _loopId = 0;
@@ -113,9 +114,17 @@ export default function ColtraneView() {
       {/* Title */}
       <div className="mt-6 mb-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-dark">
-            Coltrane Changes: {rootName} — {preset.name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-dark">
+              Coltrane Changes: {rootName} — {preset.name}
+            </h2>
+            <HelpPopover
+              placement="below"
+              text={mode === 'circle'
+                ? 'Click a note to highlight its axis group. Colored polygons connect symmetric tones. Toggle V-I cadences to see the dominant resolutions Coltrane used.'
+                : 'Lines connect every pair of notes, colored by interval class. Use the checkboxes to filter interval types. Polygons show the symmetric axis groups.'}
+            />
+          </div>
           <SynthPresetSelector />
         </div>
         <p className="text-sm text-gray-500 mt-0.5">
@@ -249,12 +258,6 @@ export default function ColtraneView() {
         />
       )}
 
-      {/* Legend */}
-      <p className="text-xs text-gray-400 text-center mt-2 max-w-lg mx-auto">
-        {mode === 'circle'
-          ? 'Click a note to highlight its axis group. Colored polygons connect symmetric tones. Toggle V-I cadences to see the dominant resolutions Coltrane used.'
-          : 'Lines connect every pair of notes, colored by interval class. Use the checkboxes to filter interval types. Polygons show the symmetric axis groups.'}
-      </p>
     </div>
   );
 }

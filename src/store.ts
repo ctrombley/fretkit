@@ -14,10 +14,28 @@ import { createBusSlice, BUS_PERSISTED_KEYS } from './store/busSlice';
 import { createMidiSlice, MIDI_PERSISTED_KEYS } from './store/midiSlice';
 import { createMonochordScalesSlice, MONOCHORD_SCALES_PERSISTED_KEYS } from './store/monochordScalesSlice';
 import { createSamplerSlice, SAMPLER_PERSISTED_KEYS } from './store/samplerSlice';
+import { createDroneSlice, DRONE_PERSISTED_KEYS } from './store/droneSlice';
 import { getMasterBus } from './lib/masterBus';
 import { getSampler } from './lib/sampler';
+import { getArpeggiator } from './lib/arpeggiator';
+import { getPatternById } from './lib/fingerPickingPatterns';
+import { getInstrument } from './lib/instrument'; // boot instrument so it subscribes to the bus at startup
+import { bootSamplerInstrument } from './lib/samplerInstrument';
+import { applyPresetByName } from './store/sandboxSlice';
+getInstrument();
+// Note: open strings are re-added via setArpUseOpenStrings on rehydration if persisted as true
 
 export type { AppState, FretboardState, Settings } from './store/types';
+
+// Boot sampler instrument — subscribes to bus and routes noteOn/noteOff to SamplerEngine
+bootSamplerInstrument(() => {
+  const s = useStore.getState();
+  return {
+    samplerKeyMap: s.samplerKeyMap,
+    samplerSlotParams: s.samplerSlotParams,
+    samplerSlotRootNotes: s.samplerSlotRootNotes,
+  };
+});
 
 const ALL_PERSISTED_KEYS: (keyof AppState)[] = [
   ...SANDBOX_PERSISTED_KEYS,
@@ -30,6 +48,7 @@ const ALL_PERSISTED_KEYS: (keyof AppState)[] = [
   ...MIDI_PERSISTED_KEYS,
   ...MONOCHORD_SCALES_PERSISTED_KEYS,
   ...SAMPLER_PERSISTED_KEYS,
+  ...DRONE_PERSISTED_KEYS,
   ...NAVIGATION_PERSISTED_KEYS,
 ];
 
@@ -48,10 +67,11 @@ export const useStore = create<AppState>()(
       ...createMidiSlice(set),
       ...createMonochordScalesSlice(set),
       ...createSamplerSlice(set),
+      ...createDroneSlice(set, get),
     }),
     {
       name: 'fretkit-storage',
-      version: 6,
+      version: 7,
       migrate: (persisted, version) => {
         // v1 → v2: add bus/midi defaults to existing state
         // v2 → v3: add monochord scales defaults
@@ -59,6 +79,7 @@ export const useStore = create<AppState>()(
         // v4 → v5: ensure fretboard entries always have sequences/litNotes/current
         //          (v4 could store them without those fields if saved before the fix)
         // v5 → v6: add sampler slice defaults
+        // v6 → v7: add drone slice defaults
         const state = { ...(persisted as Record<string, unknown>) };
         if (version < 5 && state.fretboards) {
           const boards = state.fretboards as Record<string, Record<string, unknown>>;
@@ -97,6 +118,8 @@ export const useStore = create<AppState>()(
             sequenceIdx: fb.sequenceIdx,
             startingFret: fb.startingFret,
             tuning: fb.tuning,
+            showStringLabels: fb.showStringLabels,
+            soundPreset: fb.soundPreset ?? 'Nylon Strings',
           };
         }
         partial['fretboards'] = safeBoards;
@@ -124,10 +147,27 @@ export const useStore = create<AppState>()(
             sampler.loadSample(i, slot.url).catch(console.error);
           }
         });
+        // Restore arp mode + finger picking pattern to engine
+        const arp = getArpeggiator();
+        arp.mode = state.arpMode ?? 'standard';
+        const fp = getPatternById(state.arpFingerPickingPatternId);
+        if (fp) {
+          arp.fingerPickingSequence = fp.sequence;
+          arp.fingerPickingFingers = fp.fingers;
+        }
         // Restore crossfade position
         const cf = state.samplerCrossfade ?? 0.5;
         master.getBus('synth').setCrossfadeGain(Math.cos(cf * Math.PI / 2));
         master.getBus('sampler').setCrossfadeGain(Math.sin(cf * Math.PI / 2));
+        // Apply sound preset for each unique fretboard preset — last wins for shared engine state
+        const appliedPresets = new Set<string>();
+        for (const [, fb] of Object.entries(state.fretboards)) {
+          const presetName = fb.soundPreset ?? 'Nylon Strings';
+          if (!appliedPresets.has(presetName)) {
+            appliedPresets.add(presetName);
+            applyPresetByName(presetName, state);
+          }
+        }
       },
     },
   ),

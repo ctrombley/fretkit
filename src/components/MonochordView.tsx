@@ -5,6 +5,7 @@ import { useBottomPadding } from '../hooks/useBottomPadding';
 import MonochordString, { type MonochordStringHandle } from './MonochordString';
 import MonochordScaleSelector from './MonochordScaleSelector';
 import ConchSpiral from './ConchSpiral';
+import LissajousCanvas from './LissajousCanvas';
 import {
   CANONICAL_RATIOS,
   FUNDAMENTAL_NOTES,
@@ -69,6 +70,19 @@ function centsLabel(cents: number): string {
   const et  = Math.round(cents / 100) * 100;
   const dev = cents - et;
   return `${cents.toFixed(2)}¢  (${formatCents(dev)} from ET)`;
+}
+
+// Find the simplest integer ratio p:q approximating leftHz / rightHz
+function bestRatio(leftHz: number, rightHz: number): [number, number] {
+  const r = leftHz / rightHz;
+  let bestP = 1, bestQ = 1, bestErr = Infinity;
+  for (let q = 1; q <= 16; q++) {
+    const p = Math.round(r * q);
+    if (p < 1) continue;
+    const err = Math.abs(r - p / q);
+    if (err < bestErr) { bestErr = err; bestP = p; bestQ = q; }
+  }
+  return [bestP, bestQ];
 }
 
 // ── Main view ─────────────────────────────────────────────────────────────
@@ -513,30 +527,48 @@ export default function MonochordView() {
           </div>
         </div>
 
-        {/* ── Right panel: harmonic spiral + position ──────────────────── */}
+        {/* ── Right panel: harmonic spiral + lissajous side by side ──── */}
         <div className="flex flex-col items-center gap-5">
 
-          {/* Harmonic spiral */}
-          <div className="text-center">
-            <div className="text-xs font-mono mb-2 text-gray-400">
-              Harmonic Series — logarithmic spiral
-            </div>
-            <div className="inline-block rounded-2xl p-3 bg-gray-900 border border-gray-700">
-              <ConchSpiral
-                fundHz={fundamental.hz}
-                fundPitchClass={fundamental.pitchClass}
-                leftHz={info.left.hz}
-                rightHz={info.right.hz}
-                leftColor={info.left.color}
-                rightColor={info.right.color}
-                size={240}
-              />
-            </div>
-            <p className="text-xs mt-2 max-w-xs mx-auto text-gray-400" style={{ lineHeight: 1.5 }}>
-              Each revolution is one octave. Harmonics spiral outward as the series grows.
-              Lit dots are the current string segments.
-            </p>
-          </div>
+          {/* Spiral + Lissajous row */}
+          {(() => {
+            const [p, q] = bestRatio(info.left.hz, info.right.hz);
+            return (
+              <div className="flex flex-wrap justify-center gap-4">
+                <div className="text-center">
+                  <div className="text-xs font-mono mb-2 text-gray-400">
+                    Harmonic Series
+                  </div>
+                  <div className="inline-block rounded-2xl p-3 bg-gray-900 border border-gray-700">
+                    <ConchSpiral
+                      fundHz={fundamental.hz}
+                      fundPitchClass={fundamental.pitchClass}
+                      leftHz={info.left.hz}
+                      rightHz={info.right.hz}
+                      leftColor={info.left.color}
+                      rightColor={info.right.color}
+                      beatHz={info.beatHz}
+                      size={190}
+                    />
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-xs font-mono mb-2 text-gray-400">
+                    Lissajous — {p}:{q}
+                  </div>
+                  <div className="inline-block rounded-2xl p-3 bg-gray-900 border border-gray-700">
+                    <LissajousCanvas
+                      p={p}
+                      q={q}
+                      size={190}
+                      animate
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Bridge position readout */}
           <div className="w-full rounded-lg p-3 text-center bg-gray-50 border border-gray-200">
