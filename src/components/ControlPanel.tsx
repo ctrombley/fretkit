@@ -37,10 +37,10 @@ export default function ControlPanel() {
 
   const isVoicing = arrowMode === 'voicing';
   const prevDisabled = isVoicing
-    ? !fretboard.sequenceEnabled || !fretboard.sequences.length || fretboard.sequenceIdx === 0
+    ? !fretboard.sequenceEnabled || !(fretboard.sequences ?? []).length || fretboard.sequenceIdx === 0
     : fretboard.inversion <= 0;
   const nextDisabled = isVoicing
-    ? !fretboard.sequenceEnabled || !fretboard.sequences.length || fretboard.sequenceIdx === fretboard.sequences.length - 1
+    ? !fretboard.sequenceEnabled || !(fretboard.sequences ?? []).length || fretboard.sequenceIdx === (fretboard.sequences ?? []).length - 1
     : fretboard.inversion >= maxInversions;
 
   const handlePrev = () => {
@@ -77,7 +77,7 @@ export default function ControlPanel() {
     }
   };
 
-  const hasArrows = fretboard.sequences.length > 0 || maxInversions > 0;
+  const hasArrows = (fretboard.sequences ?? []).length > 0 || maxInversions > 0;
 
   return (
     <div className="space-y-4 pt-2">
