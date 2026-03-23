@@ -217,6 +217,26 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       }));
     },
 
+    slideSandboxNote: (prevSemitones: number, newSemitones: number, newFrequency: number, stringNumber?: number, fretboardId?: string) => {
+      const source = noteSourceForFretboard(fretboardId, get);
+      if (source === 'latch-synth' && fretboardId) {
+        const entry = getEngineForFretboard(fretboardId);
+        const voice = entry.latchVoices.get(prevSemitones);
+        if (voice) {
+          voice.setFrequency(newFrequency, 0);
+          entry.latchVoices.delete(prevSemitones);
+          entry.latchVoices.set(newSemitones, voice);
+        }
+      } else {
+        getSampler().slideNote(prevSemitones, newSemitones);
+      }
+      latchFrequencies.delete(prevSemitones);
+      latchFrequencies.set(newSemitones, newFrequency);
+      set((s: AppState) => ({
+        sandboxActiveNotes: [...s.sandboxActiveNotes.filter(n => n !== prevSemitones), newSemitones],
+      }));
+    },
+
     deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => {
       const source = noteSourceForFretboard(fretboardId, get);
       if (source === 'latch-synth' && fretboardId) {

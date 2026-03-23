@@ -273,6 +273,7 @@ export interface AppState {
   toggleSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => void;
   activateSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => void;
   deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => void;
+  slideSandboxNote: (prevSemitones: number, newSemitones: number, newFrequency: number, stringNumber?: number, fretboardId?: string) => void;
   strumVoicing: (notes: Array<{ semitones: number; frequency: number; string?: number }>, fretboardId?: string) => void;
   strumActiveNotes: () => void;
   setFretboardSoundPreset: (fretboardId: string, presetName: string) => void;

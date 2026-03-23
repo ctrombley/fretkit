@@ -214,6 +214,15 @@ class SamplerEngine {
     this._activeNotes.clear();
   }
 
+  slideNote(prevMidiNote: number, newMidiNote: number): void {
+    const active = this._activeNotes.get(prevMidiNote);
+    if (!active) return;
+    const semitonesDiff = newMidiNote - prevMidiNote;
+    active.source.playbackRate.value *= Math.pow(2, semitonesDiff / 12);
+    this._activeNotes.delete(prevMidiNote);
+    this._activeNotes.set(newMidiNote, active);
+  }
+
   setOutputBus(busId: string): void {
     this._outputBusId = busId;
   }

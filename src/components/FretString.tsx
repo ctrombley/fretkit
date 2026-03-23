@@ -5,7 +5,6 @@ import { useStore } from '../store';
 import { STRING_HEIGHT } from '../lib/fretboardConstants';
 import { useFretboardContext } from './FretboardContext';
 import { noteDissonance } from '../lib/harmonicAnalysis';
-import { getEngineForFretboard } from '../lib/fretboardEngines';
 
 interface FretStringProps {
   fretIdx: number;
@@ -61,6 +60,7 @@ export default function FretString({
   const toggleNote = useStore(s => s.toggleSandboxNote);
   const activateNote = useStore(s => s.activateSandboxNote);
   const deactivateNote = useStore(s => s.deactivateSandboxNote);
+  const slideNote = useStore(s => s.slideSandboxNote);
   const isDroneSelected = droneActive && (droneFrets[stringNumber] ?? null) === note.semitones;
   // Variable thickness: idx 0 = treble (thin), idx n-1 = bass (thick)
   const stringThickness = 0.5 + (idx / Math.max(1, stringCount - 1)) * 2;
@@ -110,9 +110,7 @@ export default function FretString({
     // Click-and-drag mode: non-latch, non-arp
     // Start a note and allow drag to change pitch without retriggering envelope
     if (!useLatch && !current && !isLit) {
-      const engine = getEngineForFretboard(fretboardId);
-      const voice = engine.synth.play(note.frequency);
-      slideRef.current = { stringIdx: idx, voice, currentSemitones: note.semitones };
+      slideRef.current = { stringIdx: idx, currentSemitones: note.semitones };
       activateNote(note.semitones, note.frequency, stringNumber, fretboardId);
       return;
     }
@@ -127,18 +125,15 @@ export default function FretString({
   const handlePointerEnter = useCallback(() => {
     // Drag to new fret: if pointer is held and we're at a different fret, update pitch instantly (legato)
     if (slideRef.current?.stringIdx === idx && slideRef.current.currentSemitones !== note.semitones) {
-      const { voice } = slideRef.current;
-      // Update frequency instantly without note-off/note-on (true legato)
-      voice.setFrequency(note.frequency, 0);
+      const prev = slideRef.current.currentSemitones;
+      slideNote(prev, note.semitones, note.frequency, stringNumber, fretboardId);
       slideRef.current.currentSemitones = note.semitones;
-      // Visual state is only for local feedback during drag; not tied to store
     }
-  }, [idx, slideRef, note.semitones, note.frequency]);
+  }, [idx, slideRef, note.semitones, note.frequency, slideNote, stringNumber, fretboardId]);
 
   const handlePointerUp = useCallback(() => {
-    // If sliding on this string, stop the voice and clean up
+    // If sliding on this string, stop the note and clean up
     if (slideRef.current?.stringIdx === idx) {
-      slideRef.current.voice.stop();
       deactivateNote(slideRef.current.currentSemitones, stringNumber, fretboardId);
       slideRef.current = null;
       return;

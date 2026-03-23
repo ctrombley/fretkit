@@ -1,11 +1,9 @@
 import { createContext, useContext, useRef } from 'react';
 import type Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
-import type { SynthVoice } from '../lib/synth';
 
 interface SlideState {
   stringIdx: number;      // which string row (idx) is sliding
-  voice: SynthVoice;      // the live synth voice to portamento
   currentSemitones: number;
 }
 
