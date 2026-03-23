@@ -12,16 +12,15 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 ## Tasks
 
 ### Next Up
-- [ ] [HIGH] [~30m] Test hammer-on/pull-off on different instruments/tunings
-- [ ] [MED] [~1h] Fine-tune portamento timing per fret distance
-- [ ] [LOW] [~1h] Add visual feedback for drag path (note trail animation)
+- [ ] [HIGH] [~15m] Test click-and-drag pitch updates across different tunings
+- [ ] [LOW] [~1h] Add visual feedback for drag path (fret highlight trail)
 
 ### Backlog
 - [ ] [MED] [~2h] Document angine fretboard engine capabilities
 - [ ] [LOW] [~1h] Add performance profiling for large fretboard renders
 
 ### Completed
-- [x] Implement hammer-on/pull-off drag mechanics (click+drag on string, portamento slide between frets)
+- [x] Implement click-and-drag pitch updates (click on fret, drag to change pitch without retrigger)
 - [x] Fix ControlPanel crash (add v10 migration for missing tuning field)
 - [x] Commit feature/angine-fretboard changes and merge to master
 - [x] Implement per-fretboard synth engines (FretboardEngineRegistry)
@@ -43,9 +42,9 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 - Committed feature/angine-fretboard (20 files, 695 insertions): per-fretboard synth engines + TuningEditor
 - Merged feature/angine-fretboard to master (5 commits, all tests passing)
 - Fixed ControlPanel crash: v10 migration + defensive fallback for missing tuning field
-- Implemented hammer-on/pull-off slide mechanics:
-  * FretboardContext.slideRef for per-fretboard slide state tracking
-  * FretString slide mode: play voice directly, slide pitch via portamento on fret transitions
+- Implemented click-and-drag pitch update mechanics:
+  * FretboardContext.slideRef for per-fretboard drag state tracking
+  * FretString drag mode: play voice on click, update frequency instantly as fret changes
+  * No envelope retrigger, amplitude/sample state preserved during drag
   * Global cleanup handler in FretboardSVGContainer
-  * Proportional portamento: ~60ms per semitone
   * All 455 tests passing, feature ready for testing
