@@ -26,9 +26,10 @@ export default function FretString({
   xOffset,
   yOffset,
 }: FretStringProps) {
-  const { fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets, onDroneFretSelect, slideRef } = useFretboardContext();
+  const context = useFretboardContext();
+  const { fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets, onDroneFretSelect } = context;
+  const slideRef = context.slideRef;
   const [isPreview, setIsPreview] = useState(false);
-  const [slideActiveFret, setSlideActiveFret] = useState<number | null>(null);
   const sandboxLatch = useStore(s => s.sandboxLatch);
   const arpEnabled = useStore(s => s.arpEnabled);
   const isMarked = useStore(s => {
@@ -112,7 +113,6 @@ export default function FretString({
       const engine = getEngineForFretboard(fretboardId);
       const voice = engine.synth.play(note.frequency);
       slideRef.current = { stringIdx: idx, voice, currentSemitones: note.semitones };
-      setSlideActiveFret(note.semitones);
       activateNote(note.semitones, note.frequency, stringNumber, fretboardId);
       return;
     }
@@ -127,13 +127,11 @@ export default function FretString({
   const handlePointerEnter = useCallback(() => {
     // Drag to new fret: if pointer is held and we're at a different fret, update pitch instantly (legato)
     if (slideRef.current?.stringIdx === idx && slideRef.current.currentSemitones !== note.semitones) {
-      const { voice, currentSemitones } = slideRef.current;
+      const { voice } = slideRef.current;
       // Update frequency instantly without note-off/note-on (true legato)
       voice.setFrequency(note.frequency, 0);
       slideRef.current.currentSemitones = note.semitones;
-      setSlideActiveFret(note.semitones);
-      // Update visual state without note-off (legato: same note, different pitch)
-      // Remove old visual marker and add new one, but keep the note "tied" in MIDI
+      // Visual state is only for local feedback during drag; not tied to store
     }
   }, [idx, slideRef, note.semitones, note.frequency]);
 
@@ -142,7 +140,6 @@ export default function FretString({
     if (slideRef.current?.stringIdx === idx) {
       slideRef.current.voice.stop();
       deactivateNote(slideRef.current.currentSemitones, stringNumber, fretboardId);
-      setSlideActiveFret(null);
       slideRef.current = null;
       return;
     }
