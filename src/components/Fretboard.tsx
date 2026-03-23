@@ -75,60 +75,13 @@ export default function Fretboard({
 
   return (
     <FretboardProvider value={{ fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets: droneFrets ?? [], onDroneFretSelect }}>
-      <FretboardSVGContainer
+      <svg
+        className="fretboard"
         width={width}
         height={height}
-        stringCount={stringCount}
-        reversedTuning={reversedTuning}
-        fretCount={fretCount}
-        angineSlots={angineSlots}
-        startingFret={startingFret}
-        tuning={safeTuning}
-        showStringLabels={showStringLabels}
-      />
-    </FretboardProvider>
-  );
-}
-
-function FretboardSVGContainer({
-  width,
-  height,
-  stringCount,
-  reversedTuning,
-  fretCount,
-  angineSlots,
-  startingFret,
-  tuning,
-  showStringLabels,
-}: {
-  width: number;
-  height: number;
-  stringCount: number;
-  reversedTuning: string[];
-  fretCount: number;
-  angineSlots: import('../lib/hybridFretLayout').FretSlot[] | null;
-  startingFret: number;
-  tuning: string[];
-  showStringLabels: boolean;
-}) {
-  const { slideRef } = useFretboardContext();
-
-  const handlePointerUp = useCallback(() => {
-    if (slideRef.current) {
-      slideRef.current.voice.stop();
-      slideRef.current = null;
-    }
-  }, [slideRef]);
-
-  return (
-    <svg
-      className="fretboard"
-      width={width}
-      height={height}
-      role="img"
-      aria-label={`Fretboard with ${stringCount} strings and ${fretCount} frets`}
-      onPointerUp={handlePointerUp}
-    >
+        role="img"
+        aria-label={`Fretboard with ${stringCount} strings and ${fretCount} frets`}
+      >
         {/* Open string labels — horizontal mode: left of nut */}
         {showStringLabels && reversedTuning.map((noteName, i) => (
           <text
@@ -147,7 +100,7 @@ function FretboardSVGContainer({
           fretNumber={0}
           fretCount={angineSlots ? angineSlots.length : fretCount}
           fretboardMargin={FRETBOARD_MARGIN}
-          tuning={tuning}
+          tuning={safeTuning}
           startingFret={startingFret}
         />
         {/* Frets — angine or standard */}
@@ -159,7 +112,7 @@ function FretboardSVGContainer({
                 fretNumber={slot.nativeFretNumber}
                 fretCount={angineSlots.length}
                 fretboardMargin={FRETBOARD_MARGIN}
-                tuning={tuning}
+                tuning={safeTuning}
                 startingFret={startingFret}
                 slot={slot}
               />
@@ -171,17 +124,17 @@ function FretboardSVGContainer({
                 fretNumber={startingFret + i}
                 fretCount={fretCount}
                 fretboardMargin={FRETBOARD_MARGIN}
-                tuning={tuning}
+                tuning={safeTuning}
                 startingFret={startingFret}
               />
             ))
         }
         {/* Full-string wave animation overlay */}
         <StringWaveLayer
-          tuning={tuning}
+          tuning={safeTuning}
           startingFret={startingFret}
           boardWidth={width}
         />
       </svg>
-    );
-  }
+    </FretboardProvider>
+  );
