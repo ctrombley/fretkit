@@ -125,18 +125,17 @@ export default function FretString({
   }, [droneActive, onDroneFretSelect, stringNumber, sequenceEnabled, isLit, onStrum, current, useLatch, note.semitones, note.frequency, fretboardId, toggleNote, activateNote, idx, slideRef]);
 
   const handlePointerEnter = useCallback(() => {
-    // Drag to new fret: if pointer is held and we're at a different fret, update pitch instantly
+    // Drag to new fret: if pointer is held and we're at a different fret, update pitch instantly (legato)
     if (slideRef.current?.stringIdx === idx && slideRef.current.currentSemitones !== note.semitones) {
       const { voice, currentSemitones } = slideRef.current;
-      // Update frequency instantly (0 second portamento) without retriggering envelope
+      // Update frequency instantly without note-off/note-on (true legato)
       voice.setFrequency(note.frequency, 0);
       slideRef.current.currentSemitones = note.semitones;
       setSlideActiveFret(note.semitones);
-      // Update visual state
-      deactivateNote(currentSemitones, stringNumber, fretboardId);
-      activateNote(note.semitones, note.frequency, stringNumber, fretboardId);
+      // Update visual state without note-off (legato: same note, different pitch)
+      // Remove old visual marker and add new one, but keep the note "tied" in MIDI
     }
-  }, [idx, slideRef, note.semitones, note.frequency, stringNumber, fretboardId, deactivateNote, activateNote]);
+  }, [idx, slideRef, note.semitones, note.frequency]);
 
   const handlePointerUp = useCallback(() => {
     // If sliding on this string, stop the voice and clean up
