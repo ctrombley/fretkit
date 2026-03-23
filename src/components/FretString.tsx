@@ -106,9 +106,9 @@ export default function FretString({
       return;
     }
 
-    // Hammer-on/pull-off slide mode: non-latch, non-arp
+    // Click-and-drag mode: non-latch, non-arp
+    // Start a note and allow drag to change pitch without retriggering envelope
     if (!useLatch && !current && !isLit) {
-      // Start a slide: play the voice directly and store the ref
       const engine = getEngineForFretboard(fretboardId);
       const voice = engine.synth.play(note.frequency);
       slideRef.current = { stringIdx: idx, voice, currentSemitones: note.semitones };
@@ -125,12 +125,11 @@ export default function FretString({
   }, [droneActive, onDroneFretSelect, stringNumber, sequenceEnabled, isLit, onStrum, current, useLatch, note.semitones, note.frequency, fretboardId, toggleNote, activateNote, idx, slideRef]);
 
   const handlePointerEnter = useCallback(() => {
-    // Slide transition: if pointer is sliding on this string and we're at a different fret
+    // Drag to new fret: if pointer is held and we're at a different fret, update pitch instantly
     if (slideRef.current?.stringIdx === idx && slideRef.current.currentSemitones !== note.semitones) {
       const { voice, currentSemitones } = slideRef.current;
-      const semitoneDistance = Math.abs(note.semitones - currentSemitones);
-      const portamentoSeconds = semitoneDistance * 0.06; // ~60ms per semitone
-      voice.setFrequency(note.frequency, portamentoSeconds);
+      // Update frequency instantly (0 second portamento) without retriggering envelope
+      voice.setFrequency(note.frequency, 0);
       slideRef.current.currentSemitones = note.semitones;
       setSlideActiveFret(note.semitones);
       // Update visual state
