@@ -72,7 +72,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'fretkit-storage',
-      version: 9,
+      version: 10,
       migrate: (persisted, version) => {
         // v1 → v2: add bus/midi defaults to existing state
         // v2 → v3: add monochord scales defaults
@@ -82,6 +82,8 @@ export const useStore = create<AppState>()(
         // v5 → v6: add sampler slice defaults
         // v6 → v7: add drone slice defaults
         // v7 → v8: add edoMode / quartertoneThresholdCents to fretboards
+        // v8 → v9: add synthParams to fretboards
+        // v9 → v10: ensure all fretboards have tuning (fallback to standard guitar)
         const state = { ...(persisted as Record<string, unknown>) };
         if (version < 5 && state.fretboards) {
           const boards = state.fretboards as Record<string, Record<string, unknown>>;
@@ -102,6 +104,15 @@ export const useStore = create<AppState>()(
           const boards = state.fretboards as Record<string, Record<string, unknown>>;
           for (const fb of Object.values(boards)) {
             if (fb.synthParams === undefined) fb.synthParams = { ...DEFAULT_PARAMS };
+          }
+        }
+        if (version < 10 && state.fretboards) {
+          const boards = state.fretboards as Record<string, Record<string, unknown>>;
+          for (const fb of Object.values(boards)) {
+            if (!fb.tuning) {
+              // Default to standard guitar tuning
+              fb.tuning = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
+            }
           }
         }
         return state as unknown as AppState;

@@ -119,7 +119,7 @@ export default function ControlPanel() {
           </button>
         </div>
         <select
-          value={fretboard.tuning.join(',')}
+          value={(fretboard.tuning ?? tunings['guitar']!['standard']!).join(',')}
           onChange={e => {
             updateFretboard(id, { tuning: e.target.value.split(',') });
             setEditingTuning(false);
