@@ -55,11 +55,13 @@ export default function Fretboard({
   edoMode = '12',
   quartertoneThresholdCents = 1500,
 }: FretboardProps) {
-  const stringCount = tuning.length;
+  // Defensive fallback for missing tuning (e.g., from persisted state without v10 migration applied)
+  const safeTuning = tuning ?? ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
+  const stringCount = safeTuning.length;
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
 
   // Tuning reversed to match visual top-to-bottom string order (treble first)
-  const reversedTuning = tuning.slice().reverse();
+  const reversedTuning = safeTuning.slice().reverse();
 
   // Angine mode: build hybrid slot layout
   const angineSlots = edoMode === 'angine'
@@ -81,7 +83,7 @@ export default function Fretboard({
         fretCount={fretCount}
         angineSlots={angineSlots}
         startingFret={startingFret}
-        tuning={tuning}
+        tuning={safeTuning}
         showStringLabels={showStringLabels}
       />
     </FretboardProvider>
