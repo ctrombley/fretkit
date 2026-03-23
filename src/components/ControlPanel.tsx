@@ -5,6 +5,7 @@ import Chord from '../lib/Chord';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import tunings from '../lib/tunings';
 import { FACTORY_SAMPLER_PRESETS } from '../lib/samplerPresets';
+import TuningEditor from './TuningEditor';
 
 export default function ControlPanel() {
   const settings = useStore(s => s.settings);
@@ -19,6 +20,7 @@ export default function ControlPanel() {
   const samplerPresets = useStore(s => s.samplerPresets);
 
   const [arrowMode, setArrowMode] = useState<'voicing' | 'inversion'>('voicing');
+  const [editingTuning, setEditingTuning] = useState(false);
 
   if (!fretboard) return null;
 
@@ -103,10 +105,25 @@ export default function ControlPanel() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Tuning</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-gray-700">Tuning</label>
+          <button
+            onClick={() => setEditingTuning(!editingTuning)}
+            className={`px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+              editingTuning
+                ? 'bg-gray-200 text-fret-blue'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            Edit
+          </button>
+        </div>
         <select
           value={fretboard.tuning.join(',')}
-          onChange={e => updateFretboard(id, { tuning: e.target.value.split(',') })}
+          onChange={e => {
+            updateFretboard(id, { tuning: e.target.value.split(',') });
+            setEditingTuning(false);
+          }}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue"
         >
           {Object.entries(tunings).map(([instrument, instrumentTunings]) =>
@@ -118,6 +135,13 @@ export default function ControlPanel() {
           )}
         </select>
       </div>
+
+      {editingTuning && (
+        <TuningEditor
+          tuning={fretboard.tuning}
+          onChange={t => updateFretboard(id, { tuning: t })}
+        />
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Sound</label>
@@ -143,6 +167,40 @@ export default function ControlPanel() {
             ))}
           </optgroup>
         </select>
+      </div>
+
+      {/* Fret layout (EDO mode) */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-gray-700">Fret layout</label>
+          <button
+            onClick={() => updateFretboard(id, {
+              edoMode: fretboard.edoMode === 'angine' ? '12' : 'angine',
+            })}
+            className={`px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+              fretboard.edoMode === 'angine'
+                ? 'bg-gray-200 text-fret-blue'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            {fretboard.edoMode === 'angine' ? 'Angine' : '12-EDO'}
+          </button>
+        </div>
+        {fretboard.edoMode === 'angine' && (
+          <div className="flex items-center gap-2 mt-1">
+            <label className="text-xs text-gray-500 whitespace-nowrap">QT up to</label>
+            <input
+              type="number"
+              min={100}
+              max={2400}
+              step={100}
+              value={fretboard.quartertoneThresholdCents}
+              onChange={e => updateFretboard(id, { quartertoneThresholdCents: parseInt(e.target.value, 10) })}
+              className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-fret-blue"
+            />
+            <span className="text-xs text-gray-400">¢</span>
+          </div>
+        )}
       </div>
 
       {/* String labels toggle */}

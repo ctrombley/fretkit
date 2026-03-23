@@ -322,6 +322,8 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
         droneFrets={droneFretsForBoard}
         onDroneFretSelect={(stringNumber, semitones) => setDroneFret(id, stringNumber, semitones)}
         showStringLabels={fretboard.showStringLabels}
+        edoMode={fretboard.edoMode}
+        quartertoneThresholdCents={fretboard.quartertoneThresholdCents}
       />
     </div>
   );

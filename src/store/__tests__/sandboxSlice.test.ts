@@ -19,8 +19,22 @@ const mockPlay = vi.fn(() => ({ stop: mockStop }));
 const mockKillAll = vi.fn();
 
 vi.mock('../../lib/synth', () => ({
-  getSynth: () => ({ play: mockPlay, killAll: mockKillAll }),
+  getSynth: () => ({ play: mockPlay, killAll: mockKillAll, updateParams: vi.fn(), resetLfoBase: vi.fn(), setBpmBase: vi.fn() }),
+  SynthEngine: class { play = mockPlay; killAll = mockKillAll; updateParams = vi.fn(); resetLfoBase = vi.fn(); setBpmBase = vi.fn(); params = {}; },
+  DEFAULT_PARAMS: {},
 }));
+
+vi.mock('../../lib/fretboardEngines', () => {
+  const mockEntry = { synth: { play: vi.fn(() => ({ stop: vi.fn() })), killAll: vi.fn(), updateParams: vi.fn(), resetLfoBase: vi.fn(), setBpmBase: vi.fn(), params: { release: 0.3 } }, latchVoices: new Map() };
+  return {
+    getEngineForFretboard: vi.fn(() => mockEntry),
+    initEngineForFretboard: vi.fn(),
+    destroyEngineForFretboard: vi.fn(),
+    applyParamsToEngine: vi.fn(),
+    killAllEngines: vi.fn(),
+    DEFAULT_PARAMS: {},
+  };
+});
 
 vi.mock('../../lib/arpeggiator', () => ({
   getArpeggiator: () => ({ addNote: vi.fn(), removeNote: vi.fn(), clear: vi.fn() }),

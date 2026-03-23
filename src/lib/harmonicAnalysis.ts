@@ -105,6 +105,15 @@ function pairDissonance(f1: number, f2: number): number {
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
+/**
+ * Normalized Plomp & Levelt dissonance between two pure tones.
+ * Returns 0 (perfectly consonant) → 1 (maximally rough).
+ * Works correctly with any frequencies, including quartertone pitches.
+ */
+export function noteDissonance(hzA: number, hzB: number): number {
+  return pairDissonance(hzA, hzB);
+}
+
 export function analyzeFrequencies(strings: DroneString[]): DroneAnalysis {
   if (strings.length < 2) {
     return {

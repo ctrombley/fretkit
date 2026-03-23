@@ -13,6 +13,15 @@ import { getInternalMidiBus } from '../lib/internalMidiBus';
 import type { NoteSource } from '../lib/internalMidiBus';
 import { getInstrument } from '../lib/instrument';
 import { FACTORY_SAMPLER_PRESETS } from '../lib/samplerPresets';
+import {
+  getEngineForFretboard,
+  initEngineForFretboard,
+  destroyEngineForFretboard,
+  applyParamsToEngine,
+  killAllEngines,
+  DEFAULT_PARAMS,
+} from '../lib/fretboardEngines';
+import { synthParamsToStoreState } from '../lib/synthUtils';
 import { latchFrequencies } from './latchFrequencies';
 import { strumPreviewVoices } from './strumPreviewVoices';
 import type { AppState, FretboardState, Settings, StoreSet, StoreGet } from './types';
@@ -29,6 +38,19 @@ function noteSourceForFretboard(fretboardId: string | undefined, get: StoreGet):
 }
 
 export function applyPresetByName(presetName: string, state: AppState): void {
+  applyPresetByNameToFretboard(presetName, state, null);
+}
+
+/**
+ * Apply a named preset to a specific fretboard's engine (or globally if fretboardId is null).
+ * Synth presets update only the target fretboard's SynthEngine.
+ * Sampler presets remain global (sampler is still a shared engine).
+ */
+export function applyPresetByNameToFretboard(
+  presetName: string,
+  state: AppState,
+  fretboardId: string | null,
+): void {
   const factorySamplerIdx = FACTORY_SAMPLER_PRESETS.findIndex(p => p.name === presetName);
   if (factorySamplerIdx >= 0) {
     const preset = FACTORY_SAMPLER_PRESETS[factorySamplerIdx]!;
@@ -37,19 +59,25 @@ export function applyPresetByName(presetName: string, state: AppState): void {
       if (slot?.url) getSampler().loadSample(i, slot.url).catch(console.error);
     });
     state.setSamplerKeyMap([...preset.keyMap]);
-    state.setSamplerCrossfade(1); // sampler engine fully audible
+    state.setSamplerCrossfade(1);
     return;
   }
   const userSamplerIdx = state.samplerPresets.findIndex(p => p.name === presetName);
   if (userSamplerIdx >= 0) {
     state.loadSamplerPreset(userSamplerIdx);
-    state.setSamplerCrossfade(1); // sampler engine fully audible
+    state.setSamplerCrossfade(1);
     return;
   }
   const synthIdx = state.synthPresets.findIndex(p => p.name === presetName);
   if (synthIdx >= 0) {
-    state.loadPreset(synthIdx);
-    state.setSamplerCrossfade(0); // synth engine fully audible
+    const preset = state.synthPresets[synthIdx]!;
+    if (fretboardId) {
+      // Apply directly to this fretboard's engine without touching global store
+      applyParamsToEngine(fretboardId, preset.params);
+    } else {
+      state.loadPreset(synthIdx);
+    }
+    state.setSamplerCrossfade(0);
   }
 }
 
@@ -67,6 +95,9 @@ const defaultFretboard: Omit<FretboardState, 'id'> = {
   tuning: tunings['guitar']!['standard']!,
   showStringLabels: false,
   soundPreset: 'Nylon Strings',
+  edoMode: '12',
+  quartertoneThresholdCents: 1500,
+  synthParams: { ...DEFAULT_PARAMS },
 };
 
 export const SANDBOX_PERSISTED_KEYS: (keyof AppState)[] = [
@@ -101,8 +132,9 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     },
 
     killAllNotes: () => {
-      getInternalMidiBus().allNotesOff();   // instrument clears all voices
-      getSynth().killAll();                 // flush any lingering envelopes
+      getInternalMidiBus().allNotesOff();   // instrument clears all voices (arp/strum/monochord)
+      killAllEngines();                     // stop all per-fretboard latch voices
+      getSynth().killAll();                 // flush global synth (drone/arp)
       getSampler().stopAll();
       getArpeggiator().clear();
       latchFrequencies.clear();
@@ -118,6 +150,11 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       if (isActive) {
         if (state.arpEnabled) {
           getArpeggiator().removeNote(semitones);
+        } else if (source === 'latch-synth' && fretboardId) {
+          const entry = getEngineForFretboard(fretboardId);
+          entry.latchVoices.get(semitones)?.stop();
+          entry.latchVoices.delete(semitones);
+          latchFrequencies.delete(semitones);
         } else {
           getInternalMidiBus().noteOff(semitones, source);
           latchFrequencies.delete(semitones);
@@ -131,13 +168,18 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       } else {
         if (state.arpEnabled) {
           getArpeggiator().addNote(frequency, semitones);
+        } else if (state.view.name === 'monochord') {
+          getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
+          getInternalMidiBus().noteOn(semitones, frequency, source);
+          latchFrequencies.set(semitones, frequency);
+        } else if (source === 'latch-synth' && fretboardId) {
+          const entry = getEngineForFretboard(fretboardId);
+          const voice = entry.synth.play(frequency);
+          entry.latchVoices.set(semitones, voice);
+          latchFrequencies.set(semitones, frequency);
         } else {
-          // Monochord mode: swap instrument playFn for this note
-          if (state.view.name === 'monochord') {
-            getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
-          } else {
-            getInstrument().playFn = freq => getSynth().play(freq);
-          }
+          // Sampler or unscoped: use the bus
+          getInstrument().playFn = freq => getSynth().play(freq);
           getInternalMidiBus().noteOn(semitones, frequency, source);
           latchFrequencies.set(semitones, frequency);
         }
@@ -156,10 +198,16 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       const source = noteSourceForFretboard(fretboardId, get);
       if (state.view.name === 'monochord') {
         getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
+        getInternalMidiBus().noteOn(semitones, frequency, source);
+      } else if (source === 'latch-synth' && fretboardId) {
+        const entry = getEngineForFretboard(fretboardId);
+        const voice = entry.synth.play(frequency);
+        entry.latchVoices.set(semitones, voice);
       } else {
+        // Sampler or unscoped: use the bus
         getInstrument().playFn = freq => getSynth().play(freq);
+        getInternalMidiBus().noteOn(semitones, frequency, source);
       }
-      getInternalMidiBus().noteOn(semitones, frequency, source);
       latchFrequencies.set(semitones, frequency);
       set((s: AppState) => ({
         sandboxActiveNotes: [...s.sandboxActiveNotes, semitones],
@@ -171,7 +219,13 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
 
     deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => {
       const source = noteSourceForFretboard(fretboardId, get);
-      getInternalMidiBus().noteOff(semitones, source);
+      if (source === 'latch-synth' && fretboardId) {
+        const entry = getEngineForFretboard(fretboardId);
+        entry.latchVoices.get(semitones)?.stop();
+        entry.latchVoices.delete(semitones);
+      } else {
+        getInternalMidiBus().noteOff(semitones, source);
+      }
       latchFrequencies.delete(semitones);
       set((s: AppState) => ({
         sandboxActiveNotes: s.sandboxActiveNotes.filter(n => n !== semitones),
@@ -182,13 +236,21 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     },
 
     setFretboardSoundPreset: (fretboardId: string, presetName: string) => {
-      set((state: AppState) => ({
+      const state = get();
+      // Find new synthParams for this preset (if it's a synth preset)
+      const synthIdx = state.synthPresets.findIndex(p => p.name === presetName);
+      const newSynthParams = synthIdx >= 0 ? state.synthPresets[synthIdx]!.params : undefined;
+      set((s: AppState) => ({
         fretboards: {
-          ...state.fretboards,
-          [fretboardId]: { ...state.fretboards[fretboardId]!, soundPreset: presetName },
+          ...s.fretboards,
+          [fretboardId]: {
+            ...s.fretboards[fretboardId]!,
+            soundPreset: presetName,
+            ...(newSynthParams ? { synthParams: newSynthParams } : {}),
+          },
         },
       }));
-      applyPresetByName(presetName, get());
+      applyPresetByNameToFretboard(presetName, get(), fretboardId);
     },
 
     strumVoicing: (notes: Array<{ semitones: number; frequency: number; string?: number }>, fretboardId?: string) => {
@@ -196,11 +258,12 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       for (const voice of strumPreviewVoices) voice.stop();
       strumPreviewVoices.length = 0;
 
-      // Let attack + decay complete, then trigger release so the ADSR envelope
-      // controls the fadeout naturally — no artificial fixed timer.
-      const synth = getSynth();
-      const noteOnMs = Math.round((synth.params.attack + synth.params.decay) * 1000);
-      const releaseMs = Math.round(synth.params.release * 1000);
+      // Read timing from the fretboard's own engine when available, else global synth
+      const synthParams = fretboardId
+        ? getEngineForFretboard(fretboardId).synth.params
+        : getSynth().params;
+      const noteOnMs = Math.round((synthParams.attack + synthParams.decay) * 1000);
+      const releaseMs = Math.round(synthParams.release * 1000);
       const strumSpreadMs = (notes.length - 1) * 28;
       const totalMs = strumSpreadMs + noteOnMs + releaseMs;
 
@@ -252,6 +315,8 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           [id]: { id, ...defaultFretboard },
         },
       }));
+      // Initialize a fresh engine for the new fretboard
+      initEngineForFretboard(String(id), defaultFretboard.synthParams);
       get().retriggerDrone();
     },
 
@@ -266,6 +331,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     },
 
     deleteFretboard: (id: string) => {
+      destroyEngineForFretboard(id);
       set((state: AppState) => {
         const { [id]: _, ...rest } = state.fretboards;
         return { fretboards: rest };
@@ -318,7 +384,11 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     },
 
     openSettings: (id: string) => {
-      set({ settings: { settingsId: id, sidebarOpen: true } });
+      // Load this fretboard's synthParams into the global synth store state so
+      // SynthView controls reflect the right values for the selected fretboard.
+      const fb = get().fretboards[id];
+      const storeUpdate = fb?.synthParams ? synthParamsToStoreState(fb.synthParams) : {};
+      set({ ...storeUpdate, settings: { settingsId: id, sidebarOpen: true } } as Partial<AppState>);
     },
 
     updateSettings: (data: Partial<Settings>) => {

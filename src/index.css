@@ -56,6 +56,13 @@
   stroke: #6b7280;
 }
 
+/* Quartertone fret wire — lighter, dashed, visually reads as "added between" native frets */
+.fret__wire--quartertone {
+  stroke: #c4b5a0;
+  stroke-dasharray: 3 3;
+  stroke-width: 0.75 !important;
+}
+
 .fret__marker > circle {
   r: 10;
   fill: #e5e7eb;
@@ -104,6 +111,14 @@
   stroke: #4f46e5;
   stroke-width: 1.5;
   opacity: 0.9;
+}
+
+/* Consonance ring — shown on frets consonant with a currently active note */
+.string__marker-consonant {
+  fill: none;
+  stroke: #34d399;
+  stroke-width: 1.5;
+  opacity: 0.7;
 }
 
 @keyframes pulse {

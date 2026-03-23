@@ -1,5 +1,6 @@
 import type { SynthParams } from '../lib/synth';
 import { getSynth } from '../lib/synth';
+import { applyParamsToEngine } from '../lib/fretboardEngines';
 import { FACTORY_PRESETS, randomizeParams } from '../lib/synthPresets';
 import type { SynthPreset } from '../lib/synthPresets';
 import { synthParamsToStoreState, gatherSynthParams } from '../lib/synthUtils';
@@ -20,8 +21,19 @@ export function createSynthPresetsSlice(set: StoreSet, get: StoreGet) {
       const state = get();
       const preset = state.synthPresets[index];
       if (!preset) return;
+      const fbId = state.settings.settingsId;
       const storeUpdate = synthParamsToStoreState(preset.params);
-      set({ ...storeUpdate, synthActivePresetIndex: index } as Partial<AppState>);
+      // Apply to the settings fretboard's engine and persist synthParams on it
+      applyParamsToEngine(fbId, preset.params);
+      set((s: AppState) => ({
+        ...(storeUpdate as Partial<AppState>),
+        synthActivePresetIndex: index,
+        fretboards: {
+          ...s.fretboards,
+          [fbId]: { ...s.fretboards[fbId]!, synthParams: preset.params },
+        },
+      }));
+      // Keep global synth in sync (drone/arp timing)
       const synth = getSynth();
       synth.resetLfoBase(1);
       synth.resetLfoBase(2);
@@ -54,9 +66,19 @@ export function createSynthPresetsSlice(set: StoreSet, get: StoreGet) {
     },
 
     randomizeSynth: () => {
+      const state = get();
+      const fbId = state.settings.settingsId;
       const params = randomizeParams();
       const storeUpdate = synthParamsToStoreState(params);
-      set({ ...storeUpdate, synthActivePresetIndex: null } as Partial<AppState>);
+      applyParamsToEngine(fbId, params);
+      set((s: AppState) => ({
+        ...(storeUpdate as Partial<AppState>),
+        synthActivePresetIndex: null,
+        fretboards: {
+          ...s.fretboards,
+          [fbId]: { ...s.fretboards[fbId]!, synthParams: params },
+        },
+      }));
       const synth = getSynth();
       synth.resetLfoBase(1);
       synth.resetLfoBase(2);

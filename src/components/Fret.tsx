@@ -4,6 +4,7 @@ import FretMarker from './FretMarker';
 import Note from '../lib/Note';
 import { calcFretWidth } from './Fretboard';
 import { STRING_HEIGHT, SINGLE_MARKER_FRETS, DOUBLE_MARKER_FRETS } from '../lib/fretboardConstants';
+import type { FretSlot } from '../lib/hybridFretLayout';
 
 function getFretWidth(fretNumber: number): number {
   if (fretNumber <= 0) return 0;
@@ -29,6 +30,8 @@ interface FretProps {
   idx: number;
   startingFret: number;
   tuning: string[];
+  // Angine (hybrid 24-EDO) overrides — when provided, take precedence
+  slot?: FretSlot;
 }
 
 export default function Fret({
@@ -38,14 +41,19 @@ export default function Fret({
   idx,
   startingFret,
   tuning,
+  slot,
 }: FretProps) {
   const stringCount = tuning.length;
-  const width = getFretWidth(fretNumber);
-  const xOffset = calcXOffset(fretNumber, startingFret, fretboardMargin);
+  const width = slot ? slot.width : getFretWidth(fretNumber);
+  const xOffset = slot ? slot.xOffset : calcXOffset(fretNumber, startingFret, fretboardMargin);
+  const pitchSemitones = slot ? slot.semitones : fretNumber;
+  const markerFretNum = slot ? slot.nativeFretNumber : fretNumber;
+  const isQuartertone = slot ? !slot.isNative12 : false;
   const fretHeight = STRING_HEIGHT * (stringCount - 1);
   const isFirst = idx === 1;
   const isLast = idx === fretCount;
-  const markerType = getFretMarkerType(fretNumber);
+  // Only show inlay markers on native 12-EDO frets
+  const markerType = isQuartertone ? null : getFretMarkerType(markerFretNum);
 
   const reversedTuning = tuning.slice().reverse();
 
@@ -56,7 +64,7 @@ export default function Fret({
           xOffset={xOffset + 20}
           yOffset={fretboardMargin - 20}
         >
-          {fretNumber}
+          {markerFretNum}
         </Label>
       )}
       {markerType && (
@@ -69,7 +77,7 @@ export default function Fret({
         />
       )}
       <line
-        className={`fret__wire${isFirst ? ' fret__wire--nut' : ''}`}
+        className={`fret__wire${isFirst ? ' fret__wire--nut' : ''}${isQuartertone ? ' fret__wire--quartertone' : ''}`}
         x1={xOffset}
         x2={xOffset}
         y1={fretboardMargin}
@@ -85,7 +93,7 @@ export default function Fret({
             fretIdx={idx}
             fretWidth={width}
             idx={i}
-            note={openNote.add(fretNumber)}
+            note={openNote.add(pitchSemitones)}
             stringCount={stringCount}
             xOffset={xOffset}
             yOffset={yOffset}

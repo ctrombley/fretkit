@@ -4,6 +4,7 @@ import type Sequence from '../lib/Sequence';
 import { STRING_HEIGHT, FRETBOARD_MARGIN, BASE_FRET_WIDTH } from '../lib/fretboardConstants';
 import { FretboardProvider } from './FretboardContext';
 import StringWaveLayer from './StringWaveLayer';
+import { buildAngineSlots, angineWidth } from '../lib/hybridFretLayout';
 
 export function calcFretWidth(idx: number): number {
   if (idx <= 1) return BASE_FRET_WIDTH;
@@ -31,6 +32,8 @@ interface FretboardProps {
   droneFrets?: (number | null)[] | undefined;
   onDroneFretSelect?: (stringNumber: number, semitones: number) => void;
   showStringLabels?: boolean;
+  edoMode?: '12' | 'angine';
+  quartertoneThresholdCents?: number;
 }
 
 export default function Fretboard({
@@ -48,14 +51,24 @@ export default function Fretboard({
   droneFrets,
   onDroneFretSelect,
   showStringLabels = false,
+  edoMode = '12',
+  quartertoneThresholdCents = 1500,
 }: FretboardProps) {
   const stringCount = tuning.length;
-  const width = calcTotalWidth(fretCount) + FRETBOARD_MARGIN * 2;
-  const height = STRING_HEIGHT * stringCount + FRETBOARD_MARGIN * 2;
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
 
   // Tuning reversed to match visual top-to-bottom string order (treble first)
   const reversedTuning = tuning.slice().reverse();
+
+  // Angine mode: build hybrid slot layout
+  const angineSlots = edoMode === 'angine'
+    ? buildAngineSlots(startingFret, fretCount, quartertoneThresholdCents, BASE_FRET_WIDTH, FRETBOARD_MARGIN)
+    : null;
+
+  const width = angineSlots
+    ? angineWidth(angineSlots, FRETBOARD_MARGIN)
+    : calcTotalWidth(fretCount) + FRETBOARD_MARGIN * 2;
+  const height = STRING_HEIGHT * stringCount + FRETBOARD_MARGIN * 2;
 
   return (
     <FretboardProvider value={{ fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets: droneFrets ?? [], onDroneFretSelect }}>
@@ -82,23 +95,37 @@ export default function Fretboard({
         <Fret
           idx={0}
           fretNumber={0}
-          fretCount={fretCount}
+          fretCount={angineSlots ? angineSlots.length : fretCount}
           fretboardMargin={FRETBOARD_MARGIN}
           tuning={tuning}
           startingFret={startingFret}
         />
-        {/* Frets */}
-        {Array.from({ length: fretCount }, (_, i) => (
-          <Fret
-            key={i + 1}
-            idx={i + 1}
-            fretNumber={startingFret + i}
-            fretCount={fretCount}
-            fretboardMargin={FRETBOARD_MARGIN}
-            tuning={tuning}
-            startingFret={startingFret}
-          />
-        ))}
+        {/* Frets — angine or standard */}
+        {angineSlots
+          ? angineSlots.map((slot, i) => (
+              <Fret
+                key={i}
+                idx={i + 1}
+                fretNumber={slot.nativeFretNumber}
+                fretCount={angineSlots.length}
+                fretboardMargin={FRETBOARD_MARGIN}
+                tuning={tuning}
+                startingFret={startingFret}
+                slot={slot}
+              />
+            ))
+          : Array.from({ length: fretCount }, (_, i) => (
+              <Fret
+                key={i + 1}
+                idx={i + 1}
+                fretNumber={startingFret + i}
+                fretCount={fretCount}
+                fretboardMargin={FRETBOARD_MARGIN}
+                tuning={tuning}
+                startingFret={startingFret}
+              />
+            ))
+        }
         {/* Full-string wave animation overlay */}
         <StringWaveLayer
           tuning={tuning}

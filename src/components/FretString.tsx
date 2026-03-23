@@ -4,6 +4,7 @@ import StringMarker from './StringMarker';
 import { useStore } from '../store';
 import { STRING_HEIGHT } from '../lib/fretboardConstants';
 import { useFretboardContext } from './FretboardContext';
+import { noteDissonance } from '../lib/harmonicAnalysis';
 
 interface FretStringProps {
   fretIdx: number;
@@ -44,6 +45,14 @@ export default function FretString({
       ? (s.arpStrikeFingers[note.semitones] ?? undefined)
       : undefined
   );
+  // Consonance highlight: show when a note is active and this fret is consonant with it
+  const isConsonant = useStore(s => {
+    if (s.sandboxActiveNotes.length === 0) return false;
+    const minDissonance = Math.min(
+      ...s.sandboxActiveNotes.map(semi => noteDissonance(note.frequency, new Note(semi).frequency))
+    );
+    return minDissonance < 0.25;
+  });
   const stringNumber = (stringCount - 1) - idx;
 
   const toggleNote = useStore(s => s.toggleSandboxNote);
@@ -165,6 +174,16 @@ export default function FretString({
           note={note}
           isRoot={isRoot}
           isPlaying
+        />
+      )}
+      {/* Consonance ring: frets consonant with a currently active note */}
+      {isConsonant && !isMarked && !isLit && !droneActive && !isOpenString && (
+        <circle
+          cx={xOffset + fretWidth / 2}
+          cy={yOffset}
+          r={7}
+          className="string__marker-consonant"
+          pointerEvents="none"
         />
       )}
       {/* Hint ring: shows open string is playable when not lit or active */}

@@ -110,7 +110,9 @@ interface LfoState {
 }
 
 
-class SynthEngine {
+export { DEFAULT_PARAMS };
+
+export class SynthEngine {
   private ctx: AudioContext;
   private hp: BiquadFilterNode;
   private filter: BiquadFilterNode;

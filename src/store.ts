@@ -21,7 +21,8 @@ import { getArpeggiator } from './lib/arpeggiator';
 import { getPatternById } from './lib/fingerPickingPatterns';
 import { getInstrument } from './lib/instrument'; // boot instrument so it subscribes to the bus at startup
 import { bootSamplerInstrument } from './lib/samplerInstrument';
-import { applyPresetByName } from './store/sandboxSlice';
+import { applyPresetByName, applyPresetByNameToFretboard } from './store/sandboxSlice';
+import { initEngineForFretboard, DEFAULT_PARAMS } from './lib/fretboardEngines';
 getInstrument();
 // Note: open strings are re-added via setArpUseOpenStrings on rehydration if persisted as true
 
@@ -71,7 +72,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'fretkit-storage',
-      version: 7,
+      version: 9,
       migrate: (persisted, version) => {
         // v1 → v2: add bus/midi defaults to existing state
         // v2 → v3: add monochord scales defaults
@@ -80,6 +81,7 @@ export const useStore = create<AppState>()(
         //          (v4 could store them without those fields if saved before the fix)
         // v5 → v6: add sampler slice defaults
         // v6 → v7: add drone slice defaults
+        // v7 → v8: add edoMode / quartertoneThresholdCents to fretboards
         const state = { ...(persisted as Record<string, unknown>) };
         if (version < 5 && state.fretboards) {
           const boards = state.fretboards as Record<string, Record<string, unknown>>;
@@ -88,6 +90,19 @@ export const useStore = create<AppState>()(
             fixed[id] = { litNotes: [], current: null, sequences: [], ...fb };
           }
           state.fretboards = fixed;
+        }
+        if (version < 8 && state.fretboards) {
+          const boards = state.fretboards as Record<string, Record<string, unknown>>;
+          for (const fb of Object.values(boards)) {
+            if (fb.edoMode === undefined) fb.edoMode = '12';
+            if (fb.quartertoneThresholdCents === undefined) fb.quartertoneThresholdCents = 1500;
+          }
+        }
+        if (version < 9 && state.fretboards) {
+          const boards = state.fretboards as Record<string, Record<string, unknown>>;
+          for (const fb of Object.values(boards)) {
+            if (fb.synthParams === undefined) fb.synthParams = { ...DEFAULT_PARAMS };
+          }
         }
         return state as unknown as AppState;
       },
@@ -120,6 +135,9 @@ export const useStore = create<AppState>()(
             tuning: fb.tuning,
             showStringLabels: fb.showStringLabels,
             soundPreset: fb.soundPreset ?? 'Nylon Strings',
+            edoMode: fb.edoMode ?? '12',
+            quartertoneThresholdCents: fb.quartertoneThresholdCents ?? 1500,
+            synthParams: fb.synthParams ?? { ...DEFAULT_PARAMS },
           };
         }
         partial['fretboards'] = safeBoards;
@@ -134,6 +152,14 @@ export const useStore = create<AppState>()(
         }
         master.setMasterVolume(state.masterBusVolume);
         master.setMasterMuted(state.masterBusMuted);
+        // Initialize per-fretboard engines and apply each fretboard's sound preset
+        for (const [fbId, fb] of Object.entries(state.fretboards)) {
+          const params = fb.synthParams ?? { ...DEFAULT_PARAMS };
+          initEngineForFretboard(fbId, params);
+          if (fb.soundPreset) {
+            applyPresetByNameToFretboard(fb.soundPreset, state, fbId);
+          }
+        }
         // Re-derive litNotes/sequences/current from persisted searchStr
         for (const [fbId, fb] of Object.entries(state.fretboards)) {
           if (fb.searchStr) {

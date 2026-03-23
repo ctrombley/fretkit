@@ -29,6 +29,9 @@ export interface FretboardState {
   tuning: string[];
   showStringLabels: boolean;
   soundPreset: string;
+  edoMode: '12' | 'angine';
+  quartertoneThresholdCents: number;
+  synthParams: SynthParams;
 }
 
 export interface Settings {

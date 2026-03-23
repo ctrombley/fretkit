@@ -1,5 +1,6 @@
 import type { OscWaveform, SynthParams, LfoWaveform, LfoTargetParam } from '../lib/synth';
 import { getSynth } from '../lib/synth';
+import { getEngineForFretboard } from '../lib/fretboardEngines';
 import type { AppState, StoreSet, StoreGet } from './types';
 
 export const SYNTH_PERSISTED_KEYS: (keyof AppState)[] = [
@@ -50,24 +51,53 @@ export function createSynthSlice(set: StoreSet, get: StoreGet) {
 
     setSynthParam: <K extends keyof SynthParams>(key: K, value: SynthParams[K]) => {
       const storeKey = `synth${key.charAt(0).toUpperCase()}${key.slice(1)}` as keyof AppState;
+      const state = get();
+      const fbId = state.settings.settingsId;
+      // Update global store state (drives SynthView UI)
       set({ [storeKey]: value, synthActivePresetIndex: null } as Partial<AppState>);
+      // Update the settings fretboard's own engine + persisted synthParams
+      const entry = getEngineForFretboard(fbId);
+      entry.synth.updateParams({ [key]: value });
+      set((s: AppState) => ({
+        fretboards: {
+          ...s.fretboards,
+          [fbId]: {
+            ...s.fretboards[fbId]!,
+            synthParams: { ...s.fretboards[fbId]!.synthParams, [key]: value },
+          },
+        },
+      }));
+      // Also keep global synth in sync (used by drone, arp timing)
       getSynth().updateParams({ [key]: value });
     },
 
     setSynthKeyboardMode: (mode: 'classic' | 'isomorphic') => set({ synthKeyboardMode: mode }),
 
     setSynthLfoTarget: (lfo: 1 | 2, target: LfoTargetParam) => {
+      const state = get();
+      const fbId = state.settings.settingsId;
+      const entry = getEngineForFretboard(fbId);
+      entry.synth.resetLfoBase(lfo);
+      const lfoKey = lfo === 1 ? 'lfo1Target' : 'lfo2Target';
+      const storeKey = lfo === 1 ? 'synthLfo1Target' : 'synthLfo2Target';
+      set({ [storeKey]: target } as Partial<AppState>);
+      entry.synth.updateParams({ [lfoKey]: target });
+      set((s: AppState) => ({
+        fretboards: {
+          ...s.fretboards,
+          [fbId]: {
+            ...s.fretboards[fbId]!,
+            synthParams: { ...s.fretboards[fbId]!.synthParams, [lfoKey]: target },
+          },
+        },
+      }));
+      // Keep global synth in sync
       const synth = getSynth();
       synth.resetLfoBase(lfo);
-      if (lfo === 1) {
-        set({ synthLfo1Target: target });
-        synth.updateParams({ lfo1Target: target });
-      } else {
-        set({ synthLfo2Target: target });
-        synth.updateParams({ lfo2Target: target });
-      }
+      synth.updateParams({ [lfoKey]: target });
       if (target === 'bpm') {
-        synth.setBpmBase(get().transportBpm);
+        entry.synth.setBpmBase(state.transportBpm);
+        synth.setBpmBase(state.transportBpm);
       }
     },
   };
