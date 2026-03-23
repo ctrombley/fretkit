@@ -1,8 +1,9 @@
+import { useCallback } from 'react';
 import Fret from './Fret';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 import { STRING_HEIGHT, FRETBOARD_MARGIN, BASE_FRET_WIDTH } from '../lib/fretboardConstants';
-import { FretboardProvider } from './FretboardContext';
+import { FretboardProvider, useFretboardContext } from './FretboardContext';
 import StringWaveLayer from './StringWaveLayer';
 import { buildAngineSlots, angineWidth } from '../lib/hybridFretLayout';
 
@@ -72,13 +73,60 @@ export default function Fretboard({
 
   return (
     <FretboardProvider value={{ fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets: droneFrets ?? [], onDroneFretSelect }}>
-      <svg
-        className="fretboard"
+      <FretboardSVGContainer
         width={width}
         height={height}
-        role="img"
-        aria-label={`Fretboard with ${stringCount} strings and ${fretCount} frets`}
-      >
+        stringCount={stringCount}
+        reversedTuning={reversedTuning}
+        fretCount={fretCount}
+        angineSlots={angineSlots}
+        startingFret={startingFret}
+        tuning={tuning}
+        showStringLabels={showStringLabels}
+      />
+    </FretboardProvider>
+  );
+}
+
+function FretboardSVGContainer({
+  width,
+  height,
+  stringCount,
+  reversedTuning,
+  fretCount,
+  angineSlots,
+  startingFret,
+  tuning,
+  showStringLabels,
+}: {
+  width: number;
+  height: number;
+  stringCount: number;
+  reversedTuning: string[];
+  fretCount: number;
+  angineSlots: import('../lib/hybridFretLayout').FretSlot[] | null;
+  startingFret: number;
+  tuning: string[];
+  showStringLabels: boolean;
+}) {
+  const { slideRef } = useFretboardContext();
+
+  const handlePointerUp = useCallback(() => {
+    if (slideRef.current) {
+      slideRef.current.voice.stop();
+      slideRef.current = null;
+    }
+  }, [slideRef]);
+
+  return (
+    <svg
+      className="fretboard"
+      width={width}
+      height={height}
+      role="img"
+      aria-label={`Fretboard with ${stringCount} strings and ${fretCount} frets`}
+      onPointerUp={handlePointerUp}
+    >
         {/* Open string labels — horizontal mode: left of nut */}
         {showStringLabels && reversedTuning.map((noteName, i) => (
           <text
