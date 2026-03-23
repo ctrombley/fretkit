@@ -181,6 +181,5 @@ function FretboardSVGContainer({
           boardWidth={width}
         />
       </svg>
-    </FretboardProvider>
-  );
-}
+    );
+  }
