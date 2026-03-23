@@ -2,7 +2,7 @@
 
 **Status:** Active
 **Last Updated:** 2026-03-23
-**Next Up:** Implement hammer-on/pull-off drag mechanics with fret-to-fret note slides
+**Next Up:** Test hammer-on/pull-off feature; merge feature/hammer-on-pull-off to master
 
 ## Description
 Web-based interactive fretboard visualizer for drilling scales/chords on string instruments. Guitar, banjo, mandolin support with multiple tunings. SVG-based fretboard rendering with intelligent sequence generation algorithm.
@@ -12,15 +12,17 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 ## Tasks
 
 ### Next Up
-- [ ] [HIGH] [~4h] Implement hammer-on/pull-off drag mechanics (click+drag on string, slide through frets, trigger portamento)
-- [ ] [MED] [~1h] Add visual feedback for drag path (fret highlighting, note trail)
-- [ ] [MED] [~30m] Test hammer-on/pull-off across different tunings
+- [ ] [HIGH] [~30m] Test hammer-on/pull-off on different instruments/tunings
+- [ ] [MED] [~1h] Fine-tune portamento timing per fret distance
+- [ ] [LOW] [~1h] Add visual feedback for drag path (note trail animation)
 
 ### Backlog
 - [ ] [MED] [~2h] Document angine fretboard engine capabilities
 - [ ] [LOW] [~1h] Add performance profiling for large fretboard renders
 
 ### Completed
+- [x] Implement hammer-on/pull-off drag mechanics (click+drag on string, portamento slide between frets)
+- [x] Fix ControlPanel crash (add v10 migration for missing tuning field)
 - [x] Commit feature/angine-fretboard changes and merge to master
 - [x] Implement per-fretboard synth engines (FretboardEngineRegistry)
 - [x] Add TuningEditor component with validation
@@ -40,4 +42,10 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 - Assessed feature/angine-fretboard: tests pass, changes uncommitted, ready for merge workflow
 - Committed feature/angine-fretboard (20 files, 695 insertions): per-fretboard synth engines + TuningEditor
 - Merged feature/angine-fretboard to master (5 commits, all tests passing)
-- Starting new feature: hammer-on/pull-off drag mechanics with fret-to-fret note slides
+- Fixed ControlPanel crash: v10 migration + defensive fallback for missing tuning field
+- Implemented hammer-on/pull-off slide mechanics:
+  * FretboardContext.slideRef for per-fretboard slide state tracking
+  * FretString slide mode: play voice directly, slide pitch via portamento on fret transitions
+  * Global cleanup handler in FretboardSVGContainer
+  * Proportional portamento: ~60ms per semitone
+  * All 455 tests passing, feature ready for testing
