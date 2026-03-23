@@ -1,9 +1,8 @@
-import { useCallback } from 'react';
 import Fret from './Fret';
 import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 import { STRING_HEIGHT, FRETBOARD_MARGIN, BASE_FRET_WIDTH } from '../lib/fretboardConstants';
-import { FretboardProvider, useFretboardContext } from './FretboardContext';
+import { FretboardProvider } from './FretboardContext';
 import StringWaveLayer from './StringWaveLayer';
 import { buildAngineSlots, angineWidth } from '../lib/hybridFretLayout';
 
