@@ -20,7 +20,7 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 - [ ] [LOW] [~1h] Add performance profiling for large fretboard renders
 
 ### Completed
-- [x] Implement click-and-drag pitch updates (click on fret, drag to change pitch without retrigger)
+- [x] Implement click-and-drag pitch updates with legato MIDI behavior (no note retrigger, continuous amplitude)
 - [x] Fix ControlPanel crash (add v10 migration for missing tuning field)
 - [x] Commit feature/angine-fretboard changes and merge to master
 - [x] Implement per-fretboard synth engines (FretboardEngineRegistry)
@@ -42,9 +42,10 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 - Committed feature/angine-fretboard (20 files, 695 insertions): per-fretboard synth engines + TuningEditor
 - Merged feature/angine-fretboard to master (5 commits, all tests passing)
 - Fixed ControlPanel crash: v10 migration + defensive fallback for missing tuning field
-- Implemented click-and-drag pitch update mechanics:
+- Implemented click-and-drag pitch update mechanics with legato MIDI behavior:
   * FretboardContext.slideRef for per-fretboard drag state tracking
-  * FretString drag mode: play voice on click, update frequency instantly as fret changes
-  * No envelope retrigger, amplitude/sample state preserved during drag
+  * FretString drag mode: note-on on click, frequency updates during drag, note-off on release
+  * Legato: no note-off/note-on during drag (same MIDI note, frequency changes only)
+  * Envelope and sample state preserved throughout drag (no retrigger)
   * Global cleanup handler in FretboardSVGContainer
   * All 455 tests passing, feature ready for testing
