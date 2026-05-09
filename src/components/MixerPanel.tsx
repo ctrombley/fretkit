@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Volume2, VolumeX, X, Gauge } from 'lucide-react';
 import { useStore } from '../store';
-import { getMasterBus, BUS_IDS } from '../lib/masterBus';
+import { getMasterBus, BUS_IDS, BUS_LABELS } from '../lib/masterBus';
 
 // ── Mini VU bar for one channel strip ─────────────────────────────────────
 
@@ -158,16 +158,6 @@ function Fader({ value, onChange, disabled = false }: FaderProps) {
 
 // ── Channel strip ─────────────────────────────────────────────────────────
 
-const BUS_LABELS: Record<string, string> = {
-  sandbox: 'Fretboard',
-  songs: 'Songs',
-  spiral: 'Spiral',
-  overtones: 'Overtones',
-  coltrane: 'Coltrane',
-  synth: 'Synth',
-  monochord: 'Mono',
-  metronome: 'Metro',
-};
 
 interface ChannelStripProps {
   busId: string;

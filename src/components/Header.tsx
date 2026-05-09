@@ -1,5 +1,6 @@
 import { Guitar, Music, AlignJustify, Disc3, Orbit, Triangle, Sliders, Minus } from 'lucide-react';
 import { useStore } from '../store';
+import { BUS_LABELS } from '../lib/masterBus';
 
 export default function Header() {
   const view = useStore(s => s.view);
@@ -37,7 +38,7 @@ export default function Header() {
           }`}
         >
           <Disc3 size={16} />
-          <span className="hidden sm:inline">Wheel</span>
+          <span className="hidden sm:inline">{BUS_LABELS.spiral}</span>
         </button>
         <button
           onClick={() => navigate({ name: 'overtones' })}
@@ -46,7 +47,7 @@ export default function Header() {
           }`}
         >
           <Orbit size={16} />
-          <span className="hidden sm:inline">Overtone Spiral</span>
+          <span className="hidden sm:inline">{BUS_LABELS.overtones}</span>
         </button>
         <button
           onClick={() => navigate({ name: 'coltrane' })}

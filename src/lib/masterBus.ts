@@ -14,6 +14,19 @@ export const BUS_IDS = [
 
 export type BusId = (typeof BUS_IDS)[number];
 
+/** Human-readable labels for each bus / view — single source of truth. */
+export const BUS_LABELS: Record<string, string> = {
+  sandbox:   'Fretboard',
+  songs:     'Songs',
+  spiral:    'Wheel',
+  overtones: 'Spiral',
+  coltrane:  'Coltrane',
+  synth:     'Synth',
+  monochord: 'Mono',
+  metronome: 'Metro',
+  sampler:   'Sampler',
+};
+
 function rms(buf: Uint8Array): number {
   let sum = 0;
   for (let i = 0; i < buf.length; i++) {
