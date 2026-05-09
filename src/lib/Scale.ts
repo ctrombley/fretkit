@@ -1,7 +1,7 @@
 import Note from './Note';
 import scales from './scales';
 
-const scaleRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w\s]+?)\s*$/;
+const scaleRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w\s]+?)\s*$/u;
 
 export default class Scale {
   name: string = '';

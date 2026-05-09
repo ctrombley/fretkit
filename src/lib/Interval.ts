@@ -1,4 +1,4 @@
-const intervalRegex = /^\s*([pPmMdDb♭𝄫aA#♯']{0,2})([\d]{1})\s*$/;
+const intervalRegex = /^\s*([pPmMdDb♭𝄫aA#♯']{0,2})([\d]{1})\s*$/u;
 
 const perfectTones = ['4', '5', '8'];
 

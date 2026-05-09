@@ -1,7 +1,7 @@
 import chords from './chords';
 import Note from './Note';
 
-const chordRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w°øΔ⑦♭♯+\-\s]+?)\s*$/;
+const chordRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*([\w°øΔ⑦♭♯+\-\s]+?)\s*$/u;
 
 export default class Chord {
   name: string = '';

@@ -1,7 +1,7 @@
 import Note from './Note';
 import modes from './modes';
 
-const modeRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*(\w+)\s*$/;
+const modeRegex = /^\s*([A-Ga-g]{1}[♮#♯𝄪b♭𝄫]{0,2})\s*(\w+)\s*$/u;
 
 export default class Mode {
   name: string = '';

@@ -124,7 +124,7 @@ function drawWave(
     const x    = x0 + t * segLen;
     const xRel = xRelStart + t * xRelRange;
     const y    = baseY + amplitude * maxAmp * Math.sin(Math.PI * xRel) * Math.cos(phase);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
   ctx.stroke();
   ctx.restore();
@@ -215,7 +215,7 @@ function drawHarmonics(
       const x    = x0 + t * segLen;
       const xRel = xRelStart + t * xRelRange;
       const y    = baseY + amp * Math.sin(n * Math.PI * xRel) * Math.cos(phase);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
@@ -238,7 +238,7 @@ function drawHarmonics(
       const x    = x0 + t * segLen;
       const xRel = xRelStart + t * xRelRange;
       const y    = baseY + amp * Math.sin(n * Math.PI * xRel) * Math.cos(phase);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
