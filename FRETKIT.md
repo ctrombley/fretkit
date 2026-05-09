@@ -1,8 +1,8 @@
 # Fretkit
 
 **Status:** Active
-**Last Updated:** 2026-03-23
-**Next Up:** Test hammer-on/pull-off feature; merge feature/hammer-on-pull-off to master
+**Last Updated:** 2026-05-08
+**Next Up:** Merge feature/hammer-on-pull-off to master; test in prod
 
 ## Description
 Web-based interactive fretboard visualizer for drilling scales/chords on string instruments. Guitar, banjo, mandolin support with multiple tunings. SVG-based fretboard rendering with intelligent sequence generation algorithm.
@@ -12,7 +12,7 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 ## Tasks
 
 ### Next Up
-- [ ] [HIGH] [~15m] Test click-and-drag pitch updates across different tunings
+- [ ] [MED] [~30m] Test hammer-on/pull-off and drag across tunings in prod
 - [ ] [LOW] [~1h] Add visual feedback for drag path (fret highlight trail)
 
 ### Backlog
@@ -20,6 +20,7 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 - [ ] [LOW] [~1h] Add performance profiling for large fretboard renders
 
 ### Completed
+- [x] Polish pass: drone popup, Fretboard rename, chord voicing improvements, barre indicators, ergonomic scoring overhaul, per-fretboard enharmonic/octave toggles, loop engine, same-string eviction, animation cleanup, bug fixes
 - [x] Implement click-and-drag pitch updates with legato MIDI behavior (no note retrigger, continuous amplitude)
 - [x] Fix ControlPanel crash (add v10 migration for missing tuning field)
 - [x] Commit feature/angine-fretboard changes and merge to master
