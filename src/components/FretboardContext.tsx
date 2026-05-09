@@ -4,6 +4,7 @@ import type Sequence from '../lib/Sequence';
 
 interface SlideState {
   stringIdx: number;      // which string row (idx) is sliding
+  stringNumber: number;   // physical string number for deactivateNote
   currentSemitones: number;
 }
 

@@ -56,7 +56,8 @@ export function createSamplerSlice(set: StoreSet) {
         rootNotes[idx] = slot?.rootNote ?? null;
         const params = [...s.samplerSlotParams];
         params[idx] = slot?.params ?? { ...DEFAULT_SAMPLER_PARAMS };
-        return { samplerSlots: slots, samplerSlotRootNotes: rootNotes, samplerSlotParams: params };
+        const keyMap = s.samplerKeyMap.map(v => v === idx ? null : v);
+        return { samplerSlots: slots, samplerSlotRootNotes: rootNotes, samplerSlotParams: params, samplerKeyMap: keyMap };
       }),
 
     setSamplerSlotUrl: (idx: number, url: string) => {
@@ -116,7 +117,7 @@ export function createSamplerSlice(set: StoreSet) {
       set(s => {
         const keyMap = [...s.samplerKeyMap];
 
-        // Find lower bound: first note < dropNote that maps to a DIFFERENT slot
+        // Find lower bound: nearest key below dropNote belonging to a DIFFERENT slot
         let lowerBound = 0;
         for (let n = dropNote - 1; n >= 0; n--) {
           if (keyMap[n] !== null && keyMap[n] !== slotIdx) {
@@ -125,18 +126,21 @@ export function createSamplerSlice(set: StoreSet) {
           }
         }
 
-        // Fill from dropNote down to lowerBound
+        // Fill from lowerBound up to and including the drop note
         for (let n = lowerBound; n <= dropNote; n++) {
           keyMap[n] = slotIdx;
         }
 
-        // Set root note on the slot
+        // Root note is fixed on the first mapping and never changed by subsequent drags.
+        // Changing it would shift the pitch of every already-mapped key for this slot.
         const rootNotes = [...s.samplerSlotRootNotes];
-        rootNotes[slotIdx] = dropNote;
+        if (rootNotes[slotIdx] == null) {
+          rootNotes[slotIdx] = dropNote;
+        }
 
-        // Update the slot's rootNote field too
+        // Sync into the slot definition (also only on first mapping)
         const slots = [...s.samplerSlots];
-        if (slots[slotIdx]) {
+        if (slots[slotIdx] && slots[slotIdx]!.rootNote == null) {
           slots[slotIdx] = { ...slots[slotIdx]!, rootNote: dropNote };
         }
 

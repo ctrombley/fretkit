@@ -4,14 +4,7 @@ import { useStore } from '../store';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import type Sequence from '../lib/Sequence';
 import type Note from '../lib/Note';
-import {
-  tabShorthand,
-  shapeType,
-  inversionLabel,
-  scoreSequence,
-  difficultyTier,
-  DIFFICULTY_COLORS,
-} from '../lib/voicingUtils';
+import { tabShorthand, shapeType, inversionLabel } from '../lib/voicingUtils';
 
 interface FretboardLabelProps {
   id: string;
@@ -62,9 +55,8 @@ export default function FretboardLabel({
     }
   };
 
-  const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
+  const sequence = sequences && sequenceIdx != null ? sequences[sequenceIdx] : undefined;
   const isChordVoicing = sequenceEnabled && sequence && current?.type === 'Chord';
-  const hasMultipleVoicings = sequenceEnabled && sequences.length > 1;
 
   const handlePrevVoicing = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -127,41 +119,27 @@ export default function FretboardLabel({
   // Display mode with click-to-edit and optional voicing arrows
   return (
     <div className="text-center flex flex-col items-center gap-0.5" onPointerDown={e => e.stopPropagation()}>
-      {/* Chord name row — always centered */}
-      <div className="text-xl flex items-center justify-center gap-1">
-        {hasMultipleVoicings ? (
+      {/* Chord name — click to edit */}
+      <span
+        className="text-xl cursor-pointer hover:text-fret-blue transition-colors"
+        onClick={() => setEditing(true)}
+        title="Click to edit search"
+      >
+        {current.name} ({current.type})
+      </span>
+      {/* Voicing metadata row with arrows flanking */}
+      {isChordVoicing && (
+        <div className="flex items-center gap-1 text-sm text-gray-500">
           <button
             onClick={handlePrevVoicing}
             disabled={sequenceIdx === 0}
             className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Previous voicing"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={14} />
           </button>
-        ) : <span className="w-[22px]" />}
-        <span
-          className="cursor-pointer hover:text-fret-blue transition-colors"
-          onClick={() => setEditing(true)}
-          title="Click to edit search"
-        >
-          {current.name} ({current.type})
-        </span>
-        {hasMultipleVoicings ? (
-          <button
-            onClick={handleNextVoicing}
-            disabled={sequenceIdx === sequences.length - 1}
-            className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Next voicing"
-          >
-            <ChevronRight size={18} />
-          </button>
-        ) : <span className="w-[22px]" />}
-      </div>
-      {/* Voicing metadata row */}
-      {isChordVoicing && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
           {sequenceIdx !== null && (
-            <span className="text-xs">{sequenceIdx + 1}/{sequences.length}</span>
+            <span className="text-xs text-gray-400">{sequenceIdx + 1}/{sequences.length}</span>
           )}
           <VoicingInfo
             sequence={sequence}
@@ -170,6 +148,14 @@ export default function FretboardLabel({
             rootPitchClass={current.root?.baseSemitones ?? 0}
             stringCount={tuning.length}
           />
+          <button
+            onClick={handleNextVoicing}
+            disabled={sequenceIdx === sequences.length - 1}
+            className="p-0.5 rounded text-gray-400 hover:text-fret-blue transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Next voicing"
+          >
+            <ChevronRight size={14} />
+          </button>
         </div>
       )}
     </div>
@@ -180,7 +166,6 @@ function VoicingInfo({
   sequence,
   tuning,
   inversion,
-  rootPitchClass,
   stringCount,
 }: {
   sequence: Sequence;
@@ -191,22 +176,9 @@ function VoicingInfo({
 }) {
   const tab = tabShorthand(sequence, stringCount);
   const shape = shapeType(sequence, tuning);
-  const breakdown = scoreSequence(sequence, stringCount, rootPitchClass, tuning);
-  const tier = difficultyTier(breakdown.totalCost);
-  const color = DIFFICULTY_COLORS[tier];
-
-  const tooltipLines = [
-    `Fret span: ${breakdown.fretSpan.toFixed(2)}`,
-    `Fingers: ${breakdown.fingerCount.toFixed(2)}`,
-    `Stretch: ${breakdown.stretchEvenness.toFixed(2)}`,
-    `Contiguity: ${breakdown.stringContiguity.toFixed(2)}`,
-    `Open bonus: ${breakdown.openStringBonus.toFixed(2)}`,
-    `Bass: ${breakdown.bassCorrectness.toFixed(2)}`,
-    `Position: ${breakdown.positionWeight.toFixed(2)}`,
-  ];
 
   return (
-    <span className="text-base text-gray-500 font-mono inline-flex items-center gap-1.5">
+    <span className="text-sm text-gray-500 font-mono inline-flex items-center gap-1.5">
       <span>{tab}</span>
       <span className="text-gray-400">·</span>
       <span>{shape}</span>
@@ -216,13 +188,6 @@ function VoicingInfo({
           <span>{inversionLabel(inversion)}</span>
         </>
       )}
-      <span className="text-gray-400">·</span>
-      <span className="inline-flex items-center gap-0.5" title={tooltipLines.join('\n')}>
-        {breakdown.totalCost.toFixed(1)}
-        <svg width="10" height="10" className="inline-block">
-          <circle cx="5" cy="5" r="4" fill={color} />
-        </svg>
-      </span>
     </span>
   );
 }

@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import FretboardSection from './FretboardSection';
@@ -57,6 +58,21 @@ export default function SandboxView() {
   const setBloomAllOctaves = useStore(s => s.setBloomAllOctaves);
   const samplerMode = useStore(s => s.samplerMode);
   const bottomPadding = useBottomPadding();
+  const droneActive = useStore(s => s.droneActive);
+
+  const [droneOpen, setDroneOpen] = useState(false);
+  const droneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!droneOpen) return;
+    const close = (e: MouseEvent) => {
+      if (droneRef.current && !droneRef.current.contains(e.target as Node)) {
+        setDroneOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [droneOpen]);
 
   const activeFretboard = fretboards[settings.settingsId];
 
@@ -104,6 +120,26 @@ export default function SandboxView() {
           >
             {bloomAllOctaves ? 'All Oct' : '1 Oct'}
           </button>
+
+          {/* Drone button + popup */}
+          <div ref={droneRef} className="relative">
+            <button
+              onClick={() => setDroneOpen(o => !o)}
+              className={`flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+                droneActive
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              title="Resonates all open strings across all fretboards simultaneously."
+            >
+              Drone
+            </button>
+            {droneOpen && (
+              <div className="absolute top-full left-0 mt-1 z-50 w-[500px] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                <DronePanel />
+              </div>
+            )}
+          </div>
 
           {/* Arp toggle */}
           <button
@@ -244,7 +280,6 @@ export default function SandboxView() {
             <Plus size={20} />
           </button>
         </div>
-        <DronePanel />
       </main>
     </>
   );

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, devtools } from 'zustand/middleware';
 
 import type { AppState } from './store/types';
 import { createSandboxSlice, SANDBOX_PERSISTED_KEYS } from './store/sandboxSlice';
@@ -15,6 +15,7 @@ import { createMidiSlice, MIDI_PERSISTED_KEYS } from './store/midiSlice';
 import { createMonochordScalesSlice, MONOCHORD_SCALES_PERSISTED_KEYS } from './store/monochordScalesSlice';
 import { createSamplerSlice, SAMPLER_PERSISTED_KEYS } from './store/samplerSlice';
 import { createDroneSlice, DRONE_PERSISTED_KEYS } from './store/droneSlice';
+import { createLoopSlice } from './store/loopSlice';
 import { getMasterBus } from './lib/masterBus';
 import { getSampler } from './lib/sampler';
 import { getArpeggiator } from './lib/arpeggiator';
@@ -54,6 +55,7 @@ const ALL_PERSISTED_KEYS: (keyof AppState)[] = [
 ];
 
 export const useStore = create<AppState>()(
+  devtools(
   persist(
     (set, get) => ({
       ...createSandboxSlice(set, get),
@@ -69,54 +71,14 @@ export const useStore = create<AppState>()(
       ...createMonochordScalesSlice(set),
       ...createSamplerSlice(set),
       ...createDroneSlice(set, get),
+      ...createLoopSlice(set, get),
     }),
     {
       name: 'fretkit-storage',
-      version: 10,
-      migrate: (persisted, version) => {
-        // v1 → v2: add bus/midi defaults to existing state
-        // v2 → v3: add monochord scales defaults
-        // v3 → v4: add fretboards + view persistence
-        // v4 → v5: ensure fretboard entries always have sequences/litNotes/current
-        //          (v4 could store them without those fields if saved before the fix)
-        // v5 → v6: add sampler slice defaults
-        // v6 → v7: add drone slice defaults
-        // v7 → v8: add edoMode / quartertoneThresholdCents to fretboards
-        // v8 → v9: add synthParams to fretboards
-        // v9 → v10: ensure all fretboards have tuning (fallback to standard guitar)
-        const state = { ...(persisted as Record<string, unknown>) };
-        if (version < 5 && state.fretboards) {
-          const boards = state.fretboards as Record<string, Record<string, unknown>>;
-          const fixed: Record<string, object> = {};
-          for (const [id, fb] of Object.entries(boards)) {
-            fixed[id] = { litNotes: [], current: null, sequences: [], ...fb };
-          }
-          state.fretboards = fixed;
-        }
-        if (version < 8 && state.fretboards) {
-          const boards = state.fretboards as Record<string, Record<string, unknown>>;
-          for (const fb of Object.values(boards)) {
-            if (fb.edoMode === undefined) fb.edoMode = '12';
-            if (fb.quartertoneThresholdCents === undefined) fb.quartertoneThresholdCents = 1500;
-          }
-        }
-        if (version < 9 && state.fretboards) {
-          const boards = state.fretboards as Record<string, Record<string, unknown>>;
-          for (const fb of Object.values(boards)) {
-            if (fb.synthParams === undefined) fb.synthParams = { ...DEFAULT_PARAMS };
-          }
-        }
-        if (version < 10 && state.fretboards) {
-          const boards = state.fretboards as Record<string, Record<string, unknown>>;
-          for (const fb of Object.values(boards)) {
-            if (!fb.tuning) {
-              // Default to standard guitar tuning
-              fb.tuning = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
-            }
-          }
-        }
-        return state as unknown as AppState;
-      },
+      // Shallow merge: persisted top-level keys fully replace initial-state keys.
+      // Zustand 5 deep-merges by default, which causes the initial '0' fretboard
+      // to bleed through alongside any persisted fretboards on every page load.
+      merge: (persisted, current) => ({ ...current, ...(persisted as object) }),
       partialize: (state) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const partial: Record<string, any> = {};
@@ -130,7 +92,7 @@ export const useStore = create<AppState>()(
         for (const [fbId, fb] of Object.entries(state.fretboards)) {
           safeBoards[fbId] = {
             id: fb.id,
-            fretCount: fb.fretCount,
+            fretCount: fb.fretCount ?? 12,
             inversion: fb.inversion,
             // litNotes/current/sequences hold Note/Sequence class instances that
             // don't survive JSON round-trip; store safe defaults and regenerate
@@ -142,13 +104,15 @@ export const useStore = create<AppState>()(
             searchStr: fb.searchStr,
             sequenceEnabled: fb.sequenceEnabled,
             sequenceIdx: fb.sequenceIdx,
-            startingFret: fb.startingFret,
-            tuning: fb.tuning,
+            startingFret: fb.startingFret ?? 1,
+            tuning: fb.tuning ?? ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'],
             showStringLabels: fb.showStringLabels,
             soundPreset: fb.soundPreset ?? 'Nylon Strings',
             edoMode: fb.edoMode ?? '12',
             quartertoneThresholdCents: fb.quartertoneThresholdCents ?? 1500,
             synthParams: fb.synthParams ?? { ...DEFAULT_PARAMS },
+            showEnharmonic: fb.showEnharmonic ?? false,
+            showOctaves: fb.showOctaves ?? false,
           };
         }
         partial['fretboards'] = safeBoards;
@@ -184,6 +148,20 @@ export const useStore = create<AppState>()(
             sampler.loadSample(i, slot.url).catch(console.error);
           }
         });
+        // Recover samplerSlotRootNotes from slot definitions — handles the case where
+        // samplerSlotRootNotes was missing from an older persisted state but slot.rootNote
+        // was already being stored correctly.
+        const rootNotes = [...state.samplerSlotRootNotes];
+        let rootNotesUpdated = false;
+        state.samplerSlots.forEach((slot, i) => {
+          if (slot?.rootNote != null && rootNotes[i] == null) {
+            rootNotes[i] = slot.rootNote;
+            rootNotesUpdated = true;
+          }
+        });
+        if (rootNotesUpdated) {
+          state.samplerSlotRootNotes = rootNotes;
+        }
         // Restore arp mode + finger picking pattern to engine
         const arp = getArpeggiator();
         arp.mode = state.arpMode ?? 'standard';
@@ -207,5 +185,7 @@ export const useStore = create<AppState>()(
         }
       },
     },
+  ),
+  { name: 'FretKit' },
   ),
 );

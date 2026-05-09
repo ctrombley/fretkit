@@ -159,7 +159,7 @@ function Fader({ value, onChange, disabled = false }: FaderProps) {
 // ── Channel strip ─────────────────────────────────────────────────────────
 
 const BUS_LABELS: Record<string, string> = {
-  sandbox: 'Sandbox',
+  sandbox: 'Fretboard',
   songs: 'Songs',
   spiral: 'Spiral',
   overtones: 'Overtones',

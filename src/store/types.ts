@@ -32,6 +32,8 @@ export interface FretboardState {
   edoMode: '12' | 'angine';
   quartertoneThresholdCents: number;
   synthParams: SynthParams;
+  showEnharmonic: boolean;
+  showOctaves: boolean;
 }
 
 export interface Settings {
@@ -209,7 +211,8 @@ export interface AppState {
 
   // Sandbox latch
   sandboxLatch: boolean;
-  sandboxActiveNotes: number[];
+  sandboxActiveNotes: Record<string, number[]>;
+  sandboxActiveFretPositions: Record<string, Array<[number, number]>>;
   strumPreviewSemitones: number[];
   sandboxSoundingStrings: number[];
 
@@ -343,6 +346,16 @@ export interface AppState {
   deleteSamplerPreset: (idx: number) => void;
   renameSamplerPreset: (idx: number, name: string) => void;
   triggerSamplerAutoSave: () => void;
+
+  // Loop recording
+  loopStatuses: Record<string, 'idle' | 'waiting' | 'recording' | 'ready'>;
+  loopLengthBars: Record<string, number>;
+  loopLeadIn: boolean;
+  startRecordingLoop: (fretboardId: string) => void;
+  stopRecordingLoop: (fretboardId: string) => void;
+  clearLoop: (fretboardId: string) => void;
+  setLoopLengthBars: (fretboardId: string, bars: number) => void;
+  setLoopLeadIn: (enabled: boolean) => void;
 
   // Navigation actions
   navigate: (view: View) => void;

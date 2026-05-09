@@ -3,17 +3,17 @@ import Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
 import { STRING_HEIGHT, FRETBOARD_MARGIN, BASE_FRET_WIDTH } from '../lib/fretboardConstants';
 import { FretboardProvider } from './FretboardContext';
-import StringWaveLayer from './StringWaveLayer';
 import { buildAngineSlots, angineWidth } from '../lib/hybridFretLayout';
+import { detectBarres } from '../lib/ergonomics';
+import type { StringAssignment } from '../lib/ergonomics';
 
 export function calcFretWidth(idx: number): number {
-  if (idx <= 1) return BASE_FRET_WIDTH;
+  if (!Number.isFinite(idx) || idx <= 1) return BASE_FRET_WIDTH;
   return Math.round(calcFretWidth(idx - 1) * 0.944);
 }
 
 function calcTotalWidth(fretCount: number): number {
-  if (!fretCount) return BASE_FRET_WIDTH;
-  if (fretCount === 1) return BASE_FRET_WIDTH;
+  if (!Number.isFinite(fretCount) || fretCount <= 1) return BASE_FRET_WIDTH;
   return calcTotalWidth(fretCount - 1) + calcFretWidth(fretCount);
 }
 
@@ -54,10 +54,29 @@ export default function Fretboard({
   edoMode = '12',
   quartertoneThresholdCents = 1500,
 }: FretboardProps) {
-  // Defensive fallback for missing tuning (e.g., from persisted state without v10 migration applied)
   const safeTuning = tuning ?? ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
+  const safeLitNotes = Array.isArray(litNotes) ? litNotes : [];
   const stringCount = safeTuning.length;
-  const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
+  const sequence = sequences && sequenceIdx != null ? sequences[sequenceIdx] : undefined;
+
+  // Compute barre positions for the visual indicator
+  const barres = (() => {
+    if (!sequenceEnabled || !sequence) return [];
+    const byString = new Map<number, number>();
+    for (const sn of sequence.stringNotes) byString.set(sn.string, sn.fret);
+    const assignments: StringAssignment[] = Array.from({ length: stringCount }, (_, s) => ({
+      string: s, fret: byString.get(s) ?? null,
+    }));
+    return detectBarres(assignments);
+  })();
+
+  // X center of a fret on the horizontal board (mirrors calcXOffset + fretWidth/2 from Fret.tsx)
+  function fretXCenter(fretNumber: number): number {
+    let x = FRETBOARD_MARGIN;
+    for (let f = startingFret + 1; f <= fretNumber; f++) x += calcFretWidth(f - 1);
+    const fw = fretNumber <= 0 ? 0 : fretNumber === 1 ? BASE_FRET_WIDTH : calcFretWidth(fretNumber - 1);
+    return x + fw / 2;
+  }
 
   // Tuning reversed to match visual top-to-bottom string order (treble first)
   const reversedTuning = safeTuning.slice().reverse();
@@ -73,7 +92,7 @@ export default function Fretboard({
   const height = STRING_HEIGHT * stringCount + FRETBOARD_MARGIN * 2;
 
   return (
-    <FretboardProvider value={{ fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets: droneFrets ?? [], onDroneFretSelect }}>
+    <FretboardProvider value={{ fretboardId, current, litNotes: safeLitNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets: droneFrets ?? [], onDroneFretSelect }}>
       <svg
         className="fretboard"
         width={width}
@@ -128,12 +147,24 @@ export default function Fretboard({
               />
             ))
         }
-        {/* Full-string wave animation overlay */}
-        <StringWaveLayer
-          tuning={safeTuning}
-          startingFret={startingFret}
-          boardWidth={width}
-        />
+        {/* Barre indicators — vertical bars behind note dots */}
+        {barres.map((barre, i) => {
+          if (barre.fret < startingFret || barre.fret >= startingFret + fretCount) return null;
+          const cx = fretXCenter(barre.fret);
+          // Display idx 0 = treble (top), stringCount-1 = bass (bottom)
+          const yTop    = FRETBOARD_MARGIN + STRING_HEIGHT * (stringCount - 1 - barre.toString);
+          const yBottom = FRETBOARD_MARGIN + STRING_HEIGHT * (stringCount - 1 - barre.fromString);
+          const r = 6;
+          return (
+            <rect
+              key={`barre-${i}`}
+              x={cx - r} y={yTop - r}
+              width={r * 2} height={yBottom - yTop + r * 2}
+              rx={r} ry={r}
+              fill="#374151" opacity={0.25}
+            />
+          );
+        })}
       </svg>
     </FretboardProvider>
   );

@@ -52,7 +52,7 @@ export function createArpSlice(set: StoreSet, get: StoreGet) {
       const bus = getInternalMidiBus();
       if (enabled) {
         // Stop latch voices through the bus before handing control to the arp
-        for (const semi of state.sandboxActiveNotes) {
+        for (const semi of Object.values(state.sandboxActiveNotes).flat()) {
           bus.noteOff(semi, 'latch');
           latchFrequencies.delete(semi);
         }
@@ -64,7 +64,7 @@ export function createArpSlice(set: StoreSet, get: StoreGet) {
         arp.clear();
         set({ arpEnabled: false });
         // Restart latch voices through the bus so the instrument manages them
-        for (const semi of state.sandboxActiveNotes) {
+        for (const semi of Object.values(state.sandboxActiveNotes).flat()) {
           const freq = 440 * Math.pow(2, (semi - 69) / 12);
           bus.noteOn(semi, freq, 'latch');
           latchFrequencies.set(semi, freq);
@@ -132,9 +132,10 @@ export function createArpSlice(set: StoreSet, get: StoreGet) {
       }
 
       // Priority 2: manually toggled notes
-      if (state.sandboxActiveNotes.length > 0) {
+      const allActive = Object.values(state.sandboxActiveNotes).flat();
+      if (allActive.length > 0) {
         arp.clear();
-        for (const semi of state.sandboxActiveNotes) {
+        for (const semi of allActive) {
           const freq = 440 * Math.pow(2, (semi - 69) / 12);
           arp.addNote(freq, semi);
         }

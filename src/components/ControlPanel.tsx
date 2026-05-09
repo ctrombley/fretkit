@@ -218,6 +218,38 @@ export default function ControlPanel() {
         </button>
       </div>
 
+      {/* Enharmonic: same note on other strings */}
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-gray-700">Show enharmonic</label>
+        <button
+          onClick={() => updateFretboard(id, { showEnharmonic: !fretboard.showEnharmonic })}
+          className={`px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+            fretboard.showEnharmonic
+              ? 'bg-gray-200 text-fret-green'
+              : 'bg-gray-100 text-gray-500'
+          }`}
+          title="Highlight the same note on other strings when active"
+        >
+          {fretboard.showEnharmonic ? 'On' : 'Off'}
+        </button>
+      </div>
+
+      {/* Octaves: all octave equivalents */}
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-gray-700">Show octaves</label>
+        <button
+          onClick={() => updateFretboard(id, { showOctaves: !fretboard.showOctaves })}
+          className={`px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+            fretboard.showOctaves
+              ? 'bg-gray-200 text-fret-green'
+              : 'bg-gray-100 text-gray-500'
+          }`}
+          title="Highlight all octave equivalents of the active note"
+        >
+          {fretboard.showOctaves ? 'On' : 'Off'}
+        </button>
+      </div>
+
       {/* Voicing / Inversion arrows */}
       {hasArrows && (
         <div className="border-t border-gray-200 pt-4">

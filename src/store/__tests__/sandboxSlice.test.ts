@@ -106,11 +106,14 @@ beforeEach(() => {
   latchFrequencies.clear();
 });
 
+const allNotes = (store: ReturnType<typeof makeStore>) =>
+  Object.values(store.get().sandboxActiveNotes).flat();
+
 describe('activateSandboxNote', () => {
   it('adds the note to sandboxActiveNotes', () => {
     const store = makeStore();
     store.activateSandboxNote(A4, freq);
-    expect(store.get().sandboxActiveNotes).toContain(A4);
+    expect(allNotes(store)).toContain(A4);
   });
 
   it('starts a voice via getSynth().play()', () => {
@@ -123,14 +126,16 @@ describe('activateSandboxNote', () => {
     const store = makeStore();
     store.activateSandboxNote(A4, freq);
     store.activateSandboxNote(A4, freq);
-    expect(store.get().sandboxActiveNotes.filter(s => s === A4)).toHaveLength(1);
+    const allNotes = Object.values(store.get().sandboxActiveNotes).flat();
+    expect(allNotes.filter(s => s === A4)).toHaveLength(1);
   });
 
   it('does not affect other semitones (no cross-note pollution)', () => {
     const store = makeStore();
     store.activateSandboxNote(A4, freq);
-    expect(store.get().sandboxActiveNotes).not.toContain(A3);
-    expect(store.get().sandboxActiveNotes).not.toContain(C4);
+    const allNotes = Object.values(store.get().sandboxActiveNotes).flat();
+    expect(allNotes).not.toContain(A3);
+    expect(allNotes).not.toContain(C4);
   });
 
   it('does not activate the enharmonic octave A3 when activating A4', () => {
@@ -138,7 +143,7 @@ describe('activateSandboxNote', () => {
     store.activateSandboxNote(A4, freq);
     // Only the exact semitone is added — bloomAllOctaves is a display concern,
     // not a store concern.
-    expect(store.get().sandboxActiveNotes).toEqual([A4]);
+    expect(allNotes(store)).toEqual([A4]);
   });
 });
 
@@ -147,7 +152,7 @@ describe('deactivateSandboxNote', () => {
     const store = makeStore();
     store.activateSandboxNote(A4, freq);
     store.deactivateSandboxNote(A4);
-    expect(store.get().sandboxActiveNotes).not.toContain(A4);
+    expect(allNotes(store)).not.toContain(A4);
   });
 
   it('stops the voice via latchVoices', () => {
@@ -165,13 +170,11 @@ describe('deactivateSandboxNote', () => {
   });
 
   it('works even when sandboxLatch is true', () => {
-    // This was the core bug: sandboxLatch=true must not block deactivation
-    // when the caller explicitly calls deactivateSandboxNote (momentary play path).
     const store = makeStore({ sandboxLatch: true } as Partial<AppState>);
     store.activateSandboxNote(A4, freq);
-    expect(store.get().sandboxActiveNotes).toContain(A4);
+    expect(allNotes(store)).toContain(A4);
     store.deactivateSandboxNote(A4);
-    expect(store.get().sandboxActiveNotes).not.toContain(A4);
+    expect(allNotes(store)).not.toContain(A4);
   });
 
   it('leaves other active notes untouched', () => {
@@ -179,14 +182,14 @@ describe('deactivateSandboxNote', () => {
     store.activateSandboxNote(A4, freq);
     store.activateSandboxNote(C4, 261.63);
     store.deactivateSandboxNote(A4);
-    expect(store.get().sandboxActiveNotes).not.toContain(A4);
-    expect(store.get().sandboxActiveNotes).toContain(C4);
+    expect(allNotes(store)).not.toContain(A4);
+    expect(allNotes(store)).toContain(C4);
   });
 
   it('is a no-op for a note that was never activated', () => {
     const store = makeStore();
     expect(() => store.deactivateSandboxNote(A4)).not.toThrow();
-    expect(store.get().sandboxActiveNotes).toEqual([]);
+    expect(allNotes(store)).toEqual([]);
   });
 });
 
@@ -198,17 +201,15 @@ describe('momentary play pattern (chord display mode)', () => {
     const store = makeStore({ sandboxLatch: true } as Partial<AppState>);
     store.activateSandboxNote(A4, freq);
     store.deactivateSandboxNote(A4);
-    expect(store.get().sandboxActiveNotes).toHaveLength(0);
+    expect(allNotes(store)).toHaveLength(0);
   });
 
   it('does not add enharmonic octave to active notes during momentary play', () => {
     const store = makeStore();
     store.activateSandboxNote(A4, freq);
-    // The store only adds the exact semitone passed — enharmonics are a display
-    // concern handled by bloomAllOctaves in FretString, not the store.
-    expect(store.get().sandboxActiveNotes).not.toContain(A3);
+    expect(allNotes(store)).not.toContain(A3);
     store.deactivateSandboxNote(A4);
-    expect(store.get().sandboxActiveNotes).toHaveLength(0);
+    expect(allNotes(store)).toHaveLength(0);
   });
 });
 

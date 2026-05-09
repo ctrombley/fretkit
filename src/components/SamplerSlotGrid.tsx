@@ -138,6 +138,8 @@ export default function SamplerSlotGrid({ onSelectSlot, selectedSlot, playingSlo
                 ${isPlaying ? 'brightness-150' : ''}
               `}
               style={{ backgroundColor: slot ? color : '#2a2a2a', minHeight: 56 }}
+              draggable={!!slot}
+              onDragStart={e => { e.dataTransfer.setData('sampler-slot', String(idx)); e.dataTransfer.effectAllowed = 'link'; onSelectSlot(idx); }}
               onClick={() => onSelectSlot(idx)}
               onContextMenu={e => { e.preventDefault(); setSamplerSlot(idx, null); }}
               onDragOver={e => { e.preventDefault(); setDragOver(idx); }}

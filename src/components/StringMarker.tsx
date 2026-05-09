@@ -1,6 +1,5 @@
 import type Note from '../lib/Note';
 import { pitchToRadius, getPitchClassColor } from '../lib/noteColors';
-import { getMasterBus } from '../lib/masterBus';
 
 interface StringMarkerProps {
   className?: string;
@@ -11,7 +10,6 @@ interface StringMarkerProps {
   note?: Note;
   isRoot?: boolean;
   isPlaying?: boolean;
-  bloomKey?: number;
   fingerLabel?: string;
 }
 
@@ -24,7 +22,6 @@ export default function StringMarker({
   note,
   isRoot = false,
   isPlaying = false,
-  bloomKey,
   fingerLabel,
 }: StringMarkerProps) {
   let cx = xOffset + fretWidth / 2;
@@ -40,26 +37,12 @@ export default function StringMarker({
       : { fill: color, ...(r ? { r } : {}) }
     : undefined;
 
-  const bloomR = isPlaying && note
-    ? pitchToRadius(note.semitones) + getMasterBus().getRmsLevel() * 4
-    : 6;
-
   return (
     <g>
-      {isPlaying && note && (bloomKey === undefined || bloomKey > 0) && (
-        <circle
-          key={bloomKey ?? 'mount'}
-          cx={cx}
-          cy={yOffset}
-          r={bloomR}
-          className="string__marker-bloom"
-          style={{ fill: color ?? undefined }}
-        />
-      )}
       <circle
         cx={cx}
         cy={yOffset}
-        className={`string__marker ${className} ${isNut ? 'string__marker-nut' : ''} ${isPlaying ? 'string__marker-playing' : ''}`}
+        className={`string__marker ${className} ${isNut ? 'string__marker-nut' : ''}`}
         style={noteStyle}
       />
       {/* White dot to indicate root note */}

@@ -267,41 +267,113 @@ describe('noteOn — reverse', () => {
 
 describe('noteOff', () => {
   it('is a no-op when the note is not active', () => {
-    // Should not throw
     expect(() => {
       getSampler().noteOff(99, params(), keyMap(99, 0));
     }).not.toThrow();
   });
 
-  it('is a no-op for a non-looping sample with release = 0 (let it play out)', () => {
-    const { source } = setupMockNodes();
+  it('stops a non-looping sample with release = 0 via 10ms fade (always stops on noteOff)', () => {
+    const { gain, source } = setupMockNodes();
     getSampler().noteOn(60, 100, keyMap(60, 0), params({ loop: false, release: 0 }), rootNotes(60));
     getSampler().noteOff(60, params({ loop: false, release: 0 }), keyMap(60, 0));
-    expect(source.stop).not.toHaveBeenCalled();
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.01);
+    expect(source.stop).toHaveBeenCalledWith(0.015);
   });
 
-  it('stops a looping sample immediately when release = 0', () => {
-    const { source } = setupMockNodes();
+  it('stops a looping sample with release = 0 via 10ms fade', () => {
+    const { gain, source } = setupMockNodes();
     getSampler().noteOn(60, 100, keyMap(60, 0), params({ loop: true, release: 0 }), rootNotes(60));
     getSampler().noteOff(60, params({ loop: true, release: 0 }), keyMap(60, 0));
-    expect(source.stop).toHaveBeenCalled();
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.01);
+    expect(source.stop).toHaveBeenCalledWith(0.015);
   });
 
   it('triggers release ramp and schedules source stop when release > 0', () => {
     const { gain, source } = setupMockNodes();
     getSampler().noteOn(60, 100, keyMap(60, 0), params({ release: 0.5 }), rootNotes(60));
     getSampler().noteOff(60, params({ release: 0.5 }), keyMap(60, 0));
-    // Gain should ramp to 0 at now + release = 0.5
     expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.5);
-    // Source should stop at now + release
     expect(source.stop).toHaveBeenCalledWith(0.5);
   });
 
-  it('applies release to non-looping samples too when release > 0', () => {
+  it('applies release to non-looping samples when release > 0', () => {
     const { source } = setupMockNodes();
     getSampler().noteOn(60, 100, keyMap(60, 0), params({ loop: false, release: 0.3 }), rootNotes(60));
     getSampler().noteOff(60, params({ loop: false, release: 0.3 }), keyMap(60, 0));
     expect(source.stop).toHaveBeenCalledWith(0.3);
+  });
+});
+
+// ── cut ───────────────────────────────────────────────────────────────────────
+
+describe('cut', () => {
+  it('is a no-op when the note is not active', () => {
+    expect(() => getSampler().cut(99)).not.toThrow();
+  });
+
+  it('fades out over 10ms and stops source', () => {
+    const { gain, source } = setupMockNodes();
+    getSampler().noteOn(60, 100, keyMap(60, 0), params(), rootNotes(60));
+    getSampler().cut(60);
+    expect(gain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, 0.01);
+    expect(source.stop).toHaveBeenCalledWith(0.015);
+  });
+
+  it('removes the note from active notes so subsequent cut/noteOff is a no-op', () => {
+    const { source } = setupMockNodes();
+    getSampler().noteOn(60, 100, keyMap(60, 0), params(), rootNotes(60));
+    getSampler().cut(60);
+    source.stop.mockClear();
+    getSampler().cut(60); // second cut should be a no-op
+    expect(source.stop).not.toHaveBeenCalled();
+  });
+});
+
+// ── slideNote ────────────────────────────────────────────────────────────────
+
+describe('slideNote', () => {
+  it('adjusts playback rate by the semitone difference', () => {
+    const { source } = setupMockNodes();
+    getSampler().noteOn(60, 100, keyMap(60, 0), params(), rootNotes(60));
+    const rateBefore = source.playbackRate.value; // 1.0
+    getSampler().slideNote(60, 62); // +2 semitones → ×2^(2/12)
+    expect(source.playbackRate.value).toBeCloseTo(rateBefore * Math.pow(2, 2 / 12));
+  });
+
+  it('re-keys the active note so noteOff on the new semitone works', () => {
+    const { gain } = setupMockNodes();
+    getSampler().noteOn(60, 100, keyMap(60, 0), params({ release: 0.2 }), rootNotes(60));
+    getSampler().slideNote(60, 62);
+    // noteOff on the OLD note should be a no-op
+    getSampler().noteOff(60, params({ release: 0.2 }), keyMap(60, 0));
+    const callsBefore = gain.gain.linearRampToValueAtTime.mock.calls.length;
+    // noteOff on the NEW note should trigger the release
+    getSampler().noteOff(62, params({ release: 0.2 }), keyMap(62, 0));
+    expect(gain.gain.linearRampToValueAtTime.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it('is a no-op when the source note is not active', () => {
+    expect(() => getSampler().slideNote(50, 52)).not.toThrow();
+  });
+});
+
+// ── quarter-tone (fractional MIDI) lookup ────────────────────────────────────
+
+describe('noteOn — quarter-tone fractional MIDI lookup', () => {
+  it('rounds fractional midiNote to nearest integer for slot lookup', () => {
+    const { gain } = setupMockNodes();
+    // Map MIDI 45 to slot 0; quarter-tone note 44.5 should round to 45 and find the slot
+    const map = keyMap(45, 0);
+    getSampler().noteOn(44.5, 100, map, params(), rootNotes(45));
+    expect(gain.connect).toHaveBeenCalled();
+  });
+
+  it('does not play when fractional note rounds to an unmapped key', () => {
+    const { gain } = setupMockNodes();
+    // Map MIDI 44 to slot 0; 44.5 rounds to 45 which is unmapped
+    const map = keyMap(44, 0);
+    getSampler().noteOn(44.5, 100, map, params(), rootNotes(44));
+    expect(gain.connect).not.toHaveBeenCalled();
   });
 });
 

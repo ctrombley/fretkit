@@ -121,13 +121,19 @@ class SamplerEngine {
     params: SamplerParams[],
     rootNotes: (number | null)[],
   ): void {
-    const slotIdx = keyMap[midiNote];
+    // Quarter-tone notes have fractional midiNote values; round to nearest integer
+    // for slot lookup while keeping the fractional value for pitch calculation.
+    const lookupNote = Math.round(midiNote);
+    const slotIdx = keyMap[lookupNote];
     if (slotIdx == null) return;
     const buffer = this._buffers[slotIdx];
     if (!buffer) return;
 
     const p = params[slotIdx] ?? DEFAULT_SAMPLER_PARAMS;
-    const rootNote = rootNotes[slotIdx] ?? midiNote;
+    // rootNotes[slotIdx] is set by mapSlotToKey to the drop key (the intended root).
+    // Fall back to the pressed key (no transposition) for legacy state that pre-dates
+    // root note persistence.
+    const rootNote = rootNotes[slotIdx] ?? lookupNote;
 
     const master = getMasterBus();
     const ctx = master.getAudioContext();
@@ -160,6 +166,7 @@ class SamplerEngine {
     const semitoneShift = midiNote - rootNote + p.pitchSemitones;
     source.playbackRate.value = Math.pow(2, semitoneShift / 12);
 
+
     if (p.reverse) {
       const reversedBuffer = this._createReversedBuffer(ctx, buffer, p.startFraction, p.endFraction);
       source.buffer = reversedBuffer;
@@ -186,11 +193,8 @@ class SamplerEngine {
     const active = this._activeNotes.get(midiNote);
     if (!active) return;
 
-    const slotIdx = keyMap[midiNote];
+    const slotIdx = keyMap[Math.round(midiNote)];
     const p = slotIdx != null ? (params[slotIdx] ?? DEFAULT_SAMPLER_PARAMS) : DEFAULT_SAMPLER_PARAMS;
-
-    // Non-looping sample with no release: let it play out naturally
-    if (!p.loop && p.release < 0.001) return;
 
     const ctx = getMasterBus().getAudioContext();
     const now = ctx.currentTime;
@@ -201,9 +205,25 @@ class SamplerEngine {
       active.gainNode.gain.linearRampToValueAtTime(0, now + p.release);
       try { active.source.stop(now + p.release); } catch (_) { /* already stopped */ }
     } else {
-      try { active.source.stop(); } catch (_) { /* already stopped */ }
+      active.gainNode.gain.cancelScheduledValues(now);
+      active.gainNode.gain.setValueAtTime(active.gainNode.gain.value, now);
+      active.gainNode.gain.linearRampToValueAtTime(0, now + 0.01);
+      try { active.source.stop(now + 0.015); } catch (_) { /* already stopped */ }
     }
 
+    this._activeNotes.delete(midiNote);
+  }
+
+  /** Rapidly fade out a note, bypassing release and loop logic. Used for same-string eviction. */
+  cut(midiNote: number): void {
+    const active = this._activeNotes.get(midiNote);
+    if (!active) return;
+    const ctx = getMasterBus().getAudioContext();
+    const t = ctx.currentTime;
+    active.gainNode.gain.cancelScheduledValues(t);
+    active.gainNode.gain.setValueAtTime(active.gainNode.gain.value, t);
+    active.gainNode.gain.linearRampToValueAtTime(0, t + 0.01);
+    try { active.source.stop(t + 0.015); } catch (_) { /* already stopped */ }
     this._activeNotes.delete(midiNote);
   }
 

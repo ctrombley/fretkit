@@ -38,21 +38,15 @@ export default function MetronomeControls() {
         formatValue={(v) => `${Math.round(v * 100)}%`}
         size={36}
       />
-      <div className="flex gap-0.5">
+      <select
+        value={timbre}
+        onChange={e => setTimbre(e.target.value as MetronomeTimbre)}
+        className="text-[10px] bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-600"
+      >
         {TIMBRES.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => setTimbre(id)}
-            className={`px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded transition-colors ${
-              timbre === id
-                ? 'bg-gray-200 text-fret-green'
-                : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-            }`}
-          >
-            {label}
-          </button>
+          <option key={id} value={id}>{label}</option>
         ))}
-      </div>
+      </select>
     </div>
   );
 }

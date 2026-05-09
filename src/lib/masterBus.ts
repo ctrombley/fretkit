@@ -38,6 +38,15 @@ class MasterBusEngine {
   constructor() {
     this.ctx = new AudioContext();
 
+    // Resume the context on the first user gesture — browsers block AudioContext
+    // from starting before any interaction, so we listen once and then resume.
+    // pointerdown is included so audio works on the very first press (before click fires).
+    const resume = () => { void this.ctx.resume(); };
+    document.addEventListener('pointerdown', resume, { once: true });
+    document.addEventListener('click', resume, { once: true });
+    document.addEventListener('keydown', resume, { once: true });
+    document.addEventListener('touchstart', resume, { once: true });
+
     this._masterGain = this.ctx.createGain();
     this._masterGain.gain.value = 0.8;
 
@@ -80,9 +89,7 @@ class MasterBusEngine {
   }
 
   getAudioContext(): AudioContext {
-    if (this.ctx.state === 'suspended') {
-      void this.ctx.resume();
-    }
+    if (this.ctx.state === 'suspended') void this.ctx.resume();
     return this.ctx;
   }
 

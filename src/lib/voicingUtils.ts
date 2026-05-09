@@ -42,22 +42,21 @@ export function tabShorthand(sequence: Sequence, stringCount: number): string {
 
 /** Classify voicing shape: "Open", "Barre", or "Nth pos". */
 export function shapeType(sequence: Sequence, tuning: string[]): string {
+  // Open strings take precedence — a chord with any open string is never "Barre"
+  const hasOpen = sequence.stringNotes.some(sn => sn.fret === 0);
+  if (hasOpen) return 'Open';
+
   const assignments: StringAssignment[] = [];
   const byString = new Map<number, number>();
   for (const sn of sequence.stringNotes) {
     byString.set(sn.string, sn.fret);
   }
-
   for (let s = 0; s < tuning.length; s++) {
-    const fret = byString.get(s);
-    assignments.push({ string: s, fret: fret ?? null });
+    assignments.push({ string: s, fret: byString.get(s) ?? null });
   }
 
   const barres = detectBarres(assignments);
   if (barres.length > 0) return 'Barre';
-
-  const hasOpen = sequence.stringNotes.some(sn => sn.fret === 0);
-  if (hasOpen) return 'Open';
 
   const minFret = sequence.minFret;
   return `${ordinal(minFret)} pos`;

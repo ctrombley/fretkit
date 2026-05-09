@@ -13,7 +13,7 @@ function getFretWidth(fretNumber: number): number {
 }
 
 function calcXOffset(fretNumber: number, startingFret: number, margin: number): number {
-  if (fretNumber === 0 || fretNumber === startingFret) return margin;
+  if (!Number.isFinite(fretNumber) || fretNumber === 0 || fretNumber === startingFret) return margin;
   return calcFretWidth(fretNumber - 1) + calcXOffset(fretNumber - 1, startingFret, margin);
 }
 

@@ -14,9 +14,7 @@ export default function SamplerParamEditor({ slotIdx }: Props) {
   const rootNote = useStore(s => s.samplerSlotRootNotes[slotIdx]);
   const setSamplerSlotParam = useStore(s => s.setSamplerSlotParam);
   const saveSamplerPreset = useStore(s => s.saveSamplerPreset);
-  const keyMap = useStore(s => s.samplerKeyMap);
   const allParams = useStore(s => s.samplerSlotParams);
-  const allRoots = useStore(s => s.samplerSlotRootNotes);
 
   const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
   const [saveNameInput, setSaveNameInput] = useState('');
@@ -96,7 +94,14 @@ export default function SamplerParamEditor({ slotIdx }: Props) {
 
   function playPreview() {
     if (!buffer) return;
-    getSampler().noteOn(rootNote ?? 60, 100, keyMap, allParams, allRoots);
+    // Build a single-entry keymap so noteOn resolves to this slot regardless of
+    // whether the slot is mapped to a key, or which key it's mapped to.
+    const note = rootNote ?? 60;
+    const tempMap = new Array<number | null>(128).fill(null);
+    tempMap[note] = slotIdx;
+    const tempRoots = new Array<number | null>(16).fill(null);
+    tempRoots[slotIdx] = note;
+    getSampler().noteOn(note, 100, tempMap, allParams, tempRoots);
   }
 
   const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

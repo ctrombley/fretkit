@@ -1,4 +1,4 @@
-import { Guitar, Music, LayoutGrid, Orbit, AudioWaveform, Triangle, Sliders, Minus } from 'lucide-react';
+import { Guitar, Music, AlignJustify, Orbit, AudioWaveform, Triangle, Sliders, Minus } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Header() {
@@ -18,8 +18,8 @@ export default function Header() {
             view.name === 'sandbox' ? 'bg-gray-100 text-dark' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
         >
-          <LayoutGrid size={16} />
-          <span className="hidden sm:inline">Sandbox</span>
+          <AlignJustify size={16} />
+          <span className="hidden sm:inline">Fretboard</span>
         </button>
         <button
           onClick={() => navigate({ name: 'songList' })}

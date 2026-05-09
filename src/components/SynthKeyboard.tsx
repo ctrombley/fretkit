@@ -333,7 +333,7 @@ function IsomorphicKeyboard({
 }
 
 export default function SynthKeyboard({ mode }: SynthKeyboardProps) {
-  const sandboxActiveNotes    = useStore(s => s.sandboxActiveNotes);
+  const sandboxActiveNotes    = useStore(s => Object.values(s.sandboxActiveNotes).flat());
   const bloomAllOctaves       = useStore(s => s.bloomAllOctaves);
   const sandboxLatch          = useStore(s => s.sandboxLatch);
   const arpEnabled            = useStore(s => s.arpEnabled);

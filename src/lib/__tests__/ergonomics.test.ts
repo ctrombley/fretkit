@@ -133,6 +133,7 @@ describe('computeErgonomicScore', () => {
     expect(breakdown).toHaveProperty('bassCorrectness');
     expect(breakdown).toHaveProperty('positionWeight');
     expect(breakdown).toHaveProperty('soundedCount');
+    expect(breakdown).toHaveProperty('barreExistence');
     expect(breakdown).toHaveProperty('totalCost');
   });
 
@@ -152,7 +153,7 @@ describe('computeErgonomicScore', () => {
     // soundedCount should be more negative (better) for 6-string
     expect(sixScore.soundedCount).toBeLessThan(threeScore.soundedCount);
     expect(sixScore.soundedCount).toBeCloseTo(-1.0);
-    expect(threeScore.soundedCount).toBeCloseTo(-0.5);
+    expect(threeScore.soundedCount).toBeCloseTo(-0.75);
     // 6-string voicing should score better overall
     expect(sixScore.totalCost).toBeLessThan(threeScore.totalCost);
   });

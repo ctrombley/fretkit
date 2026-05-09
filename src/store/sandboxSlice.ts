@@ -24,7 +24,20 @@ import {
 import { synthParamsToStoreState } from '../lib/synthUtils';
 import { latchFrequencies } from './latchFrequencies';
 import { strumPreviewVoices } from './strumPreviewVoices';
+import { getLoopEngine } from '../lib/loopEngine';
 import type { AppState, FretboardState, Settings, StoreSet, StoreGet } from './types';
+
+/**
+ * Tracks the currently latched semitone per (fretboardId, stringNumber) pair.
+ * Used for same-string eviction: clicking a new fret on an occupied string
+ * stops the previous note before starting the new one.
+ *
+ * Keyed as `${fretboardId}:${stringNumber}`.
+ * Module-level so it stays in sync with actual audio state without needing
+ * to be part of Zustand state.
+ */
+const stringSemitones = new Map<string, number>();
+const stringKey = (fbId: string, str: number) => `${fbId}:${str}`;
 
 function noteSourceForFretboard(fretboardId: string | undefined, get: StoreGet): NoteSource {
   if (!fretboardId) return 'latch';
@@ -98,6 +111,8 @@ const defaultFretboard: Omit<FretboardState, 'id'> = {
   edoMode: '12',
   quartertoneThresholdCents: 1500,
   synthParams: { ...DEFAULT_PARAMS },
+  showEnharmonic: false,
+  showOctaves: false,
 };
 
 export const SANDBOX_PERSISTED_KEYS: (keyof AppState)[] = [
@@ -117,7 +132,8 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     } as Settings,
     bloomAllOctaves: true,
     sandboxLatch: true,
-    sandboxActiveNotes: [] as number[],
+    sandboxActiveNotes: {} as Record<string, number[]>,
+    sandboxActiveFretPositions: {} as Record<string, Array<[number, number]>>,
     strumPreviewSemitones: [] as number[],
     sandboxSoundingStrings: [] as number[],
 
@@ -138,16 +154,20 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       getSampler().stopAll();
       getArpeggiator().clear();
       latchFrequencies.clear();
+      stringSemitones.clear();
       for (const voice of strumPreviewVoices) voice.stop();
       strumPreviewVoices.length = 0;
-      set({ sandboxActiveNotes: [], sandboxSoundingStrings: [] });
+      set({ sandboxActiveNotes: {}, sandboxActiveFretPositions: {}, sandboxSoundingStrings: [] });
     },
 
     toggleSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => {
       const state = get();
-      const isActive = state.sandboxActiveNotes.includes(semitones);
+      const fbId = fretboardId ?? '';
+      const fbNotes = state.sandboxActiveNotes[fbId] ?? [];
+      const isActive = fbNotes.includes(semitones);
       const source = noteSourceForFretboard(fretboardId, get);
       if (isActive) {
+        if (fretboardId) getLoopEngine().recordNoteOff(fretboardId, semitones);
         if (state.arpEnabled) {
           getArpeggiator().removeNote(semitones);
         } else if (source === 'latch-synth' && fretboardId) {
@@ -159,17 +179,49 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           getInternalMidiBus().noteOff(semitones, source);
           latchFrequencies.delete(semitones);
         }
+        if (stringNumber !== undefined && fretboardId) {
+          const k = stringKey(fretboardId, stringNumber);
+          if (stringSemitones.get(k) === semitones) stringSemitones.delete(k);
+        }
         set((s: AppState) => ({
-          sandboxActiveNotes: s.sandboxActiveNotes.filter(n => n !== semitones),
+          sandboxActiveNotes: {
+            ...s.sandboxActiveNotes,
+            [fbId]: (s.sandboxActiveNotes[fbId] ?? []).filter(n => n !== semitones),
+          },
+          sandboxActiveFretPositions: {
+            ...s.sandboxActiveFretPositions,
+            [fbId]: (s.sandboxActiveFretPositions[fbId] ?? []).filter(([str, semi]) => !(str === stringNumber && semi === semitones)),
+          },
           sandboxSoundingStrings: stringNumber !== undefined
             ? s.sandboxSoundingStrings.filter(n => n !== stringNumber)
             : s.sandboxSoundingStrings,
         }));
       } else {
+        if (fretboardId) getLoopEngine().recordNoteOn(fretboardId, semitones, frequency);
+
+        const prevOnString = stringNumber !== undefined && fretboardId
+          ? stringSemitones.get(stringKey(fretboardId, stringNumber))
+          : undefined;
+        const evicting = prevOnString !== undefined && prevOnString !== semitones;
+        if (evicting) {
+          if (fretboardId) getLoopEngine().recordNoteOff(fretboardId, prevOnString!);
+          if (source === 'latch-synth' && fretboardId) {
+            const entry = getEngineForFretboard(fretboardId);
+            entry.latchVoices.get(prevOnString!)?.cut();
+            entry.latchVoices.delete(prevOnString!);
+          } else {
+            getSampler().cut(prevOnString!);
+          }
+          latchFrequencies.delete(prevOnString!);
+        }
+        if (stringNumber !== undefined && fretboardId) {
+          stringSemitones.set(stringKey(fretboardId, stringNumber), semitones);
+        }
+
         if (state.arpEnabled) {
           getArpeggiator().addNote(frequency, semitones);
         } else if (state.view.name === 'monochord') {
-          getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
+          getInstrument().playFn = freq => { const stop = pluckMonochord(freq); return { stop, cut: stop, setFrequency: () => {} }; };
           getInternalMidiBus().noteOn(semitones, frequency, source);
           latchFrequencies.set(semitones, frequency);
         } else if (source === 'latch-synth' && fretboardId) {
@@ -178,13 +230,25 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           entry.latchVoices.set(semitones, voice);
           latchFrequencies.set(semitones, frequency);
         } else {
-          // Sampler or unscoped: use the bus
           getInstrument().playFn = freq => getSynth().play(freq);
           getInternalMidiBus().noteOn(semitones, frequency, source);
           latchFrequencies.set(semitones, frequency);
         }
         set((s: AppState) => ({
-          sandboxActiveNotes: [...s.sandboxActiveNotes, semitones],
+          sandboxActiveNotes: {
+            ...s.sandboxActiveNotes,
+            [fbId]: [
+              ...(evicting ? (s.sandboxActiveNotes[fbId] ?? []).filter(n => n !== prevOnString) : (s.sandboxActiveNotes[fbId] ?? [])),
+              semitones,
+            ],
+          },
+          sandboxActiveFretPositions: stringNumber !== undefined ? {
+            ...s.sandboxActiveFretPositions,
+            [fbId]: [
+              ...(evicting ? (s.sandboxActiveFretPositions[fbId] ?? []).filter(([str, semi]) => !(str === stringNumber && semi === prevOnString)) : (s.sandboxActiveFretPositions[fbId] ?? [])),
+              [stringNumber, semitones] as [number, number],
+            ],
+          } : s.sandboxActiveFretPositions,
           sandboxSoundingStrings: stringNumber !== undefined && !s.sandboxSoundingStrings.includes(stringNumber)
             ? [...s.sandboxSoundingStrings, stringNumber]
             : s.sandboxSoundingStrings,
@@ -194,30 +258,66 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
 
     activateSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => {
       const state = get();
-      if (state.sandboxActiveNotes.includes(semitones)) return;
+      const fbId = fretboardId ?? '';
+      const fbNotes = state.sandboxActiveNotes[fbId] ?? [];
+      if (fbNotes.includes(semitones)) return;
+      if (fretboardId) getLoopEngine().recordNoteOn(fretboardId, semitones, frequency);
       const source = noteSourceForFretboard(fretboardId, get);
+
+      const prevOnString = stringNumber !== undefined && fretboardId
+        ? stringSemitones.get(stringKey(fretboardId, stringNumber))
+        : undefined;
+      const evicting = prevOnString !== undefined && prevOnString !== semitones;
+      if (evicting) {
+        if (fretboardId) getLoopEngine().recordNoteOff(fretboardId, prevOnString!);
+        if (source === 'latch-synth' && fretboardId) {
+          const entry = getEngineForFretboard(fretboardId);
+          entry.latchVoices.get(prevOnString!)?.cut();
+          entry.latchVoices.delete(prevOnString!);
+        } else {
+          getSampler().cut(prevOnString!);
+        }
+        latchFrequencies.delete(prevOnString!);
+      }
+      if (stringNumber !== undefined && fretboardId) {
+        stringSemitones.set(stringKey(fretboardId, stringNumber), semitones);
+      }
+
       if (state.view.name === 'monochord') {
-        getInstrument().playFn = freq => ({ stop: pluckMonochord(freq), setFrequency: () => {} });
+        getInstrument().playFn = freq => { const stop = pluckMonochord(freq); return { stop, cut: stop, setFrequency: () => {} }; };
         getInternalMidiBus().noteOn(semitones, frequency, source);
       } else if (source === 'latch-synth' && fretboardId) {
         const entry = getEngineForFretboard(fretboardId);
         const voice = entry.synth.play(frequency);
         entry.latchVoices.set(semitones, voice);
       } else {
-        // Sampler or unscoped: use the bus
         getInstrument().playFn = freq => getSynth().play(freq);
         getInternalMidiBus().noteOn(semitones, frequency, source);
       }
       latchFrequencies.set(semitones, frequency);
       set((s: AppState) => ({
-        sandboxActiveNotes: [...s.sandboxActiveNotes, semitones],
+        sandboxActiveNotes: {
+          ...s.sandboxActiveNotes,
+          [fbId]: [
+            ...(evicting ? (s.sandboxActiveNotes[fbId] ?? []).filter(n => n !== prevOnString) : (s.sandboxActiveNotes[fbId] ?? [])),
+            semitones,
+          ],
+        },
+        sandboxActiveFretPositions: stringNumber !== undefined ? {
+          ...s.sandboxActiveFretPositions,
+          [fbId]: [
+            ...(evicting ? (s.sandboxActiveFretPositions[fbId] ?? []).filter(([str, semi]) => !(str === stringNumber && semi === prevOnString)) : (s.sandboxActiveFretPositions[fbId] ?? [])),
+            [stringNumber, semitones] as [number, number],
+          ],
+        } : s.sandboxActiveFretPositions,
         sandboxSoundingStrings: stringNumber !== undefined && !s.sandboxSoundingStrings.includes(stringNumber)
           ? [...s.sandboxSoundingStrings, stringNumber]
           : s.sandboxSoundingStrings,
       }));
     },
 
-    slideSandboxNote: (prevSemitones: number, newSemitones: number, newFrequency: number, stringNumber?: number, fretboardId?: string) => {
+    slideSandboxNote: (prevSemitones: number, newSemitones: number, newFrequency: number, _stringNumber?: number, fretboardId?: string) => {
+      const fbId = fretboardId ?? '';
       const source = noteSourceForFretboard(fretboardId, get);
       if (source === 'latch-synth' && fretboardId) {
         const entry = getEngineForFretboard(fretboardId);
@@ -233,11 +333,22 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       latchFrequencies.delete(prevSemitones);
       latchFrequencies.set(newSemitones, newFrequency);
       set((s: AppState) => ({
-        sandboxActiveNotes: [...s.sandboxActiveNotes.filter(n => n !== prevSemitones), newSemitones],
+        sandboxActiveNotes: {
+          ...s.sandboxActiveNotes,
+          [fbId]: [...(s.sandboxActiveNotes[fbId] ?? []).filter(n => n !== prevSemitones), newSemitones],
+        },
+        sandboxActiveFretPositions: {
+          ...s.sandboxActiveFretPositions,
+          [fbId]: (s.sandboxActiveFretPositions[fbId] ?? []).map(([str, semi]) =>
+            semi === prevSemitones ? [str, newSemitones] as [number, number] : [str, semi] as [number, number]
+          ),
+        },
       }));
     },
 
     deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => {
+      const fbId = fretboardId ?? '';
+      if (fretboardId) getLoopEngine().recordNoteOff(fretboardId, semitones);
       const source = noteSourceForFretboard(fretboardId, get);
       if (source === 'latch-synth' && fretboardId) {
         const entry = getEngineForFretboard(fretboardId);
@@ -247,8 +358,19 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
         getInternalMidiBus().noteOff(semitones, source);
       }
       latchFrequencies.delete(semitones);
+      if (stringNumber !== undefined && fretboardId) {
+        const k = stringKey(fretboardId, stringNumber);
+        if (stringSemitones.get(k) === semitones) stringSemitones.delete(k);
+      }
       set((s: AppState) => ({
-        sandboxActiveNotes: s.sandboxActiveNotes.filter(n => n !== semitones),
+        sandboxActiveNotes: {
+          ...s.sandboxActiveNotes,
+          [fbId]: (s.sandboxActiveNotes[fbId] ?? []).filter(n => n !== semitones),
+        },
+        sandboxActiveFretPositions: {
+          ...s.sandboxActiveFretPositions,
+          [fbId]: (s.sandboxActiveFretPositions[fbId] ?? []).filter(([str, semi]) => !(str === stringNumber && semi === semitones)),
+        },
         sandboxSoundingStrings: stringNumber !== undefined
           ? s.sandboxSoundingStrings.filter(n => n !== stringNumber)
           : s.sandboxSoundingStrings,
@@ -309,10 +431,11 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
 
     strumActiveNotes: () => {
       const state = get();
-      if (state.sandboxActiveNotes.length < 2) return;
+      const allActive = Object.values(state.sandboxActiveNotes).flat();
+      if (allActive.length < 2) return;
 
       // Collect notes with frequencies, sort bass-to-treble (ascending frequency)
-      const notes = state.sandboxActiveNotes
+      const notes = allActive
         .map(semi => ({ semitones: semi, frequency: latchFrequencies.get(semi) ?? 0 }))
         .filter(n => n.frequency > 0)
         .sort((a, b) => a.frequency - b.frequency);
@@ -352,6 +475,11 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
 
     deleteFretboard: (id: string) => {
       destroyEngineForFretboard(id);
+      getLoopEngine().clearLoop(id);
+      // Clear string-semitone mapping for this fretboard
+      for (const key of stringSemitones.keys()) {
+        if (key.startsWith(`${id}:`)) stringSemitones.delete(key);
+      }
       set((state: AppState) => {
         const { [id]: _, ...rest } = state.fretboards;
         return { fretboards: rest };
@@ -362,6 +490,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
     search: (id: string, searchTerm: string) => {
       const state = get();
       const fb = state.fretboards[id]!;
+      const safeTuning = fb.tuning ?? tunings['guitar']!['standard']!;
       const { current, notes } = termSearch(searchTerm);
 
       let effectiveNotes = notes;
@@ -374,10 +503,10 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
       if (current?.type === 'Chord') {
         const pitchClasses = effectiveNotes.map(n => n.baseSemitones);
         const bassTarget = effectiveNotes[0]!.baseSemitones;
-        sequences = generateVoicings(pitchClasses, bassTarget, fb.tuning, 15);
+        sequences = generateVoicings(pitchClasses, bassTarget, safeTuning, 15);
       } else if (current) {
-        const strings = getStrings(fb.fretCount, fb.tuning);
-        sequences = generate(effectiveNotes, strings, fb.position);
+        const strings = getStrings(fb.fretCount ?? 12, safeTuning);
+        sequences = generate(effectiveNotes, strings, fb.position ?? 1);
       }
 
       const autoStart =
