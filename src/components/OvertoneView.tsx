@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
 import { fundamentalFrequency } from '../lib/overtones';
-import { play, updateSpiralParams } from '../lib/musicbox';
+import { playOvertone, updateOvertoneParams } from '../lib/musicbox';
 import { getDerivation, GENERATOR_PRESETS, type GeneratorPreset } from '../lib/derivation';
 import { FACTORY_PRESETS } from '../lib/synthPresets';
 import OvertoneSpiral from './OvertoneSpiral';
@@ -61,7 +61,7 @@ export default function OvertoneView() {
   function handlePreset(idx: number) {
     setPresetIdx(idx);
     const p = FACTORY_PRESETS[idx];
-    if (p) updateSpiralParams(p.params);
+    if (p) updateOvertoneParams(p.params);
   }
 
   const fundHz = fundamentalFrequency(overtoneRoot, overtoneOctave);
@@ -93,7 +93,7 @@ export default function OvertoneView() {
           const tid = setTimeout(() => {
             if (_loopId !== myId) return;
             setDerivationActiveStep(note.step);
-            _voices.push(play(note.frequency));
+            _voices.push(playOvertone(note.frequency));
           }, i * interval);
           _timeouts.push(tid);
         });
@@ -115,7 +115,7 @@ export default function OvertoneView() {
             if (_loopId !== myId) return;
             setActiveN(n);
             setBloomKey(k => k + 1);
-            _voices.push(play(freq));
+            _voices.push(playOvertone(freq));
           }, (n - 1) * interval);
           _timeouts.push(tid);
         }
