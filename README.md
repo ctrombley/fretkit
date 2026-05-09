@@ -68,6 +68,16 @@ envchain local kamal app exec "sh"  # shell into the running container
 docker compose up -d    # build and run on http://localhost:8080
 ```
 
+## Factory Reset
+
+To clear all saved state and return to factory defaults, append `?reset=1` to the URL:
+
+```
+http://localhost:5173/?reset=1
+```
+
+This removes the `fretkit-storage` key from localStorage and redirects back to the app with a clean slate. Useful if the app gets into a broken state after a schema change.
+
 ## Tech Stack
 
 | Layer | Technology |
