@@ -1,8 +1,8 @@
 # Fretkit
 
 **Status:** Active
-**Last Updated:** 2026-03-23
-**Next Up:** Implement hammer-on/pull-off drag mechanics with fret-to-fret note slides
+**Last Updated:** 2026-05-08
+**Next Up:** Merge feature/hammer-on-pull-off to master; test in prod
 
 ## Description
 Web-based interactive fretboard visualizer for drilling scales/chords on string instruments. Guitar, banjo, mandolin support with multiple tunings. SVG-based fretboard rendering with intelligent sequence generation algorithm.
@@ -12,15 +12,17 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 ## Tasks
 
 ### Next Up
-- [ ] [HIGH] [~4h] Implement hammer-on/pull-off drag mechanics (click+drag on string, slide through frets, trigger portamento)
-- [ ] [MED] [~1h] Add visual feedback for drag path (fret highlighting, note trail)
-- [ ] [MED] [~30m] Test hammer-on/pull-off across different tunings
+- [ ] [MED] [~30m] Test hammer-on/pull-off and drag across tunings in prod
+- [ ] [LOW] [~1h] Add visual feedback for drag path (fret highlight trail)
 
 ### Backlog
 - [ ] [MED] [~2h] Document angine fretboard engine capabilities
 - [ ] [LOW] [~1h] Add performance profiling for large fretboard renders
 
 ### Completed
+- [x] Polish pass: drone popup, Fretboard rename, chord voicing improvements, barre indicators, ergonomic scoring overhaul, per-fretboard enharmonic/octave toggles, loop engine, same-string eviction, animation cleanup, bug fixes
+- [x] Implement click-and-drag pitch updates with legato MIDI behavior (no note retrigger, continuous amplitude)
+- [x] Fix ControlPanel crash (add v10 migration for missing tuning field)
 - [x] Commit feature/angine-fretboard changes and merge to master
 - [x] Implement per-fretboard synth engines (FretboardEngineRegistry)
 - [x] Add TuningEditor component with validation
@@ -40,4 +42,11 @@ Web-based interactive fretboard visualizer for drilling scales/chords on string 
 - Assessed feature/angine-fretboard: tests pass, changes uncommitted, ready for merge workflow
 - Committed feature/angine-fretboard (20 files, 695 insertions): per-fretboard synth engines + TuningEditor
 - Merged feature/angine-fretboard to master (5 commits, all tests passing)
-- Starting new feature: hammer-on/pull-off drag mechanics with fret-to-fret note slides
+- Fixed ControlPanel crash: v10 migration + defensive fallback for missing tuning field
+- Implemented click-and-drag pitch update mechanics with legato MIDI behavior:
+  * FretboardContext.slideRef for per-fretboard drag state tracking
+  * FretString drag mode: note-on on click, frequency updates during drag, note-off on release
+  * Legato: no note-off/note-on during drag (same MIDI note, frequency changes only)
+  * Envelope and sample state preserved throughout drag (no retrigger)
+  * Global cleanup handler in FretboardSVGContainer
+  * All 455 tests passing, feature ready for testing

@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import Fretboard, { calcFretWidth } from './Fretboard';
 import FretboardLabel from './FretboardLabel';
 import ChordDiagram from './ChordDiagram';
-import { X, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, Circle, Square, Trash2 } from 'lucide-react';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { showToast } from '../lib/toast';
 
@@ -14,7 +14,6 @@ interface FretboardSectionProps {
 export default function FretboardSection({ id }: FretboardSectionProps) {
   const fretboard = useStore(s => s.fretboards[id]);
   const settings = useStore(s => s.settings);
-  const deleteFretboard = useStore(s => s.deleteFretboard);
   const openSettings = useStore(s => s.openSettings);
   const updateFretboard = useStore(s => s.updateFretboard);
   const strumVoicing = useStore(s => s.strumVoicing);
@@ -24,6 +23,15 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
   const droneActive = useStore(s => s.droneActive);
   const droneFretsForBoard = useStore(s => s.droneFrets[id]);
   const setDroneFret = useStore(s => s.setDroneFret);
+
+  const loopStatus = useStore(s => s.loopStatuses[id] ?? 'idle');
+  const loopLengthBars = useStore(s => s.loopLengthBars[id] ?? 4);
+  const loopLeadIn = useStore(s => s.loopLeadIn);
+  const startRecordingLoop = useStore(s => s.startRecordingLoop);
+  const stopRecordingLoop = useStore(s => s.stopRecordingLoop);
+  const clearLoop = useStore(s => s.clearLoop);
+  const setLoopLengthBars = useStore(s => s.setLoopLengthBars);
+  const setLoopLeadIn = useStore(s => s.setLoopLeadIn);
 
   const [showSongMenu, setShowSongMenu] = useState(false);
   const dragState = useRef<{ startX: number; startFret: number } | null>(null);
@@ -72,7 +80,7 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
   }, [fretboard, id, updateFretboard]);
 
   // Compute strum handler for chord voicing mode (must be before early return for hooks rules)
-  const sequence = fretboard && fretboard.sequenceIdx !== null
+  const sequence = fretboard && fretboard.sequences && fretboard.sequenceIdx != null
     ? fretboard.sequences[fretboard.sequenceIdx]
     : undefined;
   const onStrum = useMemo(() => {
@@ -150,13 +158,6 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
       onPointerUp={handlePointerUp}
     >
       <div className="absolute top-2 right-2 flex gap-1 z-10">
-        <button
-          onClick={() => deleteFretboard(id)}
-          className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Delete fretboard"
-        >
-          <X size={16} />
-        </button>
         <button
           onClick={() => openSettings(id)}
           className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
@@ -325,6 +326,74 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
         edoMode={fretboard.edoMode}
         quartertoneThresholdCents={fretboard.quartertoneThresholdCents}
       />
+      {/* Loop controls */}
+      <div
+        className="flex items-center gap-2 mt-1 px-1"
+        onPointerDown={e => e.stopPropagation()}
+      >
+        {loopStatus === 'recording' ? (
+          <button
+            onClick={() => stopRecordingLoop(id)}
+            className="flex items-center gap-1.5 px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+          >
+            <Square size={10} className="fill-red-500 text-red-500" />
+            Stop ({loopLengthBars} {loopLengthBars === 1 ? 'bar' : 'bars'})
+          </button>
+        ) : loopStatus === 'waiting' ? (
+          <button
+            onClick={() => stopRecordingLoop(id)}
+            className="flex items-center gap-1.5 px-2 py-1 text-xs text-amber-600 bg-amber-50 rounded hover:bg-amber-100 transition-colors"
+          >
+            <Circle size={10} className="fill-amber-400 text-amber-400 animate-pulse" />
+            Lead-in…
+          </button>
+        ) : (
+          <button
+            onClick={() => startRecordingLoop(id)}
+            className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded transition-colors ${
+              loopStatus === 'ready'
+                ? 'text-fret-green hover:bg-green-50'
+                : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            }`}
+          >
+            <Circle
+              size={10}
+              className={loopStatus === 'ready' ? 'fill-fret-green text-fret-green' : 'text-red-400'}
+            />
+            {loopStatus === 'ready' ? 'Re-record' : 'Record'}
+          </button>
+        )}
+        <select
+          value={loopLengthBars}
+          onChange={e => setLoopLengthBars(id, Number(e.target.value))}
+          disabled={loopStatus === 'recording' || loopStatus === 'waiting'}
+          className="text-xs text-gray-400 bg-transparent border border-gray-200 rounded px-1 py-0.5 disabled:opacity-40"
+        >
+          {[1, 2, 4, 8].map(b => (
+            <option key={b} value={b}>{b} {b === 1 ? 'bar' : 'bars'}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => setLoopLeadIn(!loopLeadIn)}
+          className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
+            loopLeadIn
+              ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+              : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100'
+          }`}
+          title={loopLeadIn ? '1-bar lead-in enabled' : 'Enable 1-bar lead-in'}
+        >
+          1
+        </button>
+        {loopStatus === 'ready' && (
+          <button
+            onClick={() => clearLoop(id)}
+            className="p-1 text-gray-300 hover:text-gray-500 rounded transition-colors"
+            title="Clear loop"
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

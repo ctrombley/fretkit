@@ -4,6 +4,8 @@ export type OscWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
 
 export interface SynthVoice {
   stop: () => void;
+  /** Immediately silence this voice without applying the release envelope. */
+  cut: () => void;
   setFrequency: (freq: number, portamentoSeconds: number) => void;
 }
 export type LfoWaveform = 'sine' | 'triangle' | 'sawtooth' | 'square';
@@ -371,6 +373,17 @@ export class SynthEngine {
             envelope.disconnect();
           };
         },
+        cut: () => {
+          if (released) return;
+          released = true;
+          this.activeVoices.delete(handle);
+          const t = this.ctx.currentTime;
+          envelope.gain.cancelScheduledValues(t);
+          envelope.gain.setValueAtTime(envelope.gain.value, t);
+          envelope.gain.linearRampToValueAtTime(0, t + 0.01);
+          osc1.stop(t + 0.015);
+          modOsc.stop(t + 0.015);
+        },
         setFrequency: (freq: number, portamentoSeconds: number) => {
           if (released) return;
           const now = this.ctx.currentTime;
@@ -428,6 +441,17 @@ export class SynthEngine {
               envelope.disconnect();
             };
           },
+          cut: () => {
+            if (released) return;
+            released = true;
+            this.activeVoices.delete(handle);
+            const t = this.ctx.currentTime;
+            envelope.gain.cancelScheduledValues(t);
+            envelope.gain.setValueAtTime(envelope.gain.value, t);
+            envelope.gain.linearRampToValueAtTime(0, t + 0.01);
+            osc1.stop(t + 0.015);
+            osc2.stop(t + 0.015);
+          },
           setFrequency: (freq: number, portamentoSeconds: number) => {
             if (released) return;
             const now = this.ctx.currentTime;
@@ -462,6 +486,16 @@ export class SynthEngine {
               osc1Gain.disconnect();
               envelope.disconnect();
             };
+          },
+          cut: () => {
+            if (released) return;
+            released = true;
+            this.activeVoices.delete(handle);
+            const t = this.ctx.currentTime;
+            envelope.gain.cancelScheduledValues(t);
+            envelope.gain.setValueAtTime(envelope.gain.value, t);
+            envelope.gain.linearRampToValueAtTime(0, t + 0.01);
+            osc1.stop(t + 0.015);
           },
           setFrequency: (freq: number, portamentoSeconds: number) => {
             if (released) return;

@@ -9,7 +9,7 @@ export default function KeyboardPanel() {
   const keyboardMode = useStore(s => s.synthKeyboardMode);
   const setKeyboardMode = useStore(s => s.setSynthKeyboardMode);
 
-  const bottomOffset = transportBarOpen ? 56 : 28;
+  const bottomOffset = transportBarOpen ? 82 : 28;
 
   if (!open) {
     return (

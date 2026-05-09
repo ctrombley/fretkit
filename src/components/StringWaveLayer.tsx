@@ -72,7 +72,7 @@ export default function StringWaveLayer({ tuning, startingFret, boardWidth }: St
         // Find active semitone for this string: latch first, then arp
         let activeSemi: number | undefined;
         if (state.sandboxSoundingStrings.includes(stringNumber)) {
-          activeSemi = state.sandboxActiveNotes.find(s => {
+          activeSemi = Object.values(state.sandboxActiveNotes).flat().find(s => {
             const fret = s - openSemi;
             return fret >= 0 && fret <= 24;
           });

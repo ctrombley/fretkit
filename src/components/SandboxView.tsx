@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import FretboardSection from './FretboardSection';
@@ -8,8 +9,7 @@ import { Plus, Lock, Unlock, Zap, Link, Unlink } from 'lucide-react';
 import type { ArpPattern, ArpMode } from '../lib/arpeggiator';
 import { FINGER_PICKING_PATTERNS } from '../lib/fingerPickingPatterns';
 import SynthKnob from './SynthKnob';
-import SynthPresetSelector from './SynthPresetSelector';
-import SamplerPresetSelector from './SamplerPresetSelector';
+import PagePresetSelector from './PagePresetSelector';
 import HelpPopover from './HelpPopover';
 
 const ARP_SYNC_SPEEDS: { value: number; label: string }[] = [
@@ -55,8 +55,22 @@ export default function SandboxView() {
   const setArpFingerPickingPatternId = useStore(s => s.setArpFingerPickingPatternId);
   const bloomAllOctaves = useStore(s => s.bloomAllOctaves);
   const setBloomAllOctaves = useStore(s => s.setBloomAllOctaves);
-  const samplerMode = useStore(s => s.samplerMode);
   const bottomPadding = useBottomPadding();
+  const droneActive = useStore(s => s.droneActive);
+
+  const [droneOpen, setDroneOpen] = useState(false);
+  const droneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!droneOpen) return;
+    const close = (e: MouseEvent) => {
+      if (droneRef.current && !droneRef.current.contains(e.target as Node)) {
+        setDroneOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [droneOpen]);
 
   const activeFretboard = fretboards[settings.settingsId];
 
@@ -71,7 +85,7 @@ export default function SandboxView() {
       <main className="pt-14 px-4 max-w-7xl mx-auto" style={{ paddingBottom: bottomPadding }}>
         {/* Toolbar */}
         <div className="flex items-center gap-2 py-2">
-          {samplerMode === 'synth' ? <SynthPresetSelector /> : <SamplerPresetSelector />}
+          <PagePresetSelector />
           <HelpPopover
             placement="below"
             text={<>
@@ -105,6 +119,26 @@ export default function SandboxView() {
             {bloomAllOctaves ? 'All Oct' : '1 Oct'}
           </button>
 
+          {/* Drone button + popup */}
+          <div ref={droneRef} className="relative">
+            <button
+              onClick={() => setDroneOpen(o => !o)}
+              className={`flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wider rounded transition-colors ${
+                droneActive
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              title="Resonates all open strings across all fretboards simultaneously."
+            >
+              Drone
+            </button>
+            {droneOpen && (
+              <div className="absolute top-full left-0 mt-1 z-50 w-[500px] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                <DronePanel />
+              </div>
+            )}
+          </div>
+
           {/* Arp toggle */}
           <button
             onClick={() => setArpEnabled(!arpEnabled)}
@@ -121,25 +155,17 @@ export default function SandboxView() {
           {/* Arp controls (visible when arp is on) */}
           {arpEnabled && (
             <>
-              {/* Mode tabs: Standard / Strum / Finger Pick */}
-              <div className="flex items-center rounded border border-gray-200 overflow-hidden">
-                {(['standard', 'strum', 'fingerPicking'] as ArpMode[]).map((m) => {
-                  const labels: Record<ArpMode, string> = { standard: 'Standard', strum: 'Strum', fingerPicking: 'Finger Pick' };
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => setArpMode(m)}
-                      className={`px-2 py-1 text-[10px] uppercase tracking-wider transition-colors ${
-                        arpMode === m
-                          ? 'bg-magenta text-white'
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {labels[m]}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Mode selector */}
+              <select
+                value={arpMode}
+                onChange={e => setArpMode(e.target.value as ArpMode)}
+                className="text-[10px] bg-white border border-gray-200 rounded px-1.5 py-1 text-gray-600"
+              >
+                <option value="standard">Standard</option>
+                <option value="strum">Strum</option>
+                <option value="fingerPicking">Finger Pick</option>
+                <option value="litRandom">Scale Rand</option>
+              </select>
 
               {/* Standard mode: pattern selector */}
               {arpMode === 'standard' && (
@@ -244,7 +270,6 @@ export default function SandboxView() {
             <Plus size={20} />
           </button>
         </div>
-        <DronePanel />
       </main>
     </>
   );

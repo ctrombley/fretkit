@@ -20,6 +20,7 @@ export interface ErgonomicWeights {
   bassCorrectness: number;
   positionWeight: number;
   soundedCount: number;
+  barreExistence: number;
 }
 
 export interface ErgonomicBreakdown {
@@ -31,6 +32,7 @@ export interface ErgonomicBreakdown {
   bassCorrectness: number;
   positionWeight: number;
   soundedCount: number;
+  barreExistence: number;
   totalCost: number;
 }
 
@@ -43,8 +45,9 @@ const DEFAULT_WEIGHTS: ErgonomicWeights = {
   stringContiguity: 2.0,
   openStringBonus: 0.4,
   bassCorrectness: 1.0,
-  positionWeight: 0.2,
-  soundedCount: 1.0,
+  positionWeight: 1.5,
+  soundedCount: 0.3,
+  barreExistence: 0.6,
 };
 
 /**
@@ -74,10 +77,11 @@ export function detectBarres(assignments: StringAssignment[]): Barre[] {
     let validBarre = true;
     for (let s = minStr; s <= maxStr; s++) {
       const a = assignments.find(x => x.string === s);
-      if (a && a.fret !== null && a.fret > 0 && a.fret < fret) {
-        validBarre = false;
-        break;
-      }
+      if (!a) continue;
+      // A lower fret within the span means the barre can't cover it
+      if (a.fret !== null && a.fret > 0 && a.fret < fret) { validBarre = false; break; }
+      // An open string within the span means it's meant to ring freely — not a barre
+      if (a.fret === 0) { validBarre = false; break; }
     }
 
     if (validBarre) {
@@ -132,11 +136,12 @@ export function computeErgonomicScore(
   const soundedCount = sounded.length;
 
   // Fret span (among fretted notes only, open excluded)
+  // Quadratic: small spans barely cost anything, wide stretches hurt sharply
   let fretSpanScore = 0;
   if (fretted.length >= 2) {
     const frets = fretted.map(a => a.fret!);
     const span = Math.max(...frets) - Math.min(...frets);
-    fretSpanScore = span / MAX_SPAN;
+    fretSpanScore = (span / MAX_SPAN) ** 2;
   }
 
   // Finger count
@@ -197,16 +202,21 @@ export function computeErgonomicScore(
     }
   }
 
-  // Position weight (slight preference for lower frets)
+  // Position weight — quadratic so first position is nearly free but high frets cost sharply
   let positionWeightScore = 0;
   if (fretted.length > 0) {
     const minFret = Math.min(...fretted.map(a => a.fret!));
-    positionWeightScore = minFret / 12;
+    positionWeightScore = (minFret / 12) ** 2;
   }
 
-  // Sounded count reward (negative = reward for sounding more strings)
+  // Barre existence penalty — a barre chord is harder than a non-barre equivalent
+  const barreExistenceScore = barres.length > 0 ? 1.0 : 0;
+
+  // Sounded count reward — capped at 4 strings so 4/5/6 all score the same;
+  // chords with fewer than 4 strings get a proportionally smaller reward
   const strCount = totalStrings ?? assignments.length;
-  const soundedCountScore = strCount > 0 ? -(soundedCount / strCount) : 0;
+  const targetSounded = Math.min(4, strCount);
+  const soundedCountScore = targetSounded > 0 ? -(Math.min(soundedCount, targetSounded) / targetSounded) : 0;
 
   const totalCost =
     weights.fretSpan * fretSpanScore +
@@ -216,7 +226,8 @@ export function computeErgonomicScore(
     weights.openStringBonus * openStringBonusScore +
     weights.bassCorrectness * bassCorrectnessScore +
     weights.positionWeight * positionWeightScore +
-    weights.soundedCount * soundedCountScore;
+    weights.soundedCount * soundedCountScore +
+    weights.barreExistence * barreExistenceScore;
 
   return {
     fretSpan: fretSpanScore,
@@ -227,6 +238,7 @@ export function computeErgonomicScore(
     bassCorrectness: bassCorrectnessScore,
     positionWeight: positionWeightScore,
     soundedCount: soundedCountScore,
+    barreExistence: barreExistenceScore,
     totalCost,
   };
 }

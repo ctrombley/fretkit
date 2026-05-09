@@ -66,8 +66,7 @@ export default function DronePanel() {
       : 'text-red-500';
 
   return (
-    <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
-      {/* Header bar */}
+    <>
       <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-gray-200">
         <button
           onClick={() => (droneActive ? deactivateDrone() : activateDrone())}
@@ -96,15 +95,14 @@ export default function DronePanel() {
           <span className="text-[10px] tabular-nums text-gray-500 w-10 text-right flex-shrink-0">
             {droneDetuneRange === 0 ? 'exact' : `±${droneDetuneRange}¢`}
           </span>
+          <button
+            onClick={randomizeDroneOffsets}
+            className="text-[9px] text-gray-400 hover:text-indigo-500 transition-colors flex-shrink-0 underline"
+            title="Randomize per-string detune offsets"
+          >
+            randomize
+          </button>
         </div>
-
-        <button
-          onClick={randomizeDroneOffsets}
-          className="px-2 py-1 text-[10px] uppercase tracking-wider rounded bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors flex-shrink-0"
-          title="Randomize per-string detune offsets"
-        >
-          Randomize
-        </button>
 
         {/* Legato toggle */}
         <button
@@ -230,12 +228,6 @@ export default function DronePanel() {
         </div>
       )}
 
-      {/* Inactive hint */}
-      {!droneActive && (
-        <p className="text-[10px] text-gray-400 text-center py-3">
-          Resonates all open strings across all fretboards simultaneously.
-        </p>
-      )}
-    </div>
+    </>
   );
 }

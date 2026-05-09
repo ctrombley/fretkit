@@ -14,6 +14,20 @@ import type { SamplerParams } from '../lib/sampler';
 import type { SamplerSlotDef, SamplerPreset } from '../lib/samplerPresets';
 import type { DroneAnalysis } from '../lib/harmonicAnalysis';
 
+export interface PagePreset {
+  id: string;
+  name: string;
+  isFactory?: boolean;
+  fretboards: Array<{
+    searchStr: string;
+    tuning: string[];
+    startingFret: number;
+    fretCount: number;
+    soundPreset: string;
+    inversion: number;
+  }>;
+}
+
 export interface FretboardState {
   id: number;
   current: { name: string; type: string; root?: Note } | null;
@@ -32,6 +46,8 @@ export interface FretboardState {
   edoMode: '12' | 'angine';
   quartertoneThresholdCents: number;
   synthParams: SynthParams;
+  showEnharmonic: boolean;
+  showOctaves: boolean;
 }
 
 export interface Settings {
@@ -180,11 +196,12 @@ export interface AppState {
   viewSynthSnapshots: Record<string, { params: SynthParams; presetIndex: number | null }>;
 
   // Bus
-  buses: Record<string, { volume: number; muted: boolean }>;
+  buses: Record<string, { volume: number; muted: boolean; pan?: number }>;
   masterBusVolume: number;
   masterBusMuted: boolean;
   setBusVolume: (busId: string, volume: number) => void;
   setBusMuted: (busId: string, muted: boolean) => void;
+  setBusPan: (busId: string, pan: number) => void;
   setMasterBusVolume: (volume: number) => void;
   setMasterBusMuted: (muted: boolean) => void;
 
@@ -209,7 +226,8 @@ export interface AppState {
 
   // Sandbox latch
   sandboxLatch: boolean;
-  sandboxActiveNotes: number[];
+  sandboxActiveNotes: Record<string, number[]>;
+  sandboxActiveFretPositions: Record<string, Array<[number, number]>>;
   strumPreviewSemitones: number[];
   sandboxSoundingStrings: number[];
 
@@ -273,6 +291,7 @@ export interface AppState {
   toggleSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => void;
   activateSandboxNote: (semitones: number, frequency: number, stringNumber?: number, fretboardId?: string) => void;
   deactivateSandboxNote: (semitones: number, stringNumber?: number, fretboardId?: string) => void;
+  slideSandboxNote: (prevSemitones: number, newSemitones: number, newFrequency: number, stringNumber?: number, fretboardId?: string) => void;
   strumVoicing: (notes: Array<{ semitones: number; frequency: number; string?: number }>, fretboardId?: string) => void;
   strumActiveNotes: () => void;
   setFretboardSoundPreset: (fretboardId: string, presetName: string) => void;
@@ -342,6 +361,24 @@ export interface AppState {
   deleteSamplerPreset: (idx: number) => void;
   renameSamplerPreset: (idx: number, name: string) => void;
   triggerSamplerAutoSave: () => void;
+
+  // Page presets
+  pagePresets: PagePreset[];
+  activePagePresetId: string | null;
+  savePagePreset: (name: string) => void;
+  loadPagePreset: (id: string) => void;
+  deletePagePreset: (id: string) => void;
+  randomizeFretboard: (fretboardId: string) => void;
+
+  // Loop recording
+  loopStatuses: Record<string, 'idle' | 'waiting' | 'recording' | 'ready'>;
+  loopLengthBars: Record<string, number>;
+  loopLeadIn: boolean;
+  startRecordingLoop: (fretboardId: string) => void;
+  stopRecordingLoop: (fretboardId: string) => void;
+  clearLoop: (fretboardId: string) => void;
+  setLoopLengthBars: (fretboardId: string, bars: number) => void;
+  setLoopLeadIn: (enabled: boolean) => void;
 
   // Navigation actions
   navigate: (view: View) => void;

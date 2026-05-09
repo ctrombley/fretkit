@@ -20,16 +20,20 @@ const MAX_MIDI = 108; // C8
 
 interface Props {
   selectedSlot: number | null;
-  onNoteClick: (midiNote: number) => void;
+  onNoteOn: (midiNote: number) => void;
+  onNoteOff: (midiNote: number) => void;
 }
 
-export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
+export default function PianoKeyboard({ selectedSlot, onNoteOn, onNoteOff }: Props) {
   const keyMap = useStore(s => s.samplerKeyMap);
   const slots = useStore(s => s.samplerSlots);
   const mapSlotToKey = useStore(s => s.mapSlotToKey);
+  const setSamplerSelectedSlot = useStore(s => s.setSamplerSelectedSlot);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Tracks which key is currently held so onPointerLeave can stop the right note.
+  const pressedMidiRef = useRef<number | null>(null);
 
   // Mirror bus activity — lights up keys from any source (fretboard, arp, etc.)
   useEffect(() => {
@@ -48,26 +52,33 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
     return slots[slotIdx]?.color ?? null;
   }
 
-  function handleKeyClick(midi: number) {
-    const slotIdx = keyMap[midi];
-    if (slotIdx != null && slots[slotIdx]) {
-      getPressAndPlay(midi);
-    }
-    onNoteClick(midi);
+  function handlePointerDown(midi: number) {
+    pressedMidiRef.current = midi;
+    onNoteOn(midi);
   }
 
-  function getPressAndPlay(midi: number) {
-    const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    const bus = getInternalMidiBus();
-    bus.noteOn(midi, freq, 'latch', 100);
-    setTimeout(() => bus.noteOff(midi, 'latch'), 150);
+  function handlePointerUp(midi: number) {
+    if (pressedMidiRef.current === midi) {
+      pressedMidiRef.current = null;
+      onNoteOff(midi);
+    }
+  }
+
+  function handlePointerLeave(midi: number) {
+    if (pressedMidiRef.current === midi) {
+      pressedMidiRef.current = null;
+      onNoteOff(midi);
+    }
   }
 
   function handleDrop(e: React.DragEvent, midi: number) {
     e.preventDefault();
     setDragOver(null);
-    if (selectedSlot == null) return;
-    mapSlotToKey(selectedSlot, midi);
+    const dragged = e.dataTransfer.getData('sampler-slot');
+    const slotIdx = dragged !== '' ? parseInt(dragged, 10) : selectedSlot;
+    if (slotIdx == null || isNaN(slotIdx as number)) return;
+    mapSlotToKey(slotIdx, midi);
+    setSamplerSelectedSlot(slotIdx);
   }
 
   // Build white key list (MIDI notes from MIN_MIDI to MAX_MIDI that are white)
@@ -113,9 +124,12 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
                 alignItems: 'center',
                 paddingBottom: 2,
                 userSelect: 'none',
+                touchAction: 'none',
                 transition: 'background-color 0.08s',
               }}
-              onClick={() => handleKeyClick(midi)}
+              onPointerDown={() => handlePointerDown(midi)}
+              onPointerUp={() => handlePointerUp(midi)}
+              onPointerLeave={() => handlePointerLeave(midi)}
               onDragOver={e => { e.preventDefault(); setDragOver(midi); }}
               onDragLeave={() => setDragOver(null)}
               onDrop={e => handleDrop(e, midi)}
@@ -171,9 +185,12 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
                   zIndex: 2,
                   cursor: 'pointer',
                   boxSizing: 'border-box',
+                  touchAction: 'none',
                   transition: 'background-color 0.08s',
                 }}
-                onClick={() => handleKeyClick(m)}
+                onPointerDown={() => handlePointerDown(m)}
+                onPointerUp={() => handlePointerUp(m)}
+                onPointerLeave={() => handlePointerLeave(m)}
                 onDragOver={e => { e.preventDefault(); setDragOver(m); }}
                 onDragLeave={() => setDragOver(null)}
                 onDrop={e => handleDrop(e, m)}
@@ -185,7 +202,7 @@ export default function PianoKeyboard({ selectedSlot, onNoteClick }: Props) {
       </div>
       <div className="text-[9px] text-gray-400 mt-1 text-center">
         {selectedSlot != null
-          ? `Drag slot ${selectedSlot + 1} or click to play — drop on a key to map`
+          ? `Drag slot ${selectedSlot + 1} or press a key to play — drop on a key to map`
           : 'Select a slot then drop it on a key to map'}
       </div>
     </div>

@@ -4,6 +4,8 @@ import type Sequence from '../lib/Sequence';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { stringStatuses, tabShorthand } from '../lib/voicingUtils';
 import { getPitchClassColor } from '../lib/noteColors';
+import { detectBarres } from '../lib/ergonomics';
+import type { StringAssignment } from '../lib/ergonomics';
 
 const STRING_SPACING = 20;
 const FRET_SPACING = 22;
@@ -45,6 +47,18 @@ export default function ChordDiagram({
   const stringCount = tuning.length;
   const sequence = sequenceIdx !== null ? sequences[sequenceIdx] : undefined;
   const statuses = sequenceEnabled && sequence ? stringStatuses(sequence, stringCount) : null;
+
+  // Detect barre positions for the arc indicator
+  const barres = (() => {
+    if (!sequenceEnabled || !sequence) return [];
+    const byString = new Map<number, number>();
+    for (const sn of sequence.stringNotes) byString.set(sn.string, sn.fret);
+    const assignments: StringAssignment[] = Array.from({ length: stringCount }, (_, s) => ({
+      string: s,
+      fret: byString.get(s) ?? null,
+    }));
+    return detectBarres(assignments);
+  })();
 
   const dragState = useRef<{ startY: number; startFret: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -235,6 +249,25 @@ export default function ChordDiagram({
         }
 
         return null;
+      })}
+
+      {/* Barre arc — rendered behind note dots */}
+      {barres.map((barre, i) => {
+        const barreRelFret = barre.fret - displayStart;
+        if (barreRelFret < 0 || barreRelFret >= visibleFrets) return null;
+        const y = fretY(barreRelFret) + FRET_SPACING / 2;
+        const x1 = stringX(barre.fromString);
+        const x2 = stringX(barre.toString);
+        const r = MARKER_RADIUS;
+        return (
+          <rect
+            key={`barre-${i}`}
+            x={x1 - r} y={y - r}
+            width={x2 - x1 + r * 2} height={r * 2}
+            rx={r} ry={r}
+            fill="#374151" opacity={0.25}
+          />
+        );
       })}
 
       {/* Note markers (fretted notes) */}

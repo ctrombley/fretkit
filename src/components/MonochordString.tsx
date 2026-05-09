@@ -179,6 +179,7 @@ function drawHarmonics(
   baseY: number, color: string, nowMs: number,
   hoverX: number | null, pluck: PluckState | null,
   highlightN: number, highlightColor: string, highlightProx: number,
+  phaseOffset = 0,
 ) {
   const segLen    = x1 - x0;
   const xRelRange = xRelEnd - xRelStart;
@@ -201,7 +202,7 @@ function drawHarmonics(
     if (alpha < 0.008) continue;
 
     const amp   = (HARM_MAX_AMP / Math.sqrt(n)) * Math.min(physLen / 200, 1);
-    const phase = (nowMs / 1000) * HARM_BASE_HZ * n * 2 * Math.PI;
+    const phase = (nowMs / 1000) * HARM_BASE_HZ * n * 2 * Math.PI + phaseOffset;
     const steps = Math.max(Math.ceil(segLen / 3), 32);
 
     ctx.strokeStyle = color;
@@ -223,7 +224,7 @@ function drawHarmonics(
     const n     = highlightN;
     const alpha = Math.min(baseAlpha / Math.sqrt(n) + highlightProx * 0.65 + pluckBoost, 0.88);
     const amp   = (HARM_MAX_AMP / Math.sqrt(n)) * Math.min(physLen / 200, 1) * (1 + highlightProx * 0.55);
-    const phase = (nowMs / 1000) * HARM_FAST_HZ * n * 2 * Math.PI;
+    const phase = (nowMs / 1000) * HARM_FAST_HZ * n * 2 * Math.PI + phaseOffset;
     const steps = Math.max(Math.ceil(segLen / 3), 48);
 
     ctx.strokeStyle = highlightColor;
@@ -577,7 +578,7 @@ const MonochordString = forwardRef<MonochordStringHandle, Props>(
           const x1   = w;
           const relS = (visFracStart - bridgePos) / rightSegLen;
           const relE = (visFracEnd   - bridgePos) / rightSegLen;
-          drawHarmonics(ctx, x0, x1, relS, relE, cy, rc, now, s.current.hoverX, rp, hN - hK, hColor, hProx);
+          drawHarmonics(ctx, x0, x1, relS, relE, cy, rc, now, s.current.hoverX, rp, hN - hK, hColor, hProx, Math.PI);
           if (rp) {
             const elapsed = now - rp.startMs;
             const amp     = Math.exp(-elapsed / (rp.durationMs * 0.30));

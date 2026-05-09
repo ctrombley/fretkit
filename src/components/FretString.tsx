@@ -4,7 +4,6 @@ import StringMarker from './StringMarker';
 import { useStore } from '../store';
 import { STRING_HEIGHT } from '../lib/fretboardConstants';
 import { useFretboardContext } from './FretboardContext';
-import { noteDissonance } from '../lib/harmonicAnalysis';
 
 interface FretStringProps {
   fretIdx: number;
@@ -25,39 +24,42 @@ export default function FretString({
   xOffset,
   yOffset,
 }: FretStringProps) {
-  const { fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets, onDroneFretSelect } = useFretboardContext();
+  const context = useFretboardContext();
+  const { fretboardId, current, litNotes, sequence, sequenceEnabled, onStrum, droneActive, droneFrets, onDroneFretSelect } = context;
+  const slideRef = context.slideRef;
   const [isPreview, setIsPreview] = useState(false);
   const sandboxLatch = useStore(s => s.sandboxLatch);
   const arpEnabled = useStore(s => s.arpEnabled);
+  const stringNumber = (stringCount - 1) - idx;
   const isMarked = useStore(s => {
-    if (s.bloomAllOctaves) {
-      return s.sandboxActiveNotes.some(semi => semi % 12 === note.baseSemitones)
+    const fbId = fretboardId ?? '';
+    const fbNotes = s.sandboxActiveNotes[fbId] ?? [];
+    const fb = s.fretboards[fbId];
+    const showOctaves = fb?.showOctaves ?? false;
+    const showEnharmonic = fb?.showEnharmonic ?? false;
+
+    if (showOctaves) {
+      return fbNotes.some(semi => semi % 12 === note.baseSemitones)
         || s.strumPreviewSemitones.some(semi => semi % 12 === note.baseSemitones);
     }
-    return s.sandboxActiveNotes.includes(note.semitones)
+    if (showEnharmonic) {
+      return fbNotes.includes(note.semitones)
+        || s.strumPreviewSemitones.includes(note.semitones);
+    }
+    // Default: only the exact string+note position that was activated
+    const fbPositions = s.sandboxActiveFretPositions[fbId] ?? [];
+    return fbPositions.some(([str, semi]) => str === stringNumber && semi === note.semitones)
       || s.strumPreviewSemitones.includes(note.semitones);
   });
-  const arpStrike = useStore(s =>
-    s.arpStrikeNotes.includes(note.semitones) ? s.arpStrikeCount : 0
-  );
   const fingerLabel = useStore(s =>
     s.arpEnabled && s.arpMode === 'fingerPicking'
       ? (s.arpStrikeFingers[note.semitones] ?? undefined)
       : undefined
   );
-  // Consonance highlight: show when a note is active and this fret is consonant with it
-  const isConsonant = useStore(s => {
-    if (s.sandboxActiveNotes.length === 0) return false;
-    const minDissonance = Math.min(
-      ...s.sandboxActiveNotes.map(semi => noteDissonance(note.frequency, new Note(semi).frequency))
-    );
-    return minDissonance < 0.25;
-  });
-  const stringNumber = (stringCount - 1) - idx;
-
   const toggleNote = useStore(s => s.toggleSandboxNote);
   const activateNote = useStore(s => s.activateSandboxNote);
   const deactivateNote = useStore(s => s.deactivateSandboxNote);
+  const slideNote = useStore(s => s.slideSandboxNote);
   const isDroneSelected = droneActive && (droneFrets[stringNumber] ?? null) === note.semitones;
   // Variable thickness: idx 0 = treble (thin), idx n-1 = bass (thick)
   const stringThickness = 0.5 + (idx / Math.max(1, stringCount - 1)) * 2;
@@ -87,6 +89,11 @@ export default function FretString({
     // which would swallow our pointerup and leave notes stuck on.
     e.stopPropagation();
 
+    // Clear any stale slide state from a drag that ended off-screen (no pointerup fired).
+    // Without this, the next handlePointerUp on any fret would see the leftover slideRef
+    // and immediately deactivate the note that was just turned on.
+    if (slideRef.current) slideRef.current = null;
+
     // In drone mode, select this fret for this string (one per string, replaces previous)
     if (droneActive) {
       onDroneFretSelect?.(stringNumber, note.semitones);
@@ -103,14 +110,40 @@ export default function FretString({
       activateNote(note.semitones, note.frequency, stringNumber, fretboardId);
       return;
     }
+
+    // Click-and-drag mode: non-latch, non-arp
+    // Start a note and allow drag to change pitch without retriggering envelope
+    if (!useLatch && !current && !isLit) {
+      slideRef.current = { stringIdx: idx, stringNumber, currentSemitones: note.semitones };
+      activateNote(note.semitones, note.frequency, stringNumber, fretboardId);
+      return;
+    }
+
+    console.log('[fret] pointerdown', { useLatch, semitones: note.semitones, fretboardId });
     if (useLatch) {
       toggleNote(note.semitones, note.frequency, stringNumber, fretboardId);
     } else {
       activateNote(note.semitones, note.frequency, stringNumber, fretboardId);
     }
-  }, [droneActive, onDroneFretSelect, stringNumber, sequenceEnabled, isLit, onStrum, current, useLatch, note.semitones, note.frequency, fretboardId, toggleNote, activateNote]);
+  }, [droneActive, onDroneFretSelect, stringNumber, sequenceEnabled, isLit, onStrum, current, useLatch, note.semitones, note.frequency, fretboardId, toggleNote, activateNote, idx, slideRef]);
+
+  const handlePointerEnter = useCallback(() => {
+    // Drag to new fret: if pointer is held and we're at a different fret, update pitch instantly (legato)
+    if (slideRef.current?.stringIdx === idx && slideRef.current.currentSemitones !== note.semitones) {
+      const prev = slideRef.current.currentSemitones;
+      slideNote(prev, note.semitones, note.frequency, stringNumber, fretboardId);
+      slideRef.current.currentSemitones = note.semitones;
+    }
+  }, [idx, slideRef, note.semitones, note.frequency, slideNote, stringNumber, fretboardId]);
 
   const handlePointerUp = useCallback(() => {
+    // If any slide is active, stop it — even if the pointer was released on a different string
+    if (slideRef.current) {
+      deactivateNote(slideRef.current.currentSemitones, slideRef.current.stringNumber, fretboardId);
+      slideRef.current = null;
+      return;
+    }
+
     if (current && isLit) {
       deactivateNote(note.semitones, stringNumber, fretboardId);
       return;
@@ -118,9 +151,14 @@ export default function FretString({
     if (!useLatch) {
       deactivateNote(note.semitones, stringNumber, fretboardId);
     }
-  }, [current, isLit, useLatch, note.semitones, stringNumber, fretboardId, deactivateNote]);
+  }, [idx, slideRef, stringNumber, fretboardId, deactivateNote, current, isLit, useLatch, note.semitones]);
 
   const handlePointerLeave = useCallback(() => {
+    // If sliding on this string, don't deactivate — the slide continues
+    if (slideRef.current?.stringIdx === idx) {
+      return;
+    }
+
     if (current && isLit) {
       deactivateNote(note.semitones, stringNumber, fretboardId);
       return;
@@ -128,7 +166,7 @@ export default function FretString({
     if (!useLatch && isMarked) {
       deactivateNote(note.semitones, stringNumber, fretboardId);
     }
-  }, [current, isLit, useLatch, isMarked, note.semitones, stringNumber, fretboardId, deactivateNote]);
+  }, [idx, slideRef, current, isLit, useLatch, isMarked, note.semitones, stringNumber, fretboardId, deactivateNote]);
 
   return (
     <g className={`string string-${idx}`}>
@@ -160,7 +198,6 @@ export default function FretString({
           note={note}
           isRoot={isRoot}
           isPlaying={isMarked}
-          bloomKey={arpEnabled ? arpStrike : undefined}
           fingerLabel={fingerLabel}
         />
       )}
@@ -174,16 +211,6 @@ export default function FretString({
           note={note}
           isRoot={isRoot}
           isPlaying
-        />
-      )}
-      {/* Consonance ring: frets consonant with a currently active note */}
-      {isConsonant && !isMarked && !isLit && !droneActive && !isOpenString && (
-        <circle
-          cx={xOffset + fretWidth / 2}
-          cy={yOffset}
-          r={7}
-          className="string__marker-consonant"
-          pointerEvents="none"
         />
       )}
       {/* Hint ring: shows open string is playable when not lit or active */}
@@ -216,6 +243,7 @@ export default function FretString({
           style={{ touchAction: 'none' }}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
+          onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           onMouseEnter={() => setIsPreview(true)}
           onMouseLeave={() => setIsPreview(false)}
@@ -231,6 +259,7 @@ export default function FretString({
           style={{ touchAction: 'none', cursor: 'pointer' }}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
+          onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           onMouseEnter={() => setIsPreview(true)}
           onMouseLeave={() => setIsPreview(false)}

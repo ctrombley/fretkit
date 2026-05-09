@@ -7,8 +7,6 @@ export const NAVIGATION_PERSISTED_KEYS: (keyof AppState)[] = ['view'];
 
 const SYNTH_BUS_MAP: Partial<Record<string, string>> = {
   sandbox: 'sandbox',
-  songList: 'songs',
-  songDetail: 'songs',
   synth: 'synth',
 };
 

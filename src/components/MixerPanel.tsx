@@ -159,7 +159,7 @@ function Fader({ value, onChange, disabled = false }: FaderProps) {
 // ── Channel strip ─────────────────────────────────────────────────────────
 
 const BUS_LABELS: Record<string, string> = {
-  sandbox: 'Sandbox',
+  sandbox: 'Fretboard',
   songs: 'Songs',
   spiral: 'Spiral',
   overtones: 'Overtones',
@@ -177,8 +177,10 @@ function ChannelStrip({ busId }: ChannelStripProps) {
   const buses = useStore(s => s.buses);
   const setBusVolume = useStore(s => s.setBusVolume);
   const setBusMuted = useStore(s => s.setBusMuted);
+  const setBusPan = useStore(s => s.setBusPan);
 
-  const bs = buses[busId] ?? { volume: 1, muted: false };
+  const bs = buses[busId] ?? { volume: 1, muted: false, pan: 0 };
+  const pan = bs.pan ?? 0;
 
   return (
     <div className="flex flex-col items-center gap-1.5 px-1.5 min-w-[44px]">
@@ -187,6 +189,17 @@ function ChannelStrip({ busId }: ChannelStripProps) {
         value={bs.volume}
         onChange={(v) => setBusVolume(busId, v)}
         disabled={bs.muted}
+      />
+      <input
+        type="range"
+        min={-1}
+        max={1}
+        step={0.01}
+        value={pan}
+        onChange={e => setBusPan(busId, parseFloat(e.target.value))}
+        className="w-full h-1 accent-gray-400"
+        title={pan === 0 ? 'C' : pan > 0 ? `R${Math.round(pan * 100)}` : `L${Math.round(-pan * 100)}`}
+        style={{ width: 40 }}
       />
       <button
         onClick={() => setBusMuted(busId, !bs.muted)}

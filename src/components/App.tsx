@@ -4,7 +4,7 @@ import Header from './Header';
 import SandboxView from './SandboxView';
 import SongListView from './SongListView';
 import SongDetailView from './SongDetailView';
-import SpiralView from './SpiralView';
+import CircleView from './SpiralView';
 import OvertoneView from './OvertoneView';
 import ColtraneView from './ColtraneView';
 import SynthView from './SynthView';
@@ -50,17 +50,22 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showKeybindings]);
 
+  const isSongDetail = view.name === 'songDetail';
+
   return (
     <div className="min-h-screen">
       <Header />
-      {view.name === 'sandbox' && <SandboxView />}
-      {view.name === 'songList' && <SongListView />}
-      {view.name === 'songDetail' && <SongDetailView songId={view.songId} />}
-      {view.name === 'spiral' && <SpiralView />}
-      {view.name === 'overtones' && <OvertoneView />}
-      {view.name === 'coltrane' && <ColtraneView />}
-      {view.name === 'synth' && <SynthView />}
-      {view.name === 'monochord' && <MonochordView />}
+      {/* Views are always mounted so audio keeps playing across tab switches */}
+      <div className={view.name === 'sandbox' ? '' : 'hidden'}><SandboxView /></div>
+      <div className={view.name === 'songList' ? '' : 'hidden'}><SongListView /></div>
+      <div className={isSongDetail ? '' : 'hidden'}>
+        {isSongDetail && <SongDetailView songId={(view as { name: 'songDetail'; songId: string }).songId} />}
+      </div>
+      <div className={view.name === 'spiral' ? '' : 'hidden'}><CircleView /></div>
+      <div className={view.name === 'overtones' ? '' : 'hidden'}><OvertoneView /></div>
+      <div className={view.name === 'coltrane' ? '' : 'hidden'}><ColtraneView /></div>
+      <div className={view.name === 'synth' ? '' : 'hidden'}><SynthView /></div>
+      <div className={view.name === 'monochord' ? '' : 'hidden'}><MonochordView /></div>
       <KeyboardPanel />
       <TransportBar />
       {showKeybindings && (

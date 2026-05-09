@@ -77,7 +77,7 @@
 
 .string__line {
   fill: none;
-  stroke: #6b7280;
+  stroke: #4b5563;
 }
 
 .string__overlay {
@@ -85,13 +85,11 @@
 }
 
 .string__marker {
-  transition: r 100ms;
   r: 8;
 }
 
 .string__marker-preview {
   fill: rgba(0, 196, 204, 0.5);
-  animation: pulse 1.2s infinite;
 }
 
 /* Open string "O" hint — shown when string is unplayed and unlit */
@@ -121,36 +119,6 @@
   opacity: 0.7;
 }
 
-@keyframes pulse {
-  0% { r: 8; opacity: 1; }
-  50% { r: 12; opacity: 0.6; }
-  100% { r: 8; opacity: 1; }
-}
-
-/* Note bloom: expanding ring that fades out */
-.string__marker-bloom {
-  opacity: 0;
-  pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: note-bloom 0.55s ease-out forwards;
-}
-
-@keyframes note-bloom {
-  0%   { opacity: 0.7; transform: scale(1); }
-  100% { opacity: 0; transform: scale(2); }
-}
-
-/* Note playing: settle-in on the main dot */
-.string__marker-playing {
-  animation: note-attack 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes note-attack {
-  0%   { r: 2; opacity: 0.6; }
-  60%  { opacity: 1; }
-  100% { opacity: 1; }
-}
 
 /* Beat indicator pulse */
 .beat-pulse {

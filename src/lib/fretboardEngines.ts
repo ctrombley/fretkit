@@ -20,23 +20,38 @@ interface FretboardEngineEntry {
 
 const registry = new Map<string, FretboardEngineEntry>();
 
+/**
+ * Params stored for fretboards that haven't created an engine yet.
+ * Engine creation is deferred until the first actual user interaction so that
+ * the AudioContext is only accessed after a user gesture (browser autoplay policy).
+ */
+const pendingParams = new Map<string, SynthParams>();
+
 /** Get (or lazily create) the engine entry for a fretboard. */
 export function getEngineForFretboard(id: string): FretboardEngineEntry {
   if (!registry.has(id)) {
     const synth = new SynthEngine();
-    registry.set(id, { synth, latchVoices: new Map() });
+    const entry = { synth, latchVoices: new Map() };
+    registry.set(id, entry);
+    const pending = pendingParams.get(id);
+    if (pending) {
+      synth.updateParams(pending);
+      pendingParams.delete(id);
+    }
   }
   return registry.get(id)!;
 }
 
 /**
- * Create an engine entry for a new fretboard and apply the given params.
- * Calling this eagerly (on fretboard creation) avoids the lazy-init audio
- * context suspension that can happen if the context hasn't been resumed yet.
+ * Store params for a fretboard engine without eagerly creating the engine.
+ * The engine (and AudioContext) will be created on first actual use.
  */
 export function initEngineForFretboard(id: string, params: SynthParams): void {
-  const entry = getEngineForFretboard(id);
-  entry.synth.updateParams(params);
+  if (registry.has(id)) {
+    registry.get(id)!.synth.updateParams(params);
+  } else {
+    pendingParams.set(id, params);
+  }
 }
 
 /** Stop all voices and remove the engine when a fretboard is deleted. */
@@ -50,10 +65,14 @@ export function destroyEngineForFretboard(id: string): void {
 
 /** Apply SynthParams to a fretboard's engine (used by preset loading). */
 export function applyParamsToEngine(id: string, params: SynthParams): void {
-  const entry = getEngineForFretboard(id);
-  entry.synth.resetLfoBase(1);
-  entry.synth.resetLfoBase(2);
-  entry.synth.updateParams(params);
+  if (registry.has(id)) {
+    const entry = registry.get(id)!;
+    entry.synth.resetLfoBase(1);
+    entry.synth.resetLfoBase(2);
+    entry.synth.updateParams(params);
+  } else {
+    pendingParams.set(id, params);
+  }
 }
 
 /** Kill all latch voices across every registered engine (global kill-all). */

@@ -1,6 +1,12 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useRef } from 'react';
 import type Note from '../lib/Note';
 import type Sequence from '../lib/Sequence';
+
+interface SlideState {
+  stringIdx: number;      // which string row (idx) is sliding
+  stringNumber: number;   // physical string number for deactivateNote
+  currentSemitones: number;
+}
 
 interface FretboardContextValue {
   fretboardId: string;
@@ -13,6 +19,8 @@ interface FretboardContextValue {
   droneActive: boolean;
   droneFrets: (number | null)[];  // indexed by stringNumber (tuning index)
   onDroneFretSelect?: (stringNumber: number, semitones: number) => void;
+  // Slide state ref (hammer-on/pull-off)
+  slideRef: React.MutableRefObject<SlideState | null>;
 }
 
 const FretboardContext = createContext<FretboardContextValue | null>(null);
@@ -22,10 +30,12 @@ export function FretboardProvider({
   value,
 }: {
   children: React.ReactNode;
-  value: FretboardContextValue;
+  value: Omit<FretboardContextValue, 'slideRef'>;
 }) {
+  const slideRef = useRef<SlideState | null>(null);
+
   return (
-    <FretboardContext.Provider value={value}>
+    <FretboardContext.Provider value={{ ...value, slideRef }}>
       {children}
     </FretboardContext.Provider>
   );

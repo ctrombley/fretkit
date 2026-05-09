@@ -69,7 +69,7 @@ interface SegmentInfo {
   pitchClass: number;
 }
 
-export default function HarmonicSpiral() {
+export default function HarmonicSpiral({ previewPc }: { previewPc?: number | null } = {}) {
   const spiralRoot = useStore(s => s.spiralRoot);
   const spiralMode = useStore(s => s.spiralMode);
   const setSpiralRoot = useStore(s => s.setSpiralRoot);
@@ -83,6 +83,10 @@ export default function HarmonicSpiral() {
 
   function getSegmentFill(pc: number, ring: 'inner' | 'major' | 'minor'): string {
     const isHovered = hovered && hovered.pitchClass === pc && hovered.ring === ring;
+    const isPreview = previewPc != null && pc === previewPc;
+
+    // Preview destination (arrow hover) — amber pulse over any underlying color
+    if (isPreview) return isHovered ? 'rgba(245, 158, 11, 0.7)' : 'rgba(245, 158, 11, 0.45)';
 
     // Root
     if (pc === spiralRoot) {
@@ -91,7 +95,6 @@ export default function HarmonicSpiral() {
 
     // In current key
     if (diatonicPCs.has(pc)) {
-      // Dominant / subdominant
       if (pc === dominantPC || pc === subdominantPC) {
         return isHovered ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)';
       }

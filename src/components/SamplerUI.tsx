@@ -24,17 +24,19 @@ export default function SamplerUI() {
     setSamplerSelectedSlot(idx === selectedSlot ? null : idx);
   }, [selectedSlot, setSamplerSelectedSlot]);
 
-  const handlePianoNote = useCallback((midi: number) => {
+  const handleNoteOn = useCallback((midi: number) => {
     const slotIdx = keyMap[midi];
     if (slotIdx == null) return;
     setPlayingSlots(prev => new Set([...prev, slotIdx]));
     const freq = 440 * Math.pow(2, (midi - 69) / 12);
-    const bus = getInternalMidiBus();
-    bus.noteOn(midi, freq, 'latch', 100);
-    setTimeout(() => {
-      bus.noteOff(midi, 'latch');
-      setPlayingSlots(prev => { const n = new Set(prev); n.delete(slotIdx); return n; });
-    }, 300);
+    getInternalMidiBus().noteOn(midi, freq, 'latch-sampler', 100);
+  }, [keyMap]);
+
+  const handleNoteOff = useCallback((midi: number) => {
+    const slotIdx = keyMap[midi];
+    if (slotIdx == null) return;
+    getInternalMidiBus().noteOff(midi, 'latch-sampler');
+    setPlayingSlots(prev => { const n = new Set(prev); n.delete(slotIdx); return n; });
   }, [keyMap]);
 
   return (
@@ -53,7 +55,8 @@ export default function SamplerUI() {
       </div>
       <PianoKeyboard
         selectedSlot={selectedSlot}
-        onNoteClick={handlePianoNote}
+        onNoteOn={handleNoteOn}
+        onNoteOff={handleNoteOff}
       />
 
       {/* Param editor */}

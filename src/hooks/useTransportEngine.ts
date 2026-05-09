@@ -3,6 +3,7 @@ import { useStore } from '../store';
 import { getMetronome } from '../lib/metronome';
 import { getArpeggiator } from '../lib/arpeggiator';
 import { getSynth } from '../lib/synth';
+import { getLoopEngine } from '../lib/loopEngine';
 
 /** Encapsulates the 4 useEffect hooks that wire the metronome/arp engines to the store. */
 export function useTransportEngine() {
@@ -94,14 +95,18 @@ export function useTransportEngine() {
   // Handle play/stop
   useEffect(() => {
     const m = getMetronome();
+    const loops = getLoopEngine();
     if (playing) {
       m.start();
+      loops.startPlayback();
     } else {
       m.stop();
+      loops.stopPlayback();
       setBeat(0, 0);
     }
     return () => {
       m.stop();
+      loops.stopPlayback();
     };
   }, [playing, setBeat]);
 
