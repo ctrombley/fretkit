@@ -96,16 +96,17 @@ export class ArpeggiatorEngine {
     this.direction = 1;
   }
 
-  /** Replace the note pool without cutting currently-playing notes.
-   *  The in-flight note finishes naturally; the next tick uses the new pool. */
+  /** Replace the note pool and immediately play the first step of the new chord.
+   *  Stops whatever was playing, loads the new notes, and fires one tick so
+   *  the user hears the change right away rather than waiting for the next
+   *  scheduled beat. */
   replaceNotes(notes: HeldNote[]): void {
+    this._stopCurrentNotes();
     this.heldNotes = [...notes];
     this.rebuildSorted();
-    // Clamp step index so it stays valid in the new pool
-    if (this.expandedNotes.length > 0) {
-      this.stepIndex = this.stepIndex % this.expandedNotes.length;
-    } else {
-      this.stepIndex = 0;
+    this.stepIndex = 0;
+    if (this.enabled && this.expandedNotes.length > 0) {
+      this.tick(0);
     }
   }
 
