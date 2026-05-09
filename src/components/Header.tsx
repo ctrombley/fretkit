@@ -1,4 +1,4 @@
-import { Guitar, Music, AlignJustify, Orbit, AudioWaveform, Triangle, Sliders, Minus } from 'lucide-react';
+import { Guitar, Music, AlignJustify, Disc3, Orbit, Triangle, Sliders, Minus } from 'lucide-react';
 import { useStore } from '../store';
 
 export default function Header() {
@@ -36,8 +36,8 @@ export default function Header() {
             view.name === 'spiral' ? 'bg-gray-100 text-dark' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
         >
-          <Orbit size={16} />
-          <span className="hidden sm:inline">Spiral</span>
+          <Disc3 size={16} />
+          <span className="hidden sm:inline">Wheel</span>
         </button>
         <button
           onClick={() => navigate({ name: 'overtones' })}
@@ -45,8 +45,8 @@ export default function Header() {
             view.name === 'overtones' ? 'bg-gray-100 text-dark' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
         >
-          <AudioWaveform size={16} />
-          <span className="hidden sm:inline">Overtones</span>
+          <Orbit size={16} />
+          <span className="hidden sm:inline">Overtone Spiral</span>
         </button>
         <button
           onClick={() => navigate({ name: 'coltrane' })}
