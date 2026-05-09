@@ -28,12 +28,18 @@ export function createBusSlice(set: StoreSet) {
       getMasterBus().getBus(busId).setVolume(volume);
     },
 
+    setBusPan: (busId: string, pan: number) => {
+      set((s) => ({
+        buses: { ...s.buses, [busId]: { ...s.buses[busId]!, pan } },
+      }));
+      getMasterBus().getBus(busId).setPan(pan);
+    },
+
     setBusMuted: (busId: string, muted: boolean) => {
       set((s) => ({
-        buses: {
-          ...s.buses,
-          [busId]: { ...s.buses[busId]!, muted },
-        },
+        buses: { ...s.buses, [busId]: { ...s.buses[busId]!, muted } },
+        // Keep metronomeMuted in sync when the metronome bus is toggled from the mixer
+        ...(busId === 'metronome' ? { metronomeMuted: muted } : {}),
       }));
       getMasterBus().getBus(busId).setMuted(muted);
     },

@@ -46,7 +46,10 @@ export function createTransportSlice(set: StoreSet) {
       getMasterBus().getBus('metronome').setVolume(volume);
     },
     setMetronomeMuted: (muted: boolean) => {
-      set({ metronomeMuted: muted });
+      set((s: AppState) => ({
+        metronomeMuted: muted,
+        buses: { ...s.buses, metronome: { ...(s.buses['metronome'] ?? { volume: 1, muted: false }), muted } },
+      }));
       getMasterBus().getBus('metronome').setMuted(muted);
     },
     setMetronomeTimbre: (timbre: MetronomeTimbre) => set({ metronomeTimbre: timbre }),

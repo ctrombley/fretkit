@@ -6,6 +6,7 @@ export class AudioBus {
   private readonly _input: GainNode;
   private readonly _volume: GainNode;
   private readonly _mute: GainNode;
+  private readonly _panner: StereoPannerNode;
   private readonly _crossfade: GainNode;
   private readonly _analyser: AnalyserNode;
 
@@ -13,14 +14,16 @@ export class AudioBus {
     this._input = ctx.createGain();
     this._volume = ctx.createGain();
     this._mute = ctx.createGain();
+    this._panner = ctx.createStereoPanner();
     this._crossfade = ctx.createGain();
     this._analyser = ctx.createAnalyser();
     this._analyser.fftSize = 256;
 
-    // input → volume → mute → crossfade → analyser (tap) → output
+    // input → volume → mute → panner → crossfade → analyser (tap) → output
     this._input.connect(this._volume);
     this._volume.connect(this._mute);
-    this._mute.connect(this._crossfade);
+    this._mute.connect(this._panner);
+    this._panner.connect(this._crossfade);
     this._crossfade.connect(this._analyser);
   }
 
@@ -34,6 +37,10 @@ export class AudioBus {
 
   setMuted(muted: boolean): void {
     this._mute.gain.value = muted ? 0 : 1;
+  }
+
+  setPan(pan: number): void {
+    this._panner.pan.value = Math.max(-1, Math.min(1, pan));
   }
 
   setCrossfadeGain(v: number): void {

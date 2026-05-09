@@ -1,17 +1,11 @@
 import { useStore } from '../store';
-import { OctagonX } from 'lucide-react';
-import { lfoFor, formatPan } from '../lib/synthUtils';
+import { Skull } from 'lucide-react';
+import { lfoFor } from '../lib/synthUtils';
 import type { LfoTargetParam } from '../lib/synth';
 import SynthKnob from './SynthKnob';
-import StereoVU from './StereoVU';
 
-interface TransportMixerProps {
-  onOpenMixer?: () => void;
-}
-
-export default function TransportMixer({ onOpenMixer }: TransportMixerProps = {}) {
+export default function TransportMixer() {
   const masterVolume = useStore(s => s.synthMasterVolume);
-  const pan = useStore(s => s.synthPan);
   const reverbSend = useStore(s => s.synthReverbSend);
   const delaySend = useStore(s => s.synthDelaySend);
   const delayTime = useStore(s => s.synthDelayTime);
@@ -34,9 +28,8 @@ export default function TransportMixer({ onOpenMixer }: TransportMixerProps = {}
         className="p-1.5 rounded text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors"
         title="Kill all notes"
       >
-        <OctagonX size={16} />
+        <Skull size={16} />
       </button>
-      <StereoVU onClick={onOpenMixer} />
       <SynthKnob
         label="Master"
         value={masterVolume}
@@ -49,19 +42,6 @@ export default function TransportMixer({ onOpenMixer }: TransportMixerProps = {}
         paramKey="masterVolume"
         lfoTargeting={lfoFor('masterVolume', lfo1Target, lfo2Target)}
         onDrop={(lfo) => handleLfoDrop('masterVolume', lfo)}
-      />
-      <SynthKnob
-        label="Pan"
-        value={pan}
-        min={-1}
-        max={1}
-        onChange={(v) => setSynthParam('pan', v)}
-        formatValue={formatPan}
-        size={32}
-        color="#00C4CC"
-        paramKey="pan"
-        lfoTargeting={lfoFor('pan', lfo1Target, lfo2Target)}
-        onDrop={(lfo) => handleLfoDrop('pan', lfo)}
       />
       <SynthKnob
         label="Reverb"

@@ -1,15 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
-import { Play, Square, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../store';
-import { lfoFor } from '../lib/synthUtils';
-import type { LfoTargetParam } from '../lib/synth';
 import { useTransportEngine } from '../hooks/useTransportEngine';
-import SynthKnob from './SynthKnob';
 import BeatIndicator from './BeatIndicator';
 import SubdivisionSelector from './SubdivisionSelector';
 import MetronomeControls from './MetronomeControls';
 import TransportMixer from './TransportMixer';
 import MixerPanel from './MixerPanel';
+import StereoVU from './StereoVU';
 
 const TIME_SIGS: [number, number][] = [
   [4, 4],
@@ -28,14 +26,11 @@ export default function TransportBar() {
   const beatUnit = useStore(s => s.transportBeatUnit);
   const currentBeat = useStore(s => s.transportCurrentBeat);
   const transportBarOpen = useStore(s => s.transportBarOpen);
-  const lfo1Target = useStore(s => s.synthLfo1Target);
-  const lfo2Target = useStore(s => s.synthLfo2Target);
 
   const setPlaying = useStore(s => s.setTransportPlaying);
   const setBpm = useStore(s => s.setTransportBpm);
   const setTimeSignature = useStore(s => s.setTransportTimeSignature);
   const setTransportBarOpen = useStore(s => s.setTransportBarOpen);
-  const setLfoTarget = useStore(s => s.setSynthLfoTarget);
 
   useTransportEngine();
 
@@ -67,9 +62,6 @@ export default function TransportBar() {
     }
   }, [setBpm]);
 
-  const handleLfoDrop = (param: LfoTargetParam, lfoNum: 1 | 2) => {
-    setLfoTarget(lfoNum, param);
-  };
 
   const handleTimeSigChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const [beats, unit] = e.target.value.split('/').map(Number);
@@ -112,20 +104,18 @@ export default function TransportBar() {
         <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
         {/* BPM */}
-        <div className="flex items-center gap-2">
-          <SynthKnob
-            label="BPM"
-            value={bpm}
-            min={30}
-            max={300}
-            onChange={(v) => setBpm(Math.round(v))}
-            formatValue={(v) => String(Math.round(v))}
-            size={36}
-            color="#F73667"
-            paramKey="bpm"
-            lfoTargeting={lfoFor('bpm', lfo1Target, lfo2Target)}
-            onDrop={(lfo) => handleLfoDrop('bpm' as LfoTargetParam, lfo)}
-          />
+        <div className="flex items-center gap-1.5">
+          <div className="flex flex-col items-center w-20">
+            <span className="text-[9px] uppercase tracking-wider text-gray-400 leading-none mb-0.5 w-full text-center">BPM</span>
+            <input
+              type="number"
+              min={30}
+              max={300}
+              value={bpm}
+              onChange={e => setBpm(Math.max(30, Math.min(300, parseInt(e.target.value, 10) || bpm)))}
+              className="w-full text-center text-xl font-mono font-semibold text-dark bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-fret-blue rounded pl-4"
+            />
+          </div>
           <button
             onClick={handleTap}
             className="px-2 py-1 text-[10px] uppercase tracking-wider rounded bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
@@ -168,21 +158,9 @@ export default function TransportBar() {
 
         <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
-        <TransportMixer onOpenMixer={() => setShowMixer(true)} />
+        <TransportMixer />
 
-        {/* Mixer button */}
-        <button
-          onClick={() => setShowMixer(v => !v)}
-          className={`p-1 rounded transition-colors ${
-            showMixer
-              ? 'text-magenta bg-magenta/10'
-              : 'text-gray-400 hover:text-gray-600'
-          }`}
-          aria-label="Toggle mixer"
-          title="Mixer"
-        >
-          <SlidersHorizontal size={14} />
-        </button>
+        <StereoVU onClick={() => setShowMixer(v => !v)} />
 
         {/* Collapse toggle */}
         <button

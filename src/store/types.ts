@@ -14,6 +14,20 @@ import type { SamplerParams } from '../lib/sampler';
 import type { SamplerSlotDef, SamplerPreset } from '../lib/samplerPresets';
 import type { DroneAnalysis } from '../lib/harmonicAnalysis';
 
+export interface PagePreset {
+  id: string;
+  name: string;
+  isFactory?: boolean;
+  fretboards: Array<{
+    searchStr: string;
+    tuning: string[];
+    startingFret: number;
+    fretCount: number;
+    soundPreset: string;
+    inversion: number;
+  }>;
+}
+
 export interface FretboardState {
   id: number;
   current: { name: string; type: string; root?: Note } | null;
@@ -182,11 +196,12 @@ export interface AppState {
   viewSynthSnapshots: Record<string, { params: SynthParams; presetIndex: number | null }>;
 
   // Bus
-  buses: Record<string, { volume: number; muted: boolean }>;
+  buses: Record<string, { volume: number; muted: boolean; pan?: number }>;
   masterBusVolume: number;
   masterBusMuted: boolean;
   setBusVolume: (busId: string, volume: number) => void;
   setBusMuted: (busId: string, muted: boolean) => void;
+  setBusPan: (busId: string, pan: number) => void;
   setMasterBusVolume: (volume: number) => void;
   setMasterBusMuted: (muted: boolean) => void;
 
@@ -346,6 +361,14 @@ export interface AppState {
   deleteSamplerPreset: (idx: number) => void;
   renameSamplerPreset: (idx: number, name: string) => void;
   triggerSamplerAutoSave: () => void;
+
+  // Page presets
+  pagePresets: PagePreset[];
+  activePagePresetId: string | null;
+  savePagePreset: (name: string) => void;
+  loadPagePreset: (id: string) => void;
+  deletePagePreset: (id: string) => void;
+  randomizeFretboard: (fretboardId: string) => void;
 
   // Loop recording
   loopStatuses: Record<string, 'idle' | 'waiting' | 'recording' | 'ready'>;
