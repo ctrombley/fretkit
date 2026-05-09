@@ -168,7 +168,7 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
       </div>
       {showMiniDiagram && (
         <div
-          className="absolute top-2 left-2 z-10 opacity-80 hover:opacity-100 transition-opacity"
+          className="hidden sm:block absolute top-2 left-2 z-10 opacity-80 hover:opacity-100 transition-opacity"
           onPointerDown={e => e.stopPropagation()}
         >
           <div className="flex items-center gap-0.5">
@@ -255,7 +255,7 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
       {/* Gear for save-to-song when mini diagram is not shown (scale/empty chord mode) */}
       {!showMiniDiagram && canSendToSong && (
         <div
-          className="absolute top-2 left-2 z-10"
+          className="hidden sm:block absolute top-2 left-2 z-10"
           onPointerDown={e => e.stopPropagation()}
         >
           <div className="relative">
