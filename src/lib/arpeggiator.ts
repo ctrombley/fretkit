@@ -5,7 +5,7 @@ import { resolvePatternIndex, type PatternStep, type PatternStepFingers, type Fi
 export type ArpPattern = 'up' | 'down' | 'upDown' | 'downUp' | 'random' | 'asPlayed' | 'converge' | 'diverge';
 export type ArpMode = 'standard' | 'strum' | 'fingerPicking' | 'litRandom';
 
-interface HeldNote {
+export interface HeldNote {
   frequency: number;
   semitones: number;
 }
@@ -94,6 +94,19 @@ export class ArpeggiatorEngine {
     this.expandedNotes = [];
     this.stepIndex = 0;
     this.direction = 1;
+  }
+
+  /** Replace the note pool without cutting currently-playing notes.
+   *  The in-flight note finishes naturally; the next tick uses the new pool. */
+  replaceNotes(notes: HeldNote[]): void {
+    this.heldNotes = [...notes];
+    this.rebuildSorted();
+    // Clamp step index so it stays valid in the new pool
+    if (this.expandedNotes.length > 0) {
+      this.stepIndex = this.stepIndex % this.expandedNotes.length;
+    } else {
+      this.stepIndex = 0;
+    }
   }
 
   private _stopCurrentNotes(): void {

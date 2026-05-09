@@ -1,5 +1,5 @@
 import { getArpeggiator } from '../lib/arpeggiator';
-import type { ArpPattern, ArpMode } from '../lib/arpeggiator';
+import type { ArpPattern, ArpMode, HeldNote } from '../lib/arpeggiator';
 import { getPatternById, FINGER_PICKING_PATTERNS } from '../lib/fingerPickingPatterns';
 import Note from '../lib/Note';
 import { getInternalMidiBus } from '../lib/internalMidiBus';
@@ -17,19 +17,21 @@ export const ARP_PERSISTED_KEYS: (keyof AppState)[] = [
   'arpFingerPickingPatternId',
 ];
 
-/** Load the notes from a chord voicing sequence into the arpeggiator, replacing current notes. */
+/** Swap the arpeggiator's note pool without cutting the currently-playing note.
+ *  The in-flight note finishes naturally; the next tick uses the new pool. */
 function applySequenceToArp(sequences: import('../lib/Sequence').default[], seqIdx: number): void {
   const seq = sequences[seqIdx];
   if (!seq) return;
   const arp = getArpeggiator();
-  arp.clear();
   const seen = new Set<number>();
+  const notes: HeldNote[] = [];
   for (const sn of seq.stringNotes) {
     if (!seen.has(sn.semitones)) {
       seen.add(sn.semitones);
-      arp.addNote(sn.frequency, sn.semitones);
+      notes.push({ frequency: sn.frequency, semitones: sn.semitones });
     }
   }
+  arp.replaceNotes(notes);
 }
 
 export function createArpSlice(set: StoreSet, get: StoreGet) {
