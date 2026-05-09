@@ -90,6 +90,8 @@ export function createArpSlice(set: StoreSet, get: StoreGet) {
       set({ arpMode: mode });
       const arp = getArpeggiator();
       arp.mode = mode;
+      // Sync lit notes immediately when switching to litRandom
+      if (mode === 'litRandom') get().syncArpToFretboard(get().settings.settingsId);
     },
 
     setArpFingerPickingPatternId: (id: string) => {
@@ -124,6 +126,13 @@ export function createArpSlice(set: StoreSet, get: StoreGet) {
       const fb = state.fretboards[fretboardId];
       if (!fb) return;
       const arp = getArpeggiator();
+
+      // litRandom mode: use the fretboard's lit (scale/chord) notes as the random pool
+      if (state.arpMode === 'litRandom') {
+        const pool = (fb.litNotes ?? []).map(n => ({ frequency: n.frequency, semitones: n.semitones }));
+        arp.setLitNotes(pool);
+        return;
+      }
 
       // Priority 1: chord voicing
       if (fb.sequenceEnabled && fb.sequenceIdx !== null && fb.sequences.length > 0) {

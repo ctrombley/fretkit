@@ -218,7 +218,7 @@ export function createSandboxSlice(set: StoreSet, get: StoreGet) {
           stringSemitones.set(stringKey(fretboardId, stringNumber), semitones);
         }
 
-        if (state.arpEnabled) {
+        if (state.arpEnabled && !state.fretboards[fbId]?.sequenceEnabled) {
           getArpeggiator().addNote(frequency, semitones);
         } else if (state.view.name === 'monochord') {
           getInstrument().playFn = freq => { const stop = pluckMonochord(freq); return { stop, cut: stop, setFrequency: () => {} }; };

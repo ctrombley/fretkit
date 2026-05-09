@@ -3,7 +3,7 @@ import { getInternalMidiBus } from './internalMidiBus';
 import { resolvePatternIndex, type PatternStep, type PatternStepFingers, type FingerLabel } from './fingerPickingPatterns';
 
 export type ArpPattern = 'up' | 'down' | 'upDown' | 'downUp' | 'random' | 'asPlayed' | 'converge' | 'diverge';
-export type ArpMode = 'standard' | 'strum' | 'fingerPicking';
+export type ArpMode = 'standard' | 'strum' | 'fingerPicking' | 'litRandom';
 
 interface HeldNote {
   frequency: number;
@@ -14,6 +14,7 @@ export class ArpeggiatorEngine {
   private heldNotes: HeldNote[] = []; // insertion order
   private sortedNotes: HeldNote[] = []; // pitch-sorted
   private expandedNotes: HeldNote[] = [];
+  private litNotesPool: HeldNote[] = []; // for litRandom mode
   private stepIndex = 0;
   private direction = 1; // 1 = up, -1 = down
   private enabled = false;
@@ -63,6 +64,10 @@ export class ArpeggiatorEngine {
     if (this.freeTimer !== null) {
       this.startFreeRunning(ms);
     }
+  }
+
+  setLitNotes(notes: Array<{ frequency: number; semitones: number }>): void {
+    this.litNotesPool = notes.map(n => ({ frequency: n.frequency, semitones: n.semitones }));
   }
 
   addNote(frequency: number, semitones: number): void {
@@ -124,7 +129,19 @@ export class ArpeggiatorEngine {
   }
 
   tick(_time: number): void {
-    if (!this.enabled || this.expandedNotes.length === 0) return;
+    if (!this.enabled) return;
+
+    if (this.mode === 'litRandom') {
+      if (this.litNotesPool.length === 0) return;
+      this._stopCurrentNotes();
+      const note = this.litNotesPool[Math.floor(Math.random() * this.litNotesPool.length)]!;
+      getInternalMidiBus().noteOn(note.semitones, note.frequency, 'arp');
+      this.currentNotes = [{ semitones: note.semitones }];
+      this.onStepPlayed?.([{ semitones: note.semitones, finger: null }]);
+      return;
+    }
+
+    if (this.expandedNotes.length === 0) return;
 
     if (this.mode === 'strum') {
       this.tickStrum();
