@@ -3,11 +3,11 @@ import { useStore } from '../store';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { noteName, usesSharps } from '../lib/harmony';
 import { fundamentalFrequency } from '../lib/overtones';
-import { play } from '../lib/musicbox';
+import { play, updateSpiralParams } from '../lib/musicbox';
 import { getDerivation, GENERATOR_PRESETS, type GeneratorPreset } from '../lib/derivation';
+import { FACTORY_PRESETS } from '../lib/synthPresets';
 import OvertoneSpiral from './OvertoneSpiral';
 import DerivationRing from './DerivationRing';
-import SynthPresetSelector from './SynthPresetSelector';
 import HelpPopover from './HelpPopover';
 
 // ── Module-level loop state (survives navigation) ─────────────────────────
@@ -56,6 +56,13 @@ export default function OvertoneView() {
 
   const [activeN, setActiveN] = useState<number | null>(null);
   const [bloomKey, setBloomKey] = useState(0);
+  const [presetIdx, setPresetIdx] = useState(0);
+
+  function handlePreset(idx: number) {
+    setPresetIdx(idx);
+    const p = FACTORY_PRESETS[idx];
+    if (p) updateSpiralParams(p.params);
+  }
 
   const fundHz = fundamentalFrequency(overtoneRoot, overtoneOctave);
   const preferSharps = usesSharps(overtoneRoot);
@@ -135,7 +142,7 @@ export default function OvertoneView() {
             <h2 className="text-2xl font-bold text-dark">
               {isDeriveMode
                 ? `ET Derivation: ${rootName} (${GENERATOR_PRESETS[derivationGenerator].name}, ${derivationDivisions}-TET)`
-                : `Overtone Series: ${rootName}${overtoneOctave}`
+                : `Overtone Spiral: ${rootName}${overtoneOctave}`
               }
             </h2>
             <HelpPopover
@@ -146,7 +153,15 @@ export default function OvertoneView() {
               }
             />
           </div>
-          <SynthPresetSelector />
+          <select
+            value={presetIdx}
+            onChange={e => handlePreset(Number(e.target.value))}
+            className="text-[11px] bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-fret-green"
+          >
+            {FACTORY_PRESETS.map((p, i) => (
+              <option key={i} value={i}>{p.name}</option>
+            ))}
+          </select>
         </div>
         <p className="text-sm text-gray-500 mt-0.5">
           Fundamental: {fundHz.toFixed(1)} Hz
