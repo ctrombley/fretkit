@@ -9,8 +9,7 @@ import { Plus, Lock, Unlock, Zap, Link, Unlink } from 'lucide-react';
 import type { ArpPattern, ArpMode } from '../lib/arpeggiator';
 import { FINGER_PICKING_PATTERNS } from '../lib/fingerPickingPatterns';
 import SynthKnob from './SynthKnob';
-import SynthPresetSelector from './SynthPresetSelector';
-import SamplerPresetSelector from './SamplerPresetSelector';
+import PagePresetSelector from './PagePresetSelector';
 import HelpPopover from './HelpPopover';
 
 const ARP_SYNC_SPEEDS: { value: number; label: string }[] = [
@@ -56,7 +55,6 @@ export default function SandboxView() {
   const setArpFingerPickingPatternId = useStore(s => s.setArpFingerPickingPatternId);
   const bloomAllOctaves = useStore(s => s.bloomAllOctaves);
   const setBloomAllOctaves = useStore(s => s.setBloomAllOctaves);
-  const samplerMode = useStore(s => s.samplerMode);
   const bottomPadding = useBottomPadding();
   const droneActive = useStore(s => s.droneActive);
 
@@ -87,7 +85,7 @@ export default function SandboxView() {
       <main className="pt-14 px-4 max-w-7xl mx-auto" style={{ paddingBottom: bottomPadding }}>
         {/* Toolbar */}
         <div className="flex items-center gap-2 py-2">
-          {samplerMode === 'synth' ? <SynthPresetSelector /> : <SamplerPresetSelector />}
+          <PagePresetSelector />
           <HelpPopover
             placement="below"
             text={<>
@@ -157,25 +155,17 @@ export default function SandboxView() {
           {/* Arp controls (visible when arp is on) */}
           {arpEnabled && (
             <>
-              {/* Mode tabs: Standard / Strum / Finger Pick */}
-              <div className="flex items-center rounded border border-gray-200 overflow-hidden">
-                {(['standard', 'strum', 'fingerPicking'] as ArpMode[]).map((m) => {
-                  const labels: Record<ArpMode, string> = { standard: 'Standard', strum: 'Strum', fingerPicking: 'Finger Pick' };
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => setArpMode(m)}
-                      className={`px-2 py-1 text-[10px] uppercase tracking-wider transition-colors ${
-                        arpMode === m
-                          ? 'bg-magenta text-white'
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {labels[m]}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Mode selector */}
+              <select
+                value={arpMode}
+                onChange={e => setArpMode(e.target.value as ArpMode)}
+                className="text-[10px] bg-white border border-gray-200 rounded px-1.5 py-1 text-gray-600"
+              >
+                <option value="standard">Standard</option>
+                <option value="strum">Strum</option>
+                <option value="fingerPicking">Finger Pick</option>
+                <option value="litRandom">Scale Rand</option>
+              </select>
 
               {/* Standard mode: pattern selector */}
               {arpMode === 'standard' && (

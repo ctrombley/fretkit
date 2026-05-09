@@ -1,5 +1,6 @@
 import { useCallback, useRef, useMemo } from 'react';
 import { useStore } from '../store';
+import { useShallow } from 'zustand/shallow';
 import { noteName } from '../lib/harmony';
 import { getPitchClassColor } from '../lib/noteColors';
 import { FACTORY_SCALE_PRESETS, type ScaleEntry } from '../lib/monochordScales';
@@ -333,7 +334,7 @@ function IsomorphicKeyboard({
 }
 
 export default function SynthKeyboard({ mode }: SynthKeyboardProps) {
-  const sandboxActiveNotes    = useStore(s => Object.values(s.sandboxActiveNotes).flat());
+  const sandboxActiveNotes    = useStore(useShallow(s => Object.values(s.sandboxActiveNotes).flat()));
   const bloomAllOctaves       = useStore(s => s.bloomAllOctaves);
   const sandboxLatch          = useStore(s => s.sandboxLatch);
   const arpEnabled            = useStore(s => s.arpEnabled);

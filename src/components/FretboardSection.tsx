@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import Fretboard, { calcFretWidth } from './Fretboard';
 import FretboardLabel from './FretboardLabel';
 import ChordDiagram from './ChordDiagram';
-import { X, Settings, ChevronLeft, ChevronRight, Circle, Square, Trash2 } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, Circle, Square, Trash2 } from 'lucide-react';
 import { optimalStartingFret } from '../lib/fretboardUtils';
 import { showToast } from '../lib/toast';
 
@@ -14,7 +14,6 @@ interface FretboardSectionProps {
 export default function FretboardSection({ id }: FretboardSectionProps) {
   const fretboard = useStore(s => s.fretboards[id]);
   const settings = useStore(s => s.settings);
-  const deleteFretboard = useStore(s => s.deleteFretboard);
   const openSettings = useStore(s => s.openSettings);
   const updateFretboard = useStore(s => s.updateFretboard);
   const strumVoicing = useStore(s => s.strumVoicing);
@@ -159,13 +158,6 @@ export default function FretboardSection({ id }: FretboardSectionProps) {
       onPointerUp={handlePointerUp}
     >
       <div className="absolute top-2 right-2 flex gap-1 z-10">
-        <button
-          onClick={() => deleteFretboard(id)}
-          className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Delete fretboard"
-        >
-          <X size={16} />
-        </button>
         <button
           onClick={() => openSettings(id)}
           className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"

@@ -16,6 +16,7 @@ import { createMonochordScalesSlice, MONOCHORD_SCALES_PERSISTED_KEYS } from './s
 import { createSamplerSlice, SAMPLER_PERSISTED_KEYS } from './store/samplerSlice';
 import { createDroneSlice, DRONE_PERSISTED_KEYS } from './store/droneSlice';
 import { createLoopSlice } from './store/loopSlice';
+import { createPagePresetsSlice, PAGE_PRESETS_PERSISTED_KEYS } from './store/pagePresetsSlice';
 import { getMasterBus } from './lib/masterBus';
 import { getSampler } from './lib/sampler';
 import { getArpeggiator } from './lib/arpeggiator';
@@ -52,6 +53,7 @@ const ALL_PERSISTED_KEYS: (keyof AppState)[] = [
   ...SAMPLER_PERSISTED_KEYS,
   ...DRONE_PERSISTED_KEYS,
   ...NAVIGATION_PERSISTED_KEYS,
+  ...PAGE_PRESETS_PERSISTED_KEYS,
 ];
 
 export const useStore = create<AppState>()(
@@ -72,6 +74,7 @@ export const useStore = create<AppState>()(
       ...createSamplerSlice(set),
       ...createDroneSlice(set, get),
       ...createLoopSlice(set, get),
+      ...createPagePresetsSlice(set, get),
     }),
     {
       name: 'fretkit-storage',
@@ -124,6 +127,7 @@ export const useStore = create<AppState>()(
         for (const [id, bs] of Object.entries(state.buses)) {
           master.getBus(id).setVolume(bs.volume);
           master.getBus(id).setMuted(bs.muted);
+          if (bs.pan != null) master.getBus(id).setPan(bs.pan);
         }
         master.setMasterVolume(state.masterBusVolume);
         master.setMasterMuted(state.masterBusMuted);
